@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import app from './server.js';
 import { initUsersTable } from './features/auth/auth.model.js';
 import authRoutes from './features/auth/auth.route.js';
