@@ -4,8 +4,9 @@ export const initUsersTable = async () => {
   const query = `
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        username VARCHAR(50) UNIQUE NOT NULL,
+        email VARCHAR(50) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
+        fullname VARCHAR(100) NOT NULL,
         avatar_url VARCHAR(500),
         role VARCHAR(20) NOT NULL,
         is_email_verified BOOLEAN DEFAULT FALSE,
