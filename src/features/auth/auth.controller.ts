@@ -1,20 +1,36 @@
-import pool from "../../db.js";
 import { Request, Response } from "express";
-import { registerUser as registerUserService, isEmailExist } from "./auth.service.js";
+import { registerUser as registerUserService, isEmailExist, verifyUserEmail, loginUser as loginUserService, createRefeshToken, checkRefreshToken } from "./auth.service.js";
 import resend from "../../emails/resend.js";
 import {JwtService} from "../../jwtService.js"; 
-import { registerSchema } from "./auth.schema.js";
+import { registerSchema, loginSchema } from "./auth.schema.js";
 
 export const loginUser = async (req: Request, res: Response) => {
-  const { username, password } = req.body;
-  const query = `SELECT id, role FROM users WHERE username = ${username} AND password = ${password}`;
-  const result = await pool.query(query);
-  if (result.rows.length == 0) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  } else {
-    return res
-      .status(200)
-      .json({ message: "Login successful", user: result.rows[0] });
+  const validation = loginSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ message: "Validation error", errors: validation.error.flatten().fieldErrors });
+  }
+  const { email, password } = validation.data;
+  
+  try {
+    const user = await loginUserService(email, password);
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+    const accessToken = JwtService.generateToken({ id: user.id, role: user.role }, 60 * 15); 
+    const refreshToken = JwtService.generateToken({ id: user.id, role: user.role }, 60 * 60 * 24 * 7);
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, //Remember to set to true in production
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+    });
+
+    createRefeshToken(user.id, user.role, refreshToken, 7 * 24 * 60 * 60);
+
+    return res.status(200).json({ message: "Login successful", accessToken });
+  } catch {
+    return res.status(500).json({ message: "Error logging in user" });
   }
 };
 
@@ -91,3 +107,38 @@ export const registerUser = async (req: Request, res: Response) => {
   return res.status(201).json({ message: "User registered", user: newUser });
 };
 
+export const verifyEmail = async (req: Request, res: Response) => {
+  const { token } = req.body;
+  const payload = JwtService.verifyToken(token);
+  if(!payload || payload.purpose !== "email_verification") {
+    return res.status(400).json({message: "Invalid or expired token"});
+  }
+  const userId = payload.id;
+  try {
+    await verifyUserEmail(userId);
+    return res.status(200).json({message: "Email verified successfully"});
+  } catch {
+    return res.status(500).json({message: "Error verifying email"});
+  }
+};
+
+export const refreshToken = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken as string;
+  if(!refreshToken) {
+    return res.status(401).json({message: "Refresh token missing"});
+  }
+  try {
+    const payload = JwtService.verifyToken(refreshToken);
+    if(!payload) {
+      return res.status(401).json({message: "Invalid refresh token"});
+    }
+    const user = await checkRefreshToken(refreshToken);
+    if(!user) {
+      return res.status(401).json({message: "Refresh token not found"});
+    }
+    const newAccessToken = JwtService.generateToken({id: payload.id, role: payload.role}, 60 * 15); 
+    return res.status(200).json({accessToken: newAccessToken});
+    } catch {
+      return res.status(401).json({message: "Invalid or expired refresh token"});
+  }
+};

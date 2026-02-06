@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { VerifyTokenPayload } from './interfaces/auth.interface.js';
 
 export class JwtService {
     private static readonly SECRET_KEY = process.env.JWT_SECRET || 'default_secret_key';
@@ -6,11 +7,7 @@ export class JwtService {
         return jwt.sign(payload, this.SECRET_KEY, {expiresIn});
     }
 
-    static verifyToken(token:string): object | null {
-        try {
-            return jwt.verify(token, this.SECRET_KEY) as object;
-        } catch {
-            return null;
-        }
+    static verifyToken(token:string): VerifyTokenPayload {
+        return jwt.verify(token, this.SECRET_KEY) as VerifyTokenPayload;
     }
 }
