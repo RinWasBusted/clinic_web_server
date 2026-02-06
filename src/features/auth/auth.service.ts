@@ -2,15 +2,17 @@ import pool from '../../db.js';
 import redisClient from '../../redis.client.js'; 
 
 export const isEmailExist = async (email: string) : Promise<boolean> => {
-    const query = `SELECT id FROM users WHERE email = '${email}'`;
-    const result = await pool.query(query);
+    const query = `SELECT id FROM users WHERE email = $1`;
+    const values = [email];
+    const result = await pool.query(query, values);
     return result.rows.length > 0;
 }
 
 export const registerUser = async (fullname: string, email: string, password: string) => {
-    const query = `INSERT INTO users (fullname, email, password, role) VALUES ('${fullname}', '${email}', '${password}', 'client') RETURNING id, fullname, email`;
+    const query = `INSERT INTO users (fullname, email, password, role) VALUES ($1, $2, $3, 'client') RETURNING id, fullname, email`;
+    const values = [fullname, email, password];
     try {
-        const result = await pool.query(query);
+        const result = await pool.query(query, values);
         return result.rows[0];
     } catch (error) {
         throw new Error('Error registering user: ' + error);
@@ -18,9 +20,10 @@ export const registerUser = async (fullname: string, email: string, password: st
 };
 
 export const verifyUserEmail = async (userId: number) => {
-    const query = `UPDATE users SET is_email_verified = TRUE WHERE id = ${userId}`;
+    const query = `UPDATE users SET is_email_verified = TRUE WHERE id = $1`;
+    const values = [userId];
     try {
-        await pool.query(query);
+        await pool.query(query, values);
         return true;
     } catch (error) {
         throw new Error('Error verifying user email: ' + error);
@@ -28,9 +31,10 @@ export const verifyUserEmail = async (userId: number) => {
 };
 
 export const loginUser = async (email: string, password: string) => {
-    const query = `SELECT id, role FROM users WHERE email = '${email}' AND password = '${password}'`;
+    const query = `SELECT id, role FROM users WHERE email = $1 AND password = $2`;
+    const values = [email, password];
     try {
-        const result = await pool.query(query);
+        const result = await pool.query(query, values);
         if(result.rows.length == 0) {
             return null;
         }
@@ -61,3 +65,12 @@ export const checkRefreshToken = async (refreshToken: string) => {
         throw new Error('Error checking refresh token: ' + error);
     }
 };
+
+export const deleteRefreshToken = async (refreshToken: string) => {
+    const key = 'rt:' + refreshToken;
+    try {
+        await redisClient.del(key);
+    } catch (error) {
+        throw new Error('Error deleting refresh token: ' + error);
+    }
+}

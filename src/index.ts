@@ -10,14 +10,15 @@ const PORT = process.env.PORT || 9999;
 
 const startServer = async () => {
     await initAuthTables();
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-    });
     app.use(express.json());
     app.use(cookieParser());
 
-    await connectRedis();
+    connectRedis();
     app.use('/api/auth', authRoutes);
+
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
 }
 
 startServer();

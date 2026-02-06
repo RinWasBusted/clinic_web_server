@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { registerUser as registerUserService, isEmailExist, verifyUserEmail, loginUser as loginUserService, createRefeshToken, checkRefreshToken } from "./auth.service.js";
+import { registerUser as registerUserService, isEmailExist, verifyUserEmail, loginUser as loginUserService, createRefeshToken, checkRefreshToken, deleteRefreshToken } from "./auth.service.js";
 import resend from "../../emails/resend.js";
 import {JwtService} from "../../jwtService.js"; 
 import { registerSchema, loginSchema } from "./auth.schema.js";
@@ -142,3 +142,12 @@ export const refreshToken = async (req: Request, res: Response) => {
       return res.status(401).json({message: "Invalid or expired refresh token"});
   }
 };
+
+export const logoutUser = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken as string;
+  if(refreshToken) {
+    await deleteRefreshToken(refreshToken);
+  }
+  res.clearCookie("refreshToken");
+  return res.status(200).json({message: "Logged out successfully"});
+}
