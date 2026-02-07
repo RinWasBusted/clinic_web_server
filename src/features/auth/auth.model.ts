@@ -8,11 +8,11 @@ export const initUsersTable = async () => {
         password VARCHAR(255) NOT NULL,
         fullname VARCHAR(100) NOT NULL,
         avatar_url VARCHAR(500),
-        role VARCHAR(20) NOT NULL DEFAULT 'patient',
+        role VARCHAR(20) NOT NULL DEFAULT 'doctor',
         is_email_verified BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         
-        CONSTRAINT chk_role CHECK (role IN ('manager', 'doctor', 'chemist', 'patient'))
+        CONSTRAINT chk_role CHECK (role IN ('manager', 'doctor', 'chemist'))
     )`;
   try {
     await pool.query(query);

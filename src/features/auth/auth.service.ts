@@ -9,7 +9,7 @@ export const isEmailExist = async (email: string) : Promise<boolean> => {
 }
 
 export const registerUser = async (fullname: string, email: string, password: string) => {
-    const query = `INSERT INTO users (fullname, email, password, role) VALUES ($1, $2, $3, 'client') RETURNING id, fullname, email`;
+    const query = `INSERT INTO users (fullname, email, password, role) VALUES ($1, $2, $3, 'doctor') RETURNING id, fullname, email`;
     const values = [fullname, email, password];
     try {
         const result = await pool.query(query, values);
