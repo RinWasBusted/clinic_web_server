@@ -15,11 +15,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # 4. Biến môi trường (Cực kỳ quan trọng để bảo mật)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# .env
+# .env.local
+# .env.development.local
+# .env.test.local
+# .env.production.local
 
 # 5. Các file cấu hình của IDE (VS Code, WebStorm)
 .vscode/
