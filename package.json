@@ -6,7 +6,9 @@
 "scripts": {
   "start": "nodemon",
   "build": "tsc",
-  "prod": "node dist/index.js"
+  "prod": "node dist/index.js",
+  "type-check": "tsc --noEmit",
+  "lint": "eslint src"
 },
   "author": "",
   "type": "module",
