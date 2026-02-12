@@ -1,11 +1,15 @@
 import 'dotenv/config';
 import app from './server.js';
-import pool from './db.js';
-import { initUsersTable } from './features/auth/auth.model.js';
-import authRoutes from './features/auth/auth.route.js';
+import pool from './utils/db.js';
+import { initUsersTable } from './api/auth/auth.model.js';
+import authRoutes from './api/auth/auth.route.js';
+import { setupSwagger } from './swagger.js';
+import express from "express";
 
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json());
+setupSwagger(app);
 app.use('/api/auth', authRoutes);
 
 const startServer = async () => {
