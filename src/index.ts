@@ -15,7 +15,9 @@ app.use('/api/auth', authRoutes);
 const startServer = async () => {
     try {
         await initUsersTable();
+        const client = await pool.connect();
         console.log('Database connected successfully');
+        client.release();
     }
     catch (error) {
         console.error('Database connection error:', error);
