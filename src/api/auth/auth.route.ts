@@ -5,10 +5,10 @@ const router = Router();
 
 /**
  * @swagger
- * /api/auth/login:
+ * /auth/login:
  *   post:
  *     summary: User login
- *     description: Authenticate user with username and password
+ *     description: Authenticate user with email and password
  *     tags:
  *       - Authentication
  *     requestBody:
@@ -18,14 +18,14 @@ const router = Router();
  *           schema:
  *             type: object
  *             properties:
- *               username:
+ *               email:
  *                 type: string
  *                 example: "user@example.com"
  *               password:
  *                 type: string
  *                 example: "password123"
  *             required:
- *               - username
+ *               - email
  *               - password
  *     responses:
  *       200:
