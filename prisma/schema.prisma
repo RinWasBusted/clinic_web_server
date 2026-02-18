@@ -12,3 +12,520 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+
+enum AccountRole {
+  root
+  staff
+  doctor
+  manager
+  patient
+}
+
+enum BloodType {
+  a
+  o
+  b
+  ab
+}
+
+enum RoomType {
+  examination
+  pharmacy
+  cashier
+  lab
+}
+
+enum DayOfWeek {
+  mon
+  tue
+  wed
+  thu
+  fri
+  sat
+  sun
+}
+
+enum AppointmentStatus {
+  pending
+  approved
+  cancelled
+}
+
+enum DepositStatus {
+  paid
+  unpaid
+  refunded
+}
+
+enum AppointmentType {
+  examine
+  re_examine
+}
+
+enum TicketStatus {
+  pending
+  in_check
+  skip
+  done
+}
+
+enum ExamineStatus {
+  draft
+  done
+}
+
+enum MedicineUnit {
+  bottle
+  capsule
+  patches
+}
+
+enum MedicineTicketStatus {
+  pending
+  done
+}
+
+enum ImexType {
+  export
+  import
+}
+
+enum PaymentStatus {
+  unpaid
+  paid
+}
+
+enum PaymentMethod {
+  cash
+  qr
+}
+
+enum ServiceType {
+  examine
+  medicine
+  test
+}
+
+// =======================
+// Account + subtypes (1-1)
+// =======================
+model Account {
+  accountID   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role        AccountRole
+  firstName   String      @db.VarChar(50)
+  lastName    String      @db.VarChar(75)
+  password    String      @db.VarChar(32)
+  email       String      @unique @db.VarChar(254)
+  phoneNumber String?     @db.VarChar(12)
+  createdAt   DateTime    @default(now()) @db.Timestamp(6)
+  birthDate   DateTime    @db.Date
+
+  patient     Patient?
+  doctor      Doctor?
+  staff       Staff?
+  pharmacist  Pharmacist?
+  root        Root?
+
+  @@map("Account")
+}
+
+model Patient {
+  patientID         String     @id @db.Uuid
+  citizenID         String     @unique @db.VarChar(12)
+  height            Int?
+  weight            Int?
+  blood             BloodType?
+  // sequence + displayID: nên làm bằng trigger/generated column nếu cần đúng logic
+  sequence          BigInt?    @db.BigInt
+  patientDisplayID  BigInt?    @unique @db.BigInt
+
+  account           Account    @relation(fields: [patientID], references: [accountID], onDelete: Cascade)
+
+  appointments      Appointment[]
+  enterTickets      EnterTicket[]
+  examineLogs       ExamineLog[]
+  testLogs          TestLog[]
+  paymentHistories  PaymentHistory[]
+
+  @@map("Patient")
+}
+
+model Doctor {
+  doctorID         String      @id @db.Uuid
+  startDate        DateTime    @db.Date
+  sequence         BigInt?     @db.BigInt
+  doctorDisplayID  BigInt?     @unique @db.BigInt
+  fromFaculty      Int?
+
+  account          Account     @relation(fields: [doctorID], references: [accountID], onDelete: Cascade)
+
+  faculty          Faculty?    @relation(fields: [fromFaculty], references: [facultyID], onDelete: Restrict)
+
+  timetables       Timetable[]
+  examineLogs      ExamineLog[]
+  prescriptions    Prescription[] @relation("PrescriptionDoctor")
+
+  @@map("Doctor")
+}
+
+model Staff {
+  staffID        String    @id @db.Uuid
+  startDate      DateTime  @db.Date
+  sequence       BigInt?   @db.BigInt
+  staffDisplayID BigInt?   @unique @db.BigInt
+
+  account        Account   @relation(fields: [staffID], references: [accountID], onDelete: Cascade)
+
+  approvedAppointments Appointment[] @relation("AppointmentApprovedBy")
+
+  @@map("Staff")
+}
+
+model Pharmacist {
+  pharmacistID         String    @id @db.Uuid
+  startDate            DateTime  @db.Date
+  sequence             BigInt?   @db.BigInt
+  pharmacistDisplayID  BigInt?   @unique @db.BigInt
+
+  account              Account   @relation(fields: [pharmacistID], references: [accountID], onDelete: Cascade)
+
+  prescriptions        Prescription[] @relation("PrescriptionPharmacist")
+  imexLogs             ImexMedicineLog[]
+
+  @@map("Pharmacist")
+}
+
+model Root {
+  rootID  String  @id @db.Uuid
+  note    String? @db.VarChar(255)
+
+  account Account @relation(fields: [rootID], references: [accountID], onDelete: Cascade)
+
+  @@map("Root")
+}
+
+// =======================
+// Faculty / Room
+// =======================
+model Faculty {
+  facultyID   Int      @id @default(autoincrement())
+  facultyName String   @db.VarChar(255)
+
+  rooms       Room[]
+  doctors     Doctor[]
+  appointments Appointment[]
+
+  @@map("Faculty")
+}
+
+model Room {
+  roomID      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomType    RoomType
+  roomName    String?  @db.VarChar(10)
+  fromFaculty Int?
+
+  faculty     Faculty? @relation(fields: [fromFaculty], references: [facultyID], onDelete: Restrict)
+
+  timetables  Timetable[]
+  appointments Appointment[]
+  enterTickets EnterTicket[]
+  medicineTickets MedicineTicket[]
+  payments     PaymentHistory[]
+
+  @@map("Room")
+}
+
+// =======================
+// Timetable / Appointment
+// =======================
+model Timetable {
+  timeID     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  doctorID   String    @db.Uuid
+  roomID     String    @db.Uuid
+  dayOfWeek  DayOfWeek
+  note       String?   @db.VarChar(255)
+  createdAt  DateTime  @default(now()) @db.Timestamp(6)
+
+  doctor     Doctor    @relation(fields: [doctorID], references: [doctorID], onDelete: Cascade)
+  room       Room      @relation(fields: [roomID], references: [roomID], onDelete: Cascade)
+
+  @@map("Timetable")
+}
+
+model Appointment {
+  appointmentID        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointmentDisplayID String            @unique @db.VarChar(6)
+  appointmentType      AppointmentType   @default(examine)
+  scheduleDate         DateTime          @db.Date
+
+  roomID               String?           @db.Uuid
+  patientID            String            @db.Uuid
+  facultyID            Int
+  approvedBy           String?           @db.Uuid
+
+  status               AppointmentStatus @default(pending)
+  depositStatus        DepositStatus     @default(unpaid)
+  createdAt            DateTime          @default(now()) @db.Timestamp(6)
+
+  room                 Room?             @relation(fields: [roomID], references: [roomID], onDelete: SetNull)
+  patient              Patient           @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
+  faculty              Faculty           @relation(fields: [facultyID], references: [facultyID], onDelete: Restrict)
+  approvedByStaff      Staff?            @relation("AppointmentApprovedBy", fields: [approvedBy], references: [staffID], onDelete: SetNull)
+
+  enterTickets         EnterTicket[]
+  examineLogs          ExamineLog[]
+
+  @@map("Appointment")
+}
+
+// =======================
+// EnterTicket / Examine
+// =======================
+model EnterTicket {
+  ticketID       String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderNum       Int
+  appointmentID  String       @db.Uuid
+  patientID      String       @db.Uuid
+  roomID         String       @db.Uuid
+  checkIn        DateTime     @default(now()) @db.Timestamp(6)
+  status         TicketStatus @default(pending)
+  note           String?      @db.VarChar(255)
+
+  appointment    Appointment  @relation(fields: [appointmentID], references: [appointmentID], onDelete: Cascade)
+  patient        Patient      @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
+  room           Room         @relation(fields: [roomID], references: [roomID], onDelete: Restrict)
+
+  @@map("EnterTicket")
+}
+
+model Disease {
+  diseaseID   String  @id @db.VarChar(5)
+  diseaseName String  @db.VarChar(255)
+  note        String? @db.VarChar(255)
+
+  details     ExamineLogDetails[]
+
+  @@map("Disease")
+}
+
+model ExamineLog {
+  examineID        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointmentID    String        @db.Uuid
+  patientID        String        @db.Uuid
+  symptoms         String        @db.VarChar(255)
+  examinedBy       String        @db.Uuid
+  createdAt        DateTime      @default(now()) @db.Timestamp(6)
+  status           ExamineStatus @default(draft)
+
+  sequence         BigInt?       @db.BigInt
+  examineDisplayID BigInt?       @unique @db.BigInt
+
+  note             String?       @db.VarChar(255)
+
+  appointment      Appointment   @relation(fields: [appointmentID], references: [appointmentID], onDelete: Cascade)
+  patient          Patient       @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
+  doctor           Doctor        @relation(fields: [examinedBy], references: [doctorID], onDelete: Restrict)
+
+  details          ExamineLogDetails[]
+  tests            TestLog[]
+  prescriptions    Prescription[]
+
+  @@map("ExamineLog")
+}
+
+model ExamineLogDetails {
+  examineID String @db.Uuid
+  diseaseID String @db.VarChar(5)
+  note      String? @db.VarChar(255)
+
+  examine   ExamineLog @relation(fields: [examineID], references: [examineID], onDelete: Cascade)
+  disease   Disease    @relation(fields: [diseaseID], references: [diseaseID], onDelete: Restrict)
+
+  @@id([examineID, diseaseID])
+  @@map("ExamineLogDetails")
+}
+
+// =======================
+// Test / TestLog
+// =======================
+model Test {
+  serviceID String   @id @db.VarChar(5)
+  price     Decimal  @default(0) @db.Decimal(12, 2)
+  testName  String   @db.VarChar(255)
+  note      String?  @db.VarChar(255)
+
+  details   TestDetails[]
+
+  @@map("Test")
+}
+
+model TestLog {
+  testID    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  examineID String   @db.Uuid
+  patientID String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  note      String?  @db.VarChar(255)
+
+  examine   ExamineLog @relation(fields: [examineID], references: [examineID], onDelete: Cascade)
+  patient   Patient    @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
+
+  details   TestDetails[]
+
+  @@map("TestLog")
+}
+
+model TestDetails {
+  testID    String @db.Uuid
+  serviceID String @db.VarChar(5)
+
+  testLog   TestLog @relation(fields: [testID], references: [testID], onDelete: Cascade)
+  test      Test    @relation(fields: [serviceID], references: [serviceID], onDelete: Restrict)
+
+  @@id([testID, serviceID])
+  @@map("TestDetails")
+}
+
+// =======================
+// Medicine / Prescription
+// =======================
+model Medicine {
+  medicineID    Int       @id @default(autoincrement())
+  medicineName  String    @unique @db.VarChar(255)
+  medicineImage String?   @db.VarChar(255)
+  unit          MedicineUnit
+  quantity      Int       @default(0)
+  price         Decimal   @default(0) @db.Decimal(12, 2)
+  description   String?   @db.Text
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+
+  details       PrescriptionDetails[]
+  monthReports  MedicineMonthReport[]
+  imexDetails   ImexMedicineDetails[]   // ✅ THÊM DÒNG NÀY
+
+  @@map("Medicine")
+}
+
+
+model Prescription {
+  prescriptionID String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  examineID      String    @db.Uuid
+  doctorID       String    @db.Uuid
+  pharmacistID   String?   @db.Uuid
+  createdAt      DateTime  @default(now()) @db.Timestamp(6)
+  payAmount      Decimal?  @default(0) @db.Decimal(12, 2)
+  note           String?   @db.VarChar(255)
+
+  examine        ExamineLog   @relation(fields: [examineID], references: [examineID], onDelete: Cascade)
+  doctor         Doctor       @relation("PrescriptionDoctor", fields: [doctorID], references: [doctorID], onDelete: Restrict)
+  pharmacist     Pharmacist?  @relation("PrescriptionPharmacist", fields: [pharmacistID], references: [pharmacistID], onDelete: SetNull)
+
+  details        PrescriptionDetails[]
+  tickets        MedicineTicket[]
+
+  @@map("Prescription")
+}
+
+model PrescriptionDetails {
+  prescriptionID String @db.Uuid
+  medicineID     Int
+  quantity       Int    @default(0)
+  usage          String? @db.VarChar(255)
+  note           String? @db.VarChar(255)
+
+  prescription   Prescription @relation(fields: [prescriptionID], references: [prescriptionID], onDelete: Cascade)
+  medicine       Medicine     @relation(fields: [medicineID], references: [medicineID], onDelete: Restrict)
+
+  @@id([prescriptionID, medicineID])
+  @@map("PrescriptionDetails")
+}
+
+model MedicineTicket {
+  ticketID        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  prescriptionID  String             @db.Uuid
+  orderNum        Int
+  roomID          String             @db.Uuid
+  status          MedicineTicketStatus @default(pending)
+  createdAt       DateTime           @default(now()) @db.Timestamp(6)
+  note            String?            @db.VarChar(255)
+
+  prescription    Prescription @relation(fields: [prescriptionID], references: [prescriptionID], onDelete: Cascade)
+  room            Room         @relation(fields: [roomID], references: [roomID], onDelete: Restrict)
+
+  @@map("MedicineTicket")
+}
+
+// =======================
+// Imex logs
+// =======================
+model ImexMedicineLog {
+  imexID        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  imexType      ImexType
+  pharmacistID  String   @db.Uuid
+  value         Decimal? @default(0) @db.Decimal(12, 2)
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  note          String?  @db.VarChar(255)
+
+  pharmacist    Pharmacist @relation(fields: [pharmacistID], references: [pharmacistID], onDelete: Restrict)
+  details       ImexMedicineDetails[]
+
+  @@map("ImexMedicineLog")
+}
+
+model ImexMedicineDetails {
+  imexID     String @db.Uuid
+  medicineID Int
+  quantity   Int    @default(0)
+  note       String? @db.VarChar(255)
+
+  log        ImexMedicineLog @relation(fields: [imexID], references: [imexID], onDelete: Cascade)
+  medicine   Medicine        @relation(fields: [medicineID], references: [medicineID], onDelete: Restrict)
+
+  @@id([imexID, medicineID])
+  @@map("ImexMedicineDetails")
+}
+
+// =======================
+// Payment
+// =======================
+model PaymentHistory {
+  paymentID      String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentMethod  PaymentMethod
+  paymentAmount  Decimal?      @default(0) @db.Decimal(12, 2)
+  patientID      String        @db.Uuid
+  roomID         String?       @db.Uuid
+  status         PaymentStatus @default(unpaid)
+  service        ServiceType
+  createdAt      DateTime      @default(now()) @db.Timestamp(6)
+
+  patient        Patient       @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
+  room           Room?         @relation(fields: [roomID], references: [roomID], onDelete: SetNull)
+
+  @@map("PaymentHistory")
+}
+
+// =======================
+// Reports
+// =======================
+model MedicineMonthReport {
+  year      Int
+  month     Int
+  medicineID Int
+  useCount  Int @default(0)
+
+  medicine  Medicine @relation(fields: [medicineID], references: [medicineID], onDelete: Cascade)
+
+  @@id([year, month, medicineID])
+  @@map("MedicineMonthReport")
+}
+
+model PaymentMonthReport {
+  year         Int
+  month        Int
+  date         Int
+  patientCount Int?     @default(0)
+  revenue      Decimal? @default(0) @db.Decimal(22, 2)
+
+  @@id([year, month, date])
+  @@map("PaymentMonthReport")
+}
