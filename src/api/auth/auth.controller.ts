@@ -1,23 +1,30 @@
-import pool from "../../utils/db.js";
 import { Request, Response } from "express";
+import prisma from "../../utils/prisma.js";
 
 export const loginUser = async (req: Request, res: Response) => {
-  const { username, password } = req.body;
-  
+  const { email, password } = req.body;
+
   try {
-    const query = `SELECT id, role FROM users WHERE username = $1 AND password = $2`;
-    const result = await pool.query(query, [username, password]);
-    
-    if (result.rows.length === 0) {
+    // Here we treat `username` as the account's `email` field in Prisma's Account model.
+    const account = await prisma.account.findUnique({
+      where: { email },
+      select: { accountID: true, role: true, password: true },
+    });
+
+    if (!account || account.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    
-    return res.status(200).json({ 
-      message: "Login successful", 
-      user: result.rows[0] 
+
+    return res.status(200).json({
+      message: "Login successful",
+      user: { id: account.accountID, role: account.role },
     });
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json(
+      { message: "Internal server error",error });
   }
 };
+// export const register = (req:Request, res:Response) =>{
+//   const {}
+// }
