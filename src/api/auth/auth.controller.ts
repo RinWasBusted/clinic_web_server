@@ -1,11 +1,10 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../../utils/prisma.js";
 
-export const loginUser = async (req: Request, res: Response) => {
+export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
   try {
-    // Here we treat `username` as the account's `email` field in Prisma's Account model.
     const account = await prisma.account.findUnique({
       where: { email },
       select: { accountID: true, role: true, password: true },
@@ -20,9 +19,7 @@ export const loginUser = async (req: Request, res: Response) => {
       user: { id: account.accountID, role: account.role },
     });
   } catch (error) {
-    console.error("Login error:", error);
-    return res.status(500).json(
-      { message: "Internal server error",error });
+    next(error)
   }
 };
 // export const register = (req:Request, res:Response) =>{
