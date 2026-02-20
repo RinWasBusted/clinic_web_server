@@ -40,8 +40,8 @@ function isAuthenticated(
 
   try {
     const token = authorization.split(' ')[1];
-    // @ts-expect-error JWT_ACCESS_SECRET may be undefined at runtime, but must be set in env
-    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    // @ts-expect-error JWT_SECRET may be undefined at runtime, but must be set in env
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.payload = payload;
   } catch (err) {
     res.status(401);
