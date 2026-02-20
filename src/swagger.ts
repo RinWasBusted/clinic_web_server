@@ -19,7 +19,16 @@ const options = {
         url: 'http://localhost:3000/api/v1',
         description: 'Development server'
       }
-    ]
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    }
   },
   apis: ['./src/api/**/*.ts']
 };
