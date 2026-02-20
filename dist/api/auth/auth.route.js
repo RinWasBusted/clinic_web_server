@@ -1,9 +1,7 @@
 import { Router } from "express";
 import { loginUser, register } from "./auth.controller.js";
 import { verifyAccessToken } from "./verifyToken.js";
-
 const router = Router();
-
 /**
  * @swagger
  * /auth/login:
@@ -51,7 +49,6 @@ const router = Router();
  *         description: Internal server error
  */
 router.post("/login", loginUser);
-
 /**
  * @swagger
  * /auth/register:
@@ -105,5 +102,6 @@ router.post("/login", loginUser);
  *       500:
  *         description: Internal server error
  */
-router.post("/register",verifyAccessToken ,register);
+router.post("/register", verifyAccessToken, register);
 export default router;
+//# sourceMappingURL=auth.route.js.map
