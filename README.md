@@ -100,6 +100,9 @@ The application uses environment variables for secure configuration. All sensiti
 | `DB_PASSWORD` | Database password | secure_password_123 |
 | `DB_PORT` | Database port | 5432 |
 | `PORT` | Server port | 3000 |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | demo |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | 1234567890 |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | abcdefg123456 |
 
 **⚠️ Security Notice:** 
 - Never commit the `.env` file to version control
@@ -111,6 +114,46 @@ The application uses environment variables for secure configuration. All sensiti
 ### Docker Services
 
 The application uses Docker Compose to manage database services. See `docker-compose.yml` for details.
+
+### Cloudinary Setup
+
+1. Create a Cloudinary account and get your **Cloud Name**, **API Key**, and **API Secret**.
+2. Add these values to your `.env` file (see `.env.example`).
+3. Use the configured client from [src/utils/cloudinary.ts](src/utils/cloudinary.ts) in your controllers/services.
+
+Example usage:
+```ts
+import cloudinary from "../utils/cloudinary.js";
+
+const result = await cloudinary.uploader.upload("/path/to/file");
+console.log(result.secure_url);
+```
+
+### Multer + Cloudinary (direct upload)
+
+Use `multer-storage-cloudinary` so files go straight to Cloudinary:
+
+```ts
+import upload from "../utils/multer.js";
+
+router.post(
+  "/upload",
+  upload.single("image"),
+  async (req, res) => {
+    if (!req.file) return res.status(400).json({ message: "No file" });
+
+    const file = req.file as Express.Multer.File & {
+      path?: string;
+      filename?: string;
+    };
+
+    res.json({
+      url: file.path,
+      publicId: file.filename,
+    });
+  }
+);
+```
 
 ## 🏃 Running the Application
 
