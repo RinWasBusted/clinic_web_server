@@ -1,15 +1,7 @@
 import { Router } from "express";
-import {
-  createMedicine,
-  getMedicineById,
-  getMedicineItems,
-  updateMedicine,
-  deleteMedicine,
-} from "./medicine-items.controller.js";
+import { createMedicine, getMedicineById, getMedicineItems, updateMedicine, deleteMedicine, } from "./medicine-items.controller.js";
 import upload from "../../../utils/multer.js";
-
 const medicineItemsRouter = Router();
-
 /**
  * @swagger
  * /medicine/items:
@@ -49,8 +41,7 @@ const medicineItemsRouter = Router();
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.post("/", upload.single("image"), createMedicine);
-
+medicineItemsRouter.post("/items", upload.single("image"), createMedicine);
 /**
  * @swagger
  * /medicine/items:
@@ -79,8 +70,7 @@ medicineItemsRouter.post("/", upload.single("image"), createMedicine);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.get("/", getMedicineItems);
-
+medicineItemsRouter.get("/items", getMedicineItems);
 /**
  * @swagger
  * /medicine/items/{id}:
@@ -103,8 +93,7 @@ medicineItemsRouter.get("/", getMedicineItems);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.get("/:id", getMedicineById);
-
+medicineItemsRouter.get("/items/:id", getMedicineById);
 /**
  * @swagger
  * /medicine/items/{id}:
@@ -145,8 +134,7 @@ medicineItemsRouter.get("/:id", getMedicineById);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.patch("/:id", upload.single("image"), updateMedicine);
-
+medicineItemsRouter.patch("/items/:id", upload.single("image"), updateMedicine);
 /**
  * @swagger
  * /medicine/items/{id}:
@@ -169,6 +157,6 @@ medicineItemsRouter.patch("/:id", upload.single("image"), updateMedicine);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.delete("/:id", deleteMedicine);
-
+medicineItemsRouter.delete("/items/:id", deleteMedicine);
 export default medicineItemsRouter;
+//# sourceMappingURL=medicine-items.route.js.map
