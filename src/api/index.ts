@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import authRoutes from "./auth/auth.route.js";
-import medicineRoutes from "./medicine/items/medicine-items.route.js";
+import medicineRoutes from "./medicine/medicine.route.js";
+
 const router = Router();
 
 router.get("/", (req: Request, res: Response) => {
