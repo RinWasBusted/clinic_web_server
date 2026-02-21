@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import {
   createMedicineService,
-  getMedicinesService,
   getMedicineByIdService,
+  getMedicineItemsService,
   updateMedicineService,
   deleteMedicineService,
-} from "./medicine.service.js";
-import cloudinary from "../../utils/cloudinary.js";
+} from "./medicine-items.service.js";
+import cloudinary from "../../../utils/cloudinary.js";
 
 export const createMedicine = async (
   req: Request,
@@ -14,7 +14,7 @@ export const createMedicine = async (
   next: NextFunction
 ) => {
   try {
-    const { medicineName, unit, price, quantity, description } = req.body;
+    const { medicineName, unit, price, description } = req.body;
 
     // Validate required fields
     if (!medicineName || !unit || !price) {
@@ -37,7 +37,6 @@ export const createMedicine = async (
       medicineName,
       unit,
       price: parseFloat(price),
-      quantity: quantity ? parseInt(quantity) : 0,
       description,
       medicineImage,
     });
@@ -51,16 +50,47 @@ export const createMedicine = async (
   }
 };
 
-export const getMedicines = async (
+// export const getMedicines = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     const medicines = await getMedicinesService();
+//     return res.status(200).json({
+//       message: "Medicines retrieved successfully",
+//       data: medicines,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+export const getMedicineItems = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const medicines = await getMedicinesService();
+    const search = (req.query.search as string) || "";
+    const page = (req.query.page as string) ? parseInt(req.query.page as string) : 1;
+    const pageSize = 10;
+
+    if (page < 1) {
+      return res.status(400).json({ message: "Page must be at least 1" });
+    }
+
+    const result = await getMedicineItemsService(search, page, pageSize);
+
     return res.status(200).json({
       message: "Medicines retrieved successfully",
-      data: medicines,
+      data: result.data,
+      pagination: {
+        currentPage: result.currentPage,
+        pageSize: result.pageSize,
+        totalItems: result.totalItems,
+        totalPages: result.totalPages,
+      },
     });
   } catch (error) {
     next(error);
@@ -101,7 +131,7 @@ export const updateMedicine = async (
 ) => {
   try {
     const { id } = req.params;
-    const { medicineName, unit, price, quantity, description } = req.body;
+    const { medicineName, unit, price, description } = req.body;
 
     if (!id) {
       return res.status(400).json({ message: "Missing medicine ID" });
@@ -134,7 +164,6 @@ export const updateMedicine = async (
       medicineName,
       unit,
       price: price ? parseFloat(price) : undefined,
-      quantity: quantity ? parseInt(quantity) : undefined,
       description,
       medicineImage,
     });

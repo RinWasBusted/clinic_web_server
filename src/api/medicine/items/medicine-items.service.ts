@@ -1,5 +1,5 @@
-import prisma from "../../utils/prisma.js";
-import type { MedicineUnit } from "../../generated/prisma/index.js";
+import prisma from "../../../utils/prisma.js";
+import type { MedicineUnit } from "../../../generated/prisma/index.js";
 
 interface CreateMedicineInput {
   medicineName: string;
@@ -64,6 +64,58 @@ export const getMedicineByIdService = (medicineID: number) => {
   });
 };
 
+export const getMedicineItemsService = async (
+  search: string,
+  page: number,
+  pageSize: number
+) => {
+  const skip = (page - 1) * pageSize;
+
+  const [data, totalItems] = await Promise.all([
+    prisma.medicine.findMany({
+      where: {
+        medicineName: {
+          contains: search,
+          mode: "insensitive" as const,
+        },
+      },
+      select: {
+        medicineID: true,
+        medicineName: true,
+        unit: true,
+        price: true,
+        quantity: true,
+        description: true,
+        medicineImage: true,
+        createdAt: true,
+      },
+      skip,
+      take: pageSize,
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+    prisma.medicine.count({
+      where: {
+        medicineName: {
+          contains: search,
+          mode: "insensitive" as const,
+        },
+      },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  return {
+    data,
+    currentPage: page,
+    pageSize,
+    totalItems,
+    totalPages,
+  };
+};
+
 export const updateMedicineService = (
   medicineID: number,
   data: Partial<CreateMedicineInput>
@@ -74,7 +126,6 @@ export const updateMedicineService = (
       medicineName: data.medicineName,
       unit: data.unit,
       price: data.price,
-      quantity: data.quantity,
       description: data.description,
       medicineImage: data.medicineImage,
     },
