@@ -81,6 +81,70 @@ export const register = async (req: Request, res: Response) => {
     message: "User registered successfully",
     user: { id: createdUser.accountID, email: createdUser.email, role: createdUser.role }
   })
+}
+export const GetProfile = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const account = await prisma.account.findUnique({
+    where: { accountID: userId },
+    select: {
+      accountID: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      birthDate: true,
+      phoneNumber: true,
+    },
+  });
+  if (!account) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  return res.status(200).json({ user: account });
+}
+export const UpdateProfile = async (req:Request, res: Response) =>{
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({
+      message: "Unauthorized"
+    })
+  }
+  await prisma.account.update({
+    where: { accountID: userId },
+    data: req.body
+    
+  })
+  return res.status(200).json({ message: "Profile updated successfully" })
+}
+export const updatePassword = async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const account = await prisma.account.findUnique({
+    where: { accountID: userId },
+    select: { password: true },
+  });
+  if (!account || !bcrypt.compareSync(currentPassword, account.password)) {
+    return res.status(401).json({ message: "Current password is incorrect" });
+  }
+  const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+  await prisma.account.update({
+    where: { accountID: userId },
 
-
+    data: { password: hashedNewPassword },
+  });
+  return res.status(200).json({ message: "Password updated successfully" });
+}
+export const logout = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (refreshToken) {
+    await prisma.refreshToken.deleteMany({ where: { hashedToken: refreshToken } });
+  }
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  return res.status(200).json({ message: "Logged out successfully" });
 }
