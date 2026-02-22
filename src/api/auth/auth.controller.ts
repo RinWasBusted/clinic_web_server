@@ -3,6 +3,8 @@ import prisma from "../../utils/prisma.js";
 import { generateTokens } from "../../utils/jwt.js";
 import { addRefreshTokenToCookieToWhitelist } from "./auth.service.js";
 import bcrypt from "bcryptjs";
+import { checkRoleToDelete } from "./auth.service.js";
+import { checkRoleToRegister } from "./auth.service.js";
 export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
@@ -48,21 +50,13 @@ export const register = async (req: Request, res: Response) => {
     where: { accountID: currentUserId },
     select: { role: true }
   })
-  if (currrentUser?.role !== "manager") {
-    return res.status(403).json({
-      message: "Forbidden: Only admin can register new users"
-    })
-  }
-  if (!firstName || !lastName || !role || !email || !birthDate) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
   const existing = await prisma.account.findUnique({ where: { email } });
   if (existing) {
     return res.status(400).json({ message: "Email already in use" });
   }
-  const bd = new Date(birthDate); // nhận "1990-01-01"
-  if (Number.isNaN(bd.getTime())) {
-    return res.status(400).json({ message: "birthDate must be a valid date (YYYY-MM-DD)" });
+  const checkRoleResult = checkRoleToRegister(currrentUser?.role || "", role)
+  if (checkRoleResult) {
+    return res.status(checkRoleResult.status).json({ message: checkRoleResult.message });
   }
   const password = firstName + "@" + lastName;
   const hashed = await bcrypt.hash(password, 10);
@@ -72,7 +66,7 @@ export const register = async (req: Request, res: Response) => {
       firstName,
       lastName,
       role,
-      birthDate: bd,
+      birthDate,
       phoneNumber,
       password: hashed
     }
@@ -81,6 +75,96 @@ export const register = async (req: Request, res: Response) => {
     message: "User registered successfully",
     user: { id: createdUser.accountID, email: createdUser.email, role: createdUser.role }
   })
+}
+export const GetProfile = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const account = await prisma.account.findUnique({
+    where: { accountID: userId },
+    select: {
+      accountID: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      birthDate: true,
+      phoneNumber: true,
+    },
+  });
+  if (!account) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  return res.status(200).json({ user: account });
+}
+export const UpdateProfile = async (req:Request, res: Response) =>{
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({
+      message: "Unauthorized"
+    })
+  }
+  await prisma.account.update({
+    where: { accountID: userId },
+    data: req.body
+    
+  })
+  return res.status(200).json({ message: "Profile updated successfully" })
+}
+export const updatePassword = async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const account = await prisma.account.findUnique({
+    where: { accountID: userId },
+    select: { password: true },
+  });
+  if (!account || !bcrypt.compareSync(currentPassword, account.password)) {
+    return res.status(401).json({ message: "Current password is incorrect" });
+  }
+  const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+  await prisma.account.update({
+    where: { accountID: userId },
 
-
+    data: { password: hashedNewPassword },
+  });
+  return res.status(200).json({ message: "Password updated successfully" });
+}
+export const deleteAccount = async (req: Request, res: Response) => {
+  const accountIdToDelete = req.params.id;
+  const currentUserId = req.user?.id;
+  if (!currentUserId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const currentUser = await prisma.account.findUnique({
+    where: { accountID: currentUserId },
+    select: { role: true }
+  })
+  // @ts-expect-error - accountIdToDelete đã được validate là string uuid nên không cần check thêm
+  const accountToDelete = await prisma.account.findUnique({ where: { accountID: accountIdToDelete }, select: { role: true } })
+  if (!accountToDelete) {
+    return res.status(404).json({ message: "Account not found" });
+  }
+  if (currentUserId === accountIdToDelete) {
+    return res.status(400).json({ message: "Cannot delete your own account" });
+  }
+  const checkRoleResult = checkRoleToDelete(currentUser?.role || "", accountToDelete.role)
+  if (checkRoleResult) {
+    return res.status(checkRoleResult.status).json({ message: checkRoleResult.message });
+  }
+  // @ts-expect-error - accountIdToDelete đã được validate là string uuid nên không cần check thêm
+  await prisma.account.delete({ where: { accountID: accountIdToDelete } });
+  return res.status(200).json({ message: "Account deleted successfully" });
+}
+export const logout = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (refreshToken) {
+    await prisma.refreshToken.deleteMany({ where: { hashedToken: refreshToken } });
+  }
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  return res.status(200).json({ message: "Logged out successfully" });
 }
