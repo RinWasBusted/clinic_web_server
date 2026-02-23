@@ -65,10 +65,19 @@ export const getImexLogsService = async (
 export const createImexLogService = async (data: CreateImexInput) => {
   const { imexType, pharmacistID, value, note, items } = data;
 
-  // Create imex log and items in transaction
+  // 1. Tính toán in-memory các thay đổi quantity
+  const medicineQuantityMap = new Map<number, number>();
+  items.forEach((item) => {
+    const quantityChange = imexType === "export" ? -item.quantity : item.quantity;
+    medicineQuantityMap.set(
+      item.medicineID,
+      (medicineQuantityMap.get(item.medicineID) || 0) + quantityChange
+    );
+  });
+
+  // 2. Tạo imex log, items, và update medicine quantities TRONG transaction
   const imexLog = await prisma.$transaction(
     async (tx) => {
-      // Create imex log
       const log = await tx.imexMedicineLog.create({
         data: {
           imexType,
@@ -86,7 +95,6 @@ export const createImexLogService = async (data: CreateImexInput) => {
         },
       });
 
-      // Prepare items data for bulk create
       const itemsData = items.map((item) => ({
         imexID: log.imexID,
         medicineID: item.medicineID,
@@ -94,47 +102,26 @@ export const createImexLogService = async (data: CreateImexInput) => {
         note: item.note,
       }));
 
-      // Create all items in one query
       await tx.imexMedicineDetails.createMany({
         data: itemsData,
       });
 
+      for (const [medicineId, quantityChange] of medicineQuantityMap.entries()) {
+        await tx.medicine.update({
+          where: { medicineID: medicineId },
+          data: { quantity: { increment: quantityChange } },
+        });
+      }
+
       return log;
     },
-    { isolationLevel: "ReadCommitted" }
+    { isolationLevel: "ReadCommitted",
+      maxWait: 5000,
+      timeout: 10000,
+    }
   );
 
-  const medicineQuantityMap = new Map<number, number>();
-  items.forEach((item) => {
-    const quantityChange = imexType === "export" ? -item.quantity : item.quantity;
-    medicineQuantityMap.set(
-      item.medicineID,
-      (medicineQuantityMap.get(item.medicineID) || 0) + quantityChange
-    );
-  });
-
-  // Update medicine quantities outside transaction
-  if (medicineQuantityMap.size > 0) {
-    const medicineIds = Array.from(medicineQuantityMap.keys());
-
-    // Fetch all medicines that need updating
-    const medicines = await prisma.medicine.findMany({
-      where: { medicineID: { in: medicineIds } },
-      select: { medicineID: true, quantity: true },
-    });
-
-    // Batch update all medicines
-    for (const medicine of medicines) {
-      const quantityChange = medicineQuantityMap.get(medicine.medicineID) || 0;
-      const newQuantity = medicine.quantity + quantityChange;
-      await prisma.medicine.update({
-        where: { medicineID: medicine.medicineID },
-        data: { quantity: newQuantity },
-      });
-    }
-  }
-
-  // Fetch complete imex log with details
+  // 3. Fetch complete imex log with details
   return prisma.imexMedicineLog.findUnique({
     where: { imexID: imexLog.imexID },
     select: {
@@ -177,7 +164,7 @@ export const updateImexLogService = async (
 
   // Fetch old details và medicines trước khi update
   let oldDetailsMap = new Map<number, number>();
-  let medicineQuantityMap = new Map<number, number>();
+  const medicineQuantityMap = new Map<number, number>();
   let toDeleteIds: number[] = [];
   const toCreate: Array<{
     imexID: string;
@@ -195,14 +182,6 @@ export const updateImexLogService = async (
     });
 
     oldDetailsMap = new Map(oldDetails.map((d) => [d.medicineID, d.quantity]));
-
-    // Fetch medicine quantities hiện tại
-    const medicines = await prisma.medicine.findMany({
-      where: { medicineID: { in: data.items.map((item) => item.medicineID) } },
-      select: { medicineID: true, quantity: true },
-    });
-
-    medicineQuantityMap = new Map(medicines.map((m) => [m.medicineID, m.quantity]));
 
     // 2. Tính toán in-memory các array thao tác
     const newItemIds = new Set(data.items.map((item) => item.medicineID));
@@ -238,9 +217,10 @@ export const updateImexLogService = async (
       const quantityChange = quantityToStore - oldQuantity;
 
       if (quantityChange !== 0) {
-        const currentQuantity = medicineQuantityMap.get(item.medicineID) || 0;
-        const newQuantity = Math.max(0, currentQuantity + quantityChange);
-        medicineQuantityMap.set(item.medicineID, newQuantity);
+        medicineQuantityMap.set(
+          item.medicineID,
+          (medicineQuantityMap.get(item.medicineID) || 0) + quantityChange
+        );
       }
     }
 
@@ -248,9 +228,10 @@ export const updateImexLogService = async (
     for (const medicineId of toDeleteIds) {
       const deletedQuantity = oldDetailsMap.get(medicineId) || 0;
       if (deletedQuantity !== 0) {
-        const currentQuantity = medicineQuantityMap.get(medicineId) || 0;
-        const newQuantity = Math.max(0, currentQuantity - deletedQuantity);
-        medicineQuantityMap.set(medicineId, newQuantity);
+        medicineQuantityMap.set(
+          medicineId,
+          (medicineQuantityMap.get(medicineId) || 0) - deletedQuantity
+        );
       }
     }
   }
@@ -304,11 +285,11 @@ export const updateImexLogService = async (
         }
       }
 
-      // Query 5+: Update tồn kho (n queries increment/decrement)
-      for (const [medicineId, newQuantity] of medicineQuantityMap.entries()) {
+      // Query 5+: Update tồn kho (n queries using atomic increment)
+      for (const [medicineId, quantityChange] of medicineQuantityMap.entries()) {
         await tx.medicine.update({
           where: { medicineID: medicineId },
-          data: { quantity: newQuantity },
+          data: { quantity: { increment: quantityChange } },
         });
       }
 
@@ -339,31 +320,25 @@ export const updateImexLogService = async (
         },
       });
     },
-    { isolationLevel: "ReadCommitted" }
+    { isolationLevel: "ReadCommitted",
+      maxWait: 5000, 
+      timeout: 10000,
+    }
   );
 };
 
 export const deleteImexLogService = async (imexID: string) => {
-  // Delete imex log and fetch details in transaction
-  const allDetails = await prisma.$transaction(
-    async (tx) => {
-      // Fetch all imex details before deleting
-      const details = await tx.imexMedicineDetails.findMany({
-        where: { imexID },
-        select: { medicineID: true, quantity: true },
-      });
+  // 1. Fetch dữ liệu cũ để tính quantity changes
+  const allDetails = await prisma.imexMedicineDetails.findMany({
+    where: { imexID },
+    select: { medicineID: true, quantity: true },
+  });
 
-      // Delete the imex log (will cascade delete details)
-      await tx.imexMedicineLog.delete({
-        where: { imexID },
-      });
+  if (allDetails.length === 0) {
+    throw new Error("Imex log not found");
+  }
 
-      return details;
-    },
-    { isolationLevel: "ReadCommitted" }
-  );
-
-  // Calculate quantity changes outside transaction
+  // 2. Tính toán in-memory các thay đổi quantity (đảo dấu để reverse imex operation)
   const medicineQuantityMap = new Map<number, number>();
   for (const detail of allDetails) {
     medicineQuantityMap.set(
@@ -372,22 +347,25 @@ export const deleteImexLogService = async (imexID: string) => {
     );
   }
 
-  // Update medicine quantities outside transaction
-  if (medicineQuantityMap.size > 0) {
-    const medicines = await prisma.medicine.findMany({
-      where: { medicineID: { in: Array.from(medicineQuantityMap.keys()) } },
-      select: { medicineID: true, quantity: true },
-    });
-
-    for (const medicine of medicines) {
-      const quantityChange = medicineQuantityMap.get(medicine.medicineID) || 0;
-      const newQuantity = Math.max(0, medicine.quantity + quantityChange);
-      await prisma.medicine.update({
-        where: { medicineID: medicine.medicineID },
-        data: { quantity: newQuantity },
+  // 3. Delete imex log và update medicine quantities 
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.imexMedicineLog.delete({
+        where: { imexID },
       });
+
+      for (const [medicineId, quantityChange] of medicineQuantityMap.entries()) {
+        await tx.medicine.update({
+          where: { medicineID: medicineId },
+          data: { quantity: { increment: quantityChange } },
+        });
+      }
+    },
+    { isolationLevel: "ReadCommitted",
+      maxWait: 5000,
+      timeout: 10000,
     }
-  }
+  );
 
   return { message: "Imex log deleted successfully" };
 };
