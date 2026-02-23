@@ -9,7 +9,7 @@ function mustGetEnv(name: string): string {
 
 const JWT_SECRET = mustGetEnv("JWT_SECRET");
 
-type AuthPayload = { id: string; email: string };
+type AuthPayload = { id: string; email: string, role: string };
 
 //tự tạo type Request có user
 export interface AuthedRequest extends Request {
@@ -22,7 +22,7 @@ function isAuthPayload(p: unknown): p is AuthPayload {
   return typeof obj.id === "string" && typeof obj.email === "string";
 }
 
-export function verifyAccessToken(req: AuthedRequest, res: Response, next: NextFunction) {
+export function verifyAccessToken(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies?.accessToken;
   if (!token) return res.status(401).json({ message: "Missing access token" });
 
@@ -33,7 +33,7 @@ export function verifyAccessToken(req: AuthedRequest, res: Response, next: NextF
       return res.status(401).json({ message: "Invalid token payload" });
     }
 
-    req.user = { id: decoded.id, email: decoded.email };
+    req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
     return next();
   } catch {
     return res.status(401).json({ message: "Invalid or expired access token" });
