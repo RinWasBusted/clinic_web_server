@@ -1,15 +1,15 @@
 import { Router } from "express";
-import { GetAccountsByRole } from "./account.controller.js";
+import { GetAccountsByRole } from "./user.controller.js";
 const router = Router();
 
 /**
  * @swagger
- * /account/role:
+ * /user/role:
  *   get:
  *     summary: Get accounts by role
  *     description: Retrieve all user accounts filtered by a specific role. Query parameter role is required.
  *     tags:
- *       - Account
+ *       - User
  *     security:
  *       - bearerAuth: []
  *     parameters:
