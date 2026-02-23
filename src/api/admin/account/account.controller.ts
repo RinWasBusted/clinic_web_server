@@ -33,8 +33,20 @@ export const register = async (req: Request, res: Response) => {
 }
 export const GetAllAccounts = async (req: Request, res: Response) => {
   const currentRole = req.user?.role;
-  if (!["manager", "staff"].includes(currentRole || "")) {
-    return res.status(403).json({ message: "Forbidden: Only manager or staff can access this resource" });
+  if (currentRole === "staff") {
+    const accounts = await prisma.account.findMany({
+      where: { role: { in: ["doctor", "pharmacist"] } },
+      select: {
+        accountID: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        birthDate: true,
+        phoneNumber: true,
+      },
+    });
+    return res.status(200).json({ accounts });
   }
   const accounts = await prisma.account.findMany({
     select: {
@@ -50,10 +62,12 @@ export const GetAllAccounts = async (req: Request, res: Response) => {
   return res.status(200).json({ accounts });
 }
 export const GetProfile = async (req: Request, res: Response) => {
-  const currentRole = req.user?.role;
+  const accountIdToGet = req.params.id ?? "";
+  if (Array.isArray(accountIdToGet)) {
+  return res.status(400).json({ message: "id must be a string, not an array" });
+}
   const currentUser = await prisma.account.findUnique({
-    // @ts-expect-error - accountIdToUpdate đã được validate là string uuid nên không cần check thêm
-    where: { accountID: req.params.id },
+    where: { accountID: accountIdToGet },
     select: {
       accountID: true,
       email: true,
@@ -64,14 +78,15 @@ export const GetProfile = async (req: Request, res: Response) => {
       phoneNumber: true,
     },
   });
-  checkRole(currentRole || "", currentUser?.role || "")
   return res.status(200).json({ user: currentUser });
 }
 export const UpdateProfile = async (req:Request, res: Response) =>{
-  const accountIdToUpdate = req.params.id;
+  const accountIdToUpdate = req.params.id ?? "";
   const currentRole = req.user?.role;
+  if (Array.isArray(accountIdToUpdate)) {
+  return res.status(400).json({ message: "id must be a string, not an array" });
+}
   const user = await prisma.account.findUnique({
-    // @ts-expect-error - accountIdToUpdate đã được validate là string uuid nên không cần check thêm
     where: { accountID: accountIdToUpdate },
     select: { password: true, role: true },
   });
@@ -80,7 +95,6 @@ export const UpdateProfile = async (req:Request, res: Response) =>{
     return res.status(checkRoleResult.status).json({ message: checkRoleResult.message });
   }
   await prisma.account.update({
-    // @ts-expect-error - accountIdToUpdate đã được validate là string uuid nên không cần check thêm
     where: { accountID: accountIdToUpdate },
     data: req.body
     
@@ -88,11 +102,13 @@ export const UpdateProfile = async (req:Request, res: Response) =>{
   return res.status(200).json({ message: "Profile updated successfully" })
 }
 export const updatePassword = async (req: Request, res: Response) => {
-  const accountIdToUpdate = req.params.id;
+  const accountIdToUpdate = req.params.id ?? "";
   const currentRole = req.user?.role;
   const { newPassword } = req.body;
+  if (Array.isArray(accountIdToUpdate)) {
+  return res.status(400).json({ message: "id must be a string, not an array" });
+}
   const user = await prisma.account.findUnique({
-    // @ts-expect-error - accountIdToUpdate đã được validate là string uuid nên không cần check thêm
     where: { accountID: accountIdToUpdate },
     select: { password: true, role: true },
   });
@@ -102,7 +118,7 @@ export const updatePassword = async (req: Request, res: Response) => {
   }
   const hashedNewPassword = await bcrypt.hash(newPassword, 10);
   await prisma.account.update({
-    // @ts-expect-error - accountIdToUpdate đã được validate là string uuid nên không cần check thêm
+    
     where: { accountID: accountIdToUpdate },
 
     data: { password: hashedNewPassword },
@@ -110,9 +126,11 @@ export const updatePassword = async (req: Request, res: Response) => {
   return res.status(200).json({ message: "Password updated successfully" });
 }
 export const deleteAccount = async (req: Request, res: Response) => {
-  const accountIdToDelete = req.params.id;
+  const accountIdToDelete = req.params.id ?? "";
   const currentRole = req.user?.role;
-  // @ts-expect-error - accountIdToDelete đã được validate là string uuid nên không cần check thêm
+  if (Array.isArray(accountIdToDelete)) {
+  return res.status(400).json({ message: "id must be a string, not an array" });
+}
   const accountToDelete = await prisma.account.findUnique({ where: { accountID: accountIdToDelete }, select: { role: true } })
   if (!accountToDelete) {
     return res.status(404).json({ message: "Account not found" });
@@ -121,7 +139,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
   if (checkRoleResult) {
     return res.status(checkRoleResult.status).json({ message: checkRoleResult.message });
   }
-  // @ts-expect-error - accountIdToDelete đã được validate là string uuid nên không cần check thêm
+
   await prisma.account.delete({ where: { accountID: accountIdToDelete } });
   return res.status(200).json({ message: "Account deleted successfully" });
 }

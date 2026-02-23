@@ -15,7 +15,6 @@ type AuthPayload = { id: string; email: string, role: string };
 export interface AuthedRequest extends Request {
   user?: AuthPayload;
 }
-
 function isAuthPayload(p: unknown): p is AuthPayload {
   if (!p || typeof p !== "object") return false;
   const obj = p as Record<string, unknown>;
