@@ -325,7 +325,7 @@ router.patch("/update-password/:id", verifyAccessToken, validateParams(deleteAcc
  *         description: Internal server error
  */
 
-router.delete("/:id",verifyAccessToken, validateParams(deleteAccountParamsSchema), deleteAccount)
+router.delete("/:id", verifyAccessToken, deleteAccount)
 
 /**
  * @swagger

@@ -20,6 +20,7 @@ enum AccountRole {
   doctor
   manager
   patient
+  pharmacist
 }
 
 enum BloodType {
