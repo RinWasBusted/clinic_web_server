@@ -3,6 +3,7 @@ import { validateBody, validateParams } from "../../../middlewares/validate.js";
 import { deleteAccountParamsSchema, registerSchema } from "../../../schema/auth.schema.js";
 import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, updatePassword, UpdateProfile } from "./account.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorizeRoles, checkRole} from "../../../middlewares/role.js";
 const router = Router();
 /**
  * @swagger
@@ -107,7 +108,7 @@ router.post("/register",verifyAccessToken,validateBody(registerSchema),register)
  *       500:
  *         description: Internal server error
  */
-router.get("",verifyAccessToken, GetAllAccounts)
+router.get("",verifyAccessToken,authorizeRoles("manager", "staff"),GetAllAccounts)
 
 /**
  * @swagger
@@ -168,7 +169,7 @@ router.get("",verifyAccessToken, GetAllAccounts)
  *       500:
  *         description: Internal server error
  */
-router.get("/profile/:id", verifyAccessToken, validateParams(deleteAccountParamsSchema), GetProfile)
+router.get("/profile/:id", verifyAccessToken,checkRole, GetProfile)
 
 /**
  * @swagger

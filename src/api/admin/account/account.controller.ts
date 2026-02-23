@@ -33,8 +33,20 @@ export const register = async (req: Request, res: Response) => {
 }
 export const GetAllAccounts = async (req: Request, res: Response) => {
   const currentRole = req.user?.role;
-  if (!["manager", "staff"].includes(currentRole || "")) {
-    return res.status(403).json({ message: "Forbidden: Only manager or staff can access this resource" });
+  if (currentRole === "staff") {
+    const accounts = await prisma.account.findMany({
+      where: { role: { in: ["doctor", "pharmacist"] } },
+      select: {
+        accountID: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        birthDate: true,
+        phoneNumber: true,
+      },
+    });
+    return res.status(200).json({ accounts });
   }
   const accounts = await prisma.account.findMany({
     select: {
@@ -50,7 +62,6 @@ export const GetAllAccounts = async (req: Request, res: Response) => {
   return res.status(200).json({ accounts });
 }
 export const GetProfile = async (req: Request, res: Response) => {
-  const currentRole = req.user?.role ?? "";
   const accountIdToGet = req.params.id ?? "";
   if (Array.isArray(accountIdToGet)) {
   return res.status(400).json({ message: "id must be a string, not an array" });
@@ -67,7 +78,6 @@ export const GetProfile = async (req: Request, res: Response) => {
       phoneNumber: true,
     },
   });
-  checkRole(currentRole || "", currentUser?.role || "")
   return res.status(200).json({ user: currentUser });
 }
 export const UpdateProfile = async (req:Request, res: Response) =>{

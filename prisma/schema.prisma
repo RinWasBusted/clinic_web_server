@@ -179,7 +179,7 @@ model Doctor {
   startDate        DateTime    @db.Date
   sequence         BigInt?     @db.BigInt
   doctorDisplayID  BigInt?     @unique @db.BigInt
-  fromFaculty      Int?
+  fromFaculty      String?    @db.Uuid
 
   account          Account     @relation(fields: [doctorID], references: [accountID], onDelete: Cascade)
 
@@ -232,8 +232,8 @@ model Root {
 // Faculty / Room
 // =======================
 model Faculty {
-  facultyID   Int      @id @default(autoincrement())
-  facultyName String?  @unique
+  facultyID   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facultyName String      @unique
   rooms       Room[]
   doctors     Doctor[]
   appointments Appointment[]
@@ -245,7 +245,7 @@ model Room {
   roomID      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   roomType    RoomType @unique
   roomName    String?  @db.VarChar(10)
-  fromFaculty Int?
+  fromFaculty String?    @db.Uuid
 
   faculty     Faculty? @relation(fields: [fromFaculty], references: [facultyID], onDelete: Restrict)
 
@@ -283,7 +283,7 @@ model Appointment {
 
   roomID               String?           @db.Uuid
   patientID            String            @db.Uuid
-  facultyID            Int
+  facultyID            String  @db.Uuid
   approvedBy           String?           @db.Uuid
 
   status               AppointmentStatus @default(pending)
