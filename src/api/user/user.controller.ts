@@ -1,5 +1,5 @@
 import { Response, Request } from "express";
-import { isAccountRole } from "./account.service.js";
+import { isAccountRole } from "./user.service.js";
 import { AccountRole } from "../../generated/prisma/index.js";
 import prisma from "../../utils/prisma.js";
 export const GetAccountsByRole = async (req: Request, res: Response) => {
