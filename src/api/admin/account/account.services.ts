@@ -1,20 +1,17 @@
-const checkRoleToRegister = (currentRole: string, newRole: string) => {
-    if (currentRole !== "manager" && currentRole !== "staff") {
-    return { status: 403, message: "Forbidden: Only manager or staff can register new users" };
-    }
-    if (newRole === "staff" && currentRole !== "manager") {
-        return { status: 403, message: "Forbidden: Only manager can create staff accounts" };
-    }
-}
-const checkRoleToDelete = (currentrole: string, accountToDeleterole: string) => {
-    if (currentrole !== "manager" && currentrole !== "staff") {
-    return { status: 403, message: "Forbidden: Only manager or staff can delete accounts" };
+const checkRole = (currentrole: string, accountToDeleterole: string) => {
+  if (currentrole !== "manager" && currentrole !== "staff") {
+    return { status: 403, message: "Forbidden: Only manager or staff can use " };
   }
   if (currentrole !== "manager" && (accountToDeleterole === "staff" || accountToDeleterole === "manager")) {
-    return { status: 403, message: "Forbidden: Only manager can delete staff or manager accounts" };
+    return { status: 403, message: "Forbidden: Only manager can use " };
   }
   if (accountToDeleterole === "root") {
-    return { status: 403, message: "Forbidden: Cannot delete root account" };
+    return { status: 403, message: "Forbidden: Cannot update root account" };
   }
+  if (currentrole === accountToDeleterole) {
+    return { status: 400, message: "Bad Request: not use for same role" };
+  }
+  return null;
 }
-export { checkRoleToDelete, checkRoleToRegister }
+
+export { checkRole }

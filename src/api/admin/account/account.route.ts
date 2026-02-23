@@ -1,50 +1,9 @@
 import { Router } from "express";
-import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { validateBody, validateParams } from "../../../middlewares/validate.js";
 import { deleteAccountParamsSchema, registerSchema } from "../../../schema/auth.schema.js";
-import { deleteAccount, register } from "./account.controller.js";
+import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, updatePassword, UpdateProfile } from "./account.controller.js";
+import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 const router = Router();
-/**
- * @swagger
- * /admin/account/{id}:
- *   delete:
- *     summary: Delete user account
- *     description: Delete a user account by ID. Only manager or staff can delete accounts. Manager can delete any account except root. Staff can only delete patient accounts.
- *     tags:
- *       - Admin/Account
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: The ID of the account to delete
- *     responses:
- *       200:
- *         description: Account deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Account deleted successfully"
- *       400:
- *         description: Bad request (e.g., trying to delete own account)
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden (insufficient permissions or trying to delete protected account)
- *       404:
- *         description: Account not found
- *       500:
- *         description: Internal server error
- */
-router.delete("/:id",verifyAccessToken, validateParams(deleteAccountParamsSchema), deleteAccount)
 /**
  * @swagger
  * /admin/account/register:
@@ -99,4 +58,325 @@ router.delete("/:id",verifyAccessToken, validateParams(deleteAccountParamsSchema
  *         description: Internal server error
  */
 router.post("/register",verifyAccessToken,validateBody(registerSchema),register);
+
+/**
+ * @swagger
+ * /admin/account:
+ *   get:
+ *     summary: Get all accounts
+ *     description: Retrieve a list of all user accounts. Only authorized admin users can access this endpoint.
+ *     tags:
+ *       - Admin/Account
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Accounts retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   accountID:
+ *                     type: string
+ *                     format: uuid
+ *                     example: "550e8400-e29b-41d4-a716-446655440000"
+ *                   email:
+ *                     type: string
+ *                     example: "user@example.com"
+ *                   firstName:
+ *                     type: string
+ *                     example: "John"
+ *                   lastName:
+ *                     type: string
+ *                     example: "Doe"
+ *                   role:
+ *                     type: string
+ *                     example: "doctor"
+ *                   birthDate:
+ *                     type: string
+ *                     format: date
+ *                     example: "1990-01-01"
+ *                   phoneNumber:
+ *                     type: string
+ *                     example: "+1234567890"
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get("",verifyAccessToken, GetAllAccounts)
+
+/**
+ * @swagger
+ * /admin/account/profile/{id}:
+ *   get:
+ *     summary: Get user profile
+ *     description: Retrieve the profile information of a specific user account
+ *     tags:
+ *       - Admin/Account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The ID of the account to retrieve
+ *     responses:
+ *       200:
+ *         description: Profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     accountID:
+ *                       type: string
+ *                       format: uuid
+ *                       example: "550e8400-e29b-41d4-a716-446655440000"
+ *                     email:
+ *                       type: string
+ *                       example: "user@example.com"
+ *                     firstName:
+ *                       type: string
+ *                       example: "John"
+ *                     lastName:
+ *                       type: string
+ *                       example: "Doe"
+ *                     role:
+ *                       type: string
+ *                       example: "doctor"
+ *                     birthDate:
+ *                       type: string
+ *                       format: date
+ *                       example: "1990-01-01"
+ *                     phoneNumber:
+ *                       type: string
+ *                       example: "+1234567890"
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Account not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/profile/:id", verifyAccessToken, validateParams(deleteAccountParamsSchema), GetProfile)
+
+/**
+ * @swagger
+ * /admin/account/update-profile/{id}:
+ *   patch:
+ *     summary: Update user profile
+ *     description: Update profile information for a specific user account. Only manager or staff can update other users' profiles.
+ *     tags:
+ *       - Admin/Account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The ID of the account to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "John"
+ *               lastName:
+ *                 type: string
+ *                 example: "Doe"
+ *               birthDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "1990-01-01"
+ *               phoneNumber:
+ *                 type: string
+ *                 example: "+1234567890"
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Profile updated successfully"
+ *       400:
+ *         description: Bad request - Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - insufficient permissions
+ *       404:
+ *         description: Account not found
+ *       500:
+ *         description: Internal server error
+ */
+router.patch("/update-profile/:id", verifyAccessToken, validateParams(deleteAccountParamsSchema), UpdateProfile)
+/**
+ * @swagger
+ * /admin/account/update-password/{id}:
+ *   patch:
+ *     summary: Update user password
+ *     description: Update password for a specific user account. Only manager or staff can update other users' passwords.
+ *     tags:
+ *       - Admin/Account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The ID of the account to update password for
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               newPassword:
+ *                 type: string
+ *                 example: "newpassword123"
+ *             required:
+ *               - newPassword
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Password updated successfully"
+ *       400:
+ *         description: Bad request - Missing required fields
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - insufficient permissions
+ *       404:
+ *         description: Account not found
+ *       500:
+ *         description: Internal server error
+ */
+router.patch("/update-password/:id", verifyAccessToken, validateParams(deleteAccountParamsSchema), updatePassword)
+/**
+ * @swagger
+ * /admin/account/{id}:
+ *   delete:
+ *     summary: Delete user account
+ *     description: Delete a user account by ID. Only manager or staff can delete accounts. Manager can delete any account except root. Staff can only delete patient accounts.
+ *     tags:
+ *       - Admin/Account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The ID of the account to delete
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Account deleted successfully"
+ *       400:
+ *         description: Bad request (e.g., trying to delete own account)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (insufficient permissions or trying to delete protected account)
+ *       404:
+ *         description: Account not found
+ *       500:
+ *         description: Internal server error
+ */
+
+router.delete("/:id",verifyAccessToken, validateParams(deleteAccountParamsSchema), deleteAccount)
+
+/**
+ * @swagger
+ * /admin/account/delete-many:
+ *   post:
+ *     summary: Delete multiple accounts
+ *     description: Delete multiple user accounts at once. Only manager or staff can delete accounts.
+ *     tags:
+ *       - Admin/Account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 example: [
+ *                   "550e8400-e29b-41d4-a716-446655440000",
+ *                   "550e8400-e29b-41d4-a716-446655440001"
+ *                 ]
+ *             required:
+ *               - ids
+ *     responses:
+ *       200:
+ *         description: Accounts deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "3 accounts deleted successfully"
+ *                 deletedCount:
+ *                   type: integer
+ *                   example: 3
+ *       400:
+ *         description: Bad request - Missing or invalid IDs
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - insufficient permissions
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/delete-many", verifyAccessToken, DeleteManyAccounts)
 export default router;

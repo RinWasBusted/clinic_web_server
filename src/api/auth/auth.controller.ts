@@ -15,7 +15,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
     if (!account || !bcrypt.compareSync(password, account.password)) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    const { accessToken, refreshToken } = generateTokens({ id: account.accountID, email })
+    const { accessToken, refreshToken } = generateTokens({ id: account.accountID, email, role: account.role });
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
