@@ -5,9 +5,6 @@ const checkRole = (currentrole: string, accountToDeleterole: string) => {
   if (currentrole !== "manager" && (accountToDeleterole === "staff" || accountToDeleterole === "manager")) {
     return { status: 403, message: "Forbidden: Only manager can use " };
   }
-  if (accountToDeleterole === "root") {
-    return { status: 403, message: "Forbidden: Cannot update root account" };
-  }
   if (currentrole === accountToDeleterole) {
     return { status: 400, message: "Bad Request: not use for same role" };
   }

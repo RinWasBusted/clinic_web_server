@@ -29,7 +29,13 @@ enum BloodType {
   b
   ab
 }
-
+enum FacultyName {
+  CARDIOLOGY
+  GASTROENTEROLOGY
+  PULMONOLOGY
+  NEUROLOGY
+  ORTHOPEDICS
+}
 enum RoomType {
   examination
   pharmacy
@@ -227,8 +233,7 @@ model Root {
 // =======================
 model Faculty {
   facultyID   Int      @id @default(autoincrement())
-  facultyName String   @db.VarChar(255)
-
+  facultyName String?  @unique
   rooms       Room[]
   doctors     Doctor[]
   appointments Appointment[]
@@ -238,7 +243,7 @@ model Faculty {
 
 model Room {
   roomID      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  roomType    RoomType
+  roomType    RoomType @unique
   roomName    String?  @db.VarChar(10)
   fromFaculty Int?
 
@@ -418,7 +423,7 @@ model Medicine {
 
   details       PrescriptionDetails[]
   monthReports  MedicineMonthReport[]
-  imexDetails   ImexMedicineDetails[]   // ✅ THÊM DÒNG NÀY
+  imexDetails   ImexMedicineDetails[]   
 
   @@map("Medicine")
 }
