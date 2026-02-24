@@ -1,7 +1,5 @@
 import { AppointmentStatus } from "../../../generated/prisma/index.js";
 import prisma from "../../../utils/prisma.js";
-
-
 function isAppointment(v: unknown): v is AppointmentStatus {
     return typeof v === "string" && (Object.values(AppointmentStatus) as string[]).includes(v);
 }
