@@ -3,7 +3,7 @@ import prisma from "../../../utils/prisma.js";
 
 export const CreateRoom = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { roomType, roomName, fromFaculty } = req.body;
+    const { roomType, roomName, FacultyID } = req.body;
 
     if (!roomType) {
       return res.status(400).json({ message: "Room type is required" });
@@ -21,7 +21,7 @@ export const CreateRoom = async (req: Request, res: Response, next: NextFunction
       data: {
         roomType,
         roomName,
-        fromFaculty
+        FacultyID
       }
     });
 

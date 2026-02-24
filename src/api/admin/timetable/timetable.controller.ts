@@ -4,23 +4,6 @@ import prisma from "../../../utils/prisma.js";
 export const CreateTimetable = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { doctorID, roomID, dayOfWeek, note } = req.body;
-
-        if (!doctorID || !roomID || !dayOfWeek) {
-            return res.status(400).json({ message: "doctorID, roomID, and dayOfWeek are required" });
-        }
-
-        // Check if doctor exists
-        const doctor = await prisma.doctor.findUnique({ where: { doctorID } });
-        if (!doctor) {
-            return res.status(404).json({ message: "Doctor not found" });
-        }
-
-        // Check if room exists
-        const room = await prisma.room.findUnique({ where: { roomID } });
-        if (!room) {
-            return res.status(404).json({ message: "Room not found" });
-        }
-
         const newTimetable = await prisma.timetable.create({
             data: {
                 doctorID,

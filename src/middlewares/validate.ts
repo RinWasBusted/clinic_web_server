@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { ZodSchema } from "zod";
 import type { ParamsDictionary } from "express-serve-static-core";
 import type { ZodType } from "zod";
+import { z, ZodError } from "zod";
 export const validateBody =
   (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
@@ -29,4 +30,21 @@ export const validateParams =
 
     req.params = result.data; // ✅ type-safe
     next();
+  };
+  export const validateQuery =
+  <T extends z.ZodTypeAny>(schema: T) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const parsed = schema.parse(req.query);
+      res.locals.query = parsed;
+      next();
+    } catch (err) {
+      if (err instanceof ZodError) {
+        return res.status(400).json({
+          message: "Invalid query parameters",
+          errors: err.flatten(),
+        });
+      }
+      next(err);
+    }
   };

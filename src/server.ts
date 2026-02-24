@@ -4,6 +4,7 @@ import apiRoutes from "./api/index.js";
 import cors from "cors";
 import { setupSwagger } from "./swagger.js";
 import cookieParser from "cookie-parser";
+import { errorHandler } from "./middlewares/error.middleware.js";
 const app = express();
 const corsOptions = {
   origin: [
@@ -32,4 +33,5 @@ setupSwagger(app);
 app.use(express.json()); //bật middleware parse JSON trước khi mount routes
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1", apiRoutes);
+app.use(errorHandler)
 export default app;
