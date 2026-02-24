@@ -11,6 +11,7 @@ export const registerSchema = z.object({
     .transform((s) => new Date(s)),
   phoneNumber: z.string().max(12).optional(),
 });
+export const registerManySchema = z.array(registerSchema).min(1);
 export const UpdateAccountSchema = registerSchema
 .pick({ firstName: true, lastName: true, birthDate: true, phoneNumber: true })
 .partial()

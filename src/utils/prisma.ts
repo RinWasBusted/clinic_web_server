@@ -1,4 +1,5 @@
-import { PrismaClient } from "../generated/prisma/index.js";
+// Thêm Prisma vào dòng import đầu tiên
+import { PrismaClient, Prisma } from "../generated/prisma/index.js"; 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -7,7 +8,8 @@ const pool = new Pool({
 });
 
 const adapter = new PrismaPg(pool);
-
 const prisma = new PrismaClient({ adapter });
 
+// Export thêm Prisma để dùng cho việc bắt lỗi (Error Handling) ở các file khác
+export { prisma, Prisma }; 
 export default prisma;
