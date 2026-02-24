@@ -7,6 +7,8 @@ import {
   DeleteFacultyById,
   DeleteManyFaculty,
 } from "./faculty.controller.js";
+import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorizeRoles } from "../../../middlewares/role.js";
 
 const router = Router();
 
@@ -50,7 +52,7 @@ const router = Router();
  *       409:
  *         description: Conflict - Faculty with this name already exists
  */
-router.post("/", CreateFaculty);
+router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"), CreateFaculty);
 
 /**
  * @swagger
@@ -78,7 +80,7 @@ router.post("/", CreateFaculty);
  *                       facultyName:
  *                         type: string
  */
-router.get("/", GetAllFaculties);
+router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllFaculties);
 
 /**
  * @swagger
@@ -115,7 +117,7 @@ router.get("/", GetAllFaculties);
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.get("/:id", GetFacultyById);
+router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetFacultyById);
 
 /**
  * @swagger
@@ -159,7 +161,7 @@ router.get("/:id", GetFacultyById);
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.put("/:id", UpdateFacultyById);
+router.put("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), UpdateFacultyById);
 
 /**
  * @swagger
@@ -192,7 +194,7 @@ router.put("/:id", UpdateFacultyById);
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.delete("/:id", DeleteFacultyById);
+router.delete("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteFacultyById);
 
 /**
  * @swagger
@@ -230,6 +232,6 @@ router.delete("/:id", DeleteFacultyById);
  *       400:
  *         description: Bad request
  */
-router.delete("/delete-many", DeleteManyFaculty);
+router.delete("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyFaculty);
 
 export default router;
