@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import prisma from "../../../utils/prisma.js";
 export const CreateFaculty = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { facultyName } = req.body;
+        const { facultyName, doctors, rooms } = req.body;
         if (!facultyName) {
             return res.status(400).json({ message: "Faculty name is required" });
         }
@@ -10,7 +10,14 @@ export const CreateFaculty = async (req: Request, res: Response, next: NextFunct
         if (existingFaculty) {
             return res.status(409).json({ message: "Faculty with this name already exists" });
         }
-        const newFaculty = await prisma.faculty.create({ data: { facultyName } });
+        const newFaculty = await prisma.faculty.create({
+            data:
+            {
+                facultyName,
+                doctors,
+                rooms
+            }
+        });
         return res.status(201).json({ faculty: newFaculty });
     } catch (error) {
         next(error);
@@ -83,16 +90,39 @@ export const DeleteFacultyById = async (req: Request, res: Response, next: NextF
             where: { facultyID }
         })
         if (result) {
-            res.status(200).json({
+            return res.status(200).json({
                 message: "Delete Successful"
             })
         }
         else {
-            res.status(400).json({
+            return res.status(400).json({
                 message: "Not find Faculty"
             })
         }
     } catch (error) {
         next(error)
+    }
+}
+export const DeleteManyFaculty = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { FacultyIds, } = req.body;
+        if (!Array.isArray(FacultyIds) || FacultyIds.length === 0) {
+            return res.status(400).json({ message: "FacultyIds must be a non-empty array" });
+        }
+        const result = await prisma.faculty.deleteMany({
+            where: { facultyID: { in: FacultyIds } },
+        });
+        if (result) {
+            return res.status(200).json({
+                message: "Delete Successful"
+            })
+        }
+        else {
+            return res.status(400).json({
+                message: "Delete fail"
+            })
+        }
+    } catch (error) {
+        return next(error)
     }
 }

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { validateBody, validateParams } from "../../../middlewares/validate.js";
-import { deleteAccountParamsSchema, registerSchema } from "../../../schema/auth.schema.js";
-import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, updatePassword, UpdateProfile } from "./account.controller.js";
+import { deleteAccountParamsSchema, registerManySchema, registerSchema } from "../../../schema/auth.schema.js";
+import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, registerMany, updatePassword, UpdateProfile } from "./account.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { authorizeRoles, checkRole} from "../../../middlewares/role.js";
 const router = Router();
@@ -59,7 +59,109 @@ const router = Router();
  *         description: Internal server error
  */
 router.post("/register",verifyAccessToken,validateBody(registerSchema),register);
-
+/**
+ * @swagger
+ * /admin/account/register-many:
+ *   post:
+ *     summary: Register multiple users at once (Admin only)
+ *     description: Allows admin to register multiple user accounts in a single request. Returns details of successful and failed registrations.
+ *     tags:
+ *       - Admin/Account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: array
+ *             items:
+ *               type: object
+ *               required:
+ *                 - firstName
+ *                 - lastName
+ *                 - role
+ *                 - email
+ *                 - birthDate
+ *                 - phoneNumber
+ *               properties:
+ *                 firstName:
+ *                   type: string
+ *                 lastName:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 birthDate:
+ *                   type: string
+ *                   format: date
+ *                 phoneNumber:
+ *                   type: string
+ *           example:
+ *             - firstName: "John"
+ *               lastName: "Doe"
+ *               role: "doctor"
+ *               email: "john.hdoe@example.com"
+ *               birthDate: "1990-01-01"
+ *               phoneNumber: "+1234567890"
+ *             - firstName: "John"
+ *               lastName: "Doe"
+ *               role: "doctor"
+ *               email: "john.hoe@example.com"
+ *               birthDate: "1990-01-01"
+ *               phoneNumber: "+1234567890"
+ *     responses:
+ *       200:
+ *         description: Bulk registration completed with success and failure details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Register many completed"
+ *                 requestedCount:
+ *                   type: integer
+ *                   example: 5
+ *                 successCount:
+ *                   type: integer
+ *                   example: 4
+ *                 failedCount:
+ *                   type: integer
+ *                   example: 1
+ *                 success:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       index:
+ *                         type: integer
+ *                       email:
+ *                         type: string
+ *                 failed:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       index:
+ *                         type: integer
+ *                       email:
+ *                         type: string
+ *                       reason:
+ *                         type: string
+ *                         enum: ["DUPLICATE_UNIQUE", "PRISMA_P2003", "INVALID_DATA"]
+ *       400:
+ *         description: Bad request - Invalid data format
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Only admin can register
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/register-many", verifyAccessToken, validateBody(registerManySchema),registerMany)
 /**
  * @swagger
  * /admin/account:
