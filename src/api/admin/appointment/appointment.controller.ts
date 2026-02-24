@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import prisma, { Prisma } from "../../../utils/prisma.js";
 import { isAppointment, NotFoundError, verifyRefsForUpdate } from "./appointment.service.js";
 import { AppointmentStatus } from "../../../generated/prisma/index.js";
+import { sendMail } from "../../../utils/mailer.js";
 
 export const CreateAppointment = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -271,9 +272,53 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
             include: {
                 patient: true,
                 faculty: true,
-                room: true
+                room: true,
+                doctor: { include: { account: true } }
             }
         });
+
+        // Send cancellation email to patient
+        if (appointment.patient?.email) {
+            const scheduleDate = new Date(appointment.scheduleDate).toLocaleDateString('vi-VN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const emailHtml = `
+            <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+                <div style="background-color: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #e74c3c; margin-bottom: 20px;">Thông báo hủy lịch khám</h2>
+                    <p style="color: #333; line-height: 1.6;">Kính gửi <strong>${appointment.patient.fullName}</strong>,</p>
+                    <p style="color: #333; line-height: 1.6;">Rất tiếc, lịch khám của bạn đã được hủy.</p>
+                    <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #e74c3c; margin: 20px 0;">
+                        <p><strong>Thông tin lịch khám:</strong></p>
+                        <p style="margin: 8px 0;"><strong>Mã lịch khám:</strong> ${appointmentID}</p>
+                        <p style="margin: 8px 0;"><strong>Ngày khám:</strong> ${scheduleDate}</p>
+                        <p style="margin: 8px 0;"><strong>Loại khám:</strong> ${appointment.appointmentType}</p>
+                        ${appointment.faculty ? `<p style="margin: 8px 0;"><strong>Bác sĩ:</strong> ${appointment.doctor}</p>` : ''}
+                        ${appointment.room ? `<p style="margin: 8px 0;"><strong>Phòng:</strong> ${appointment.room.roomName}</p>` : ''}
+                    </div>
+                    <p style="color: #333; line-height: 1.6;">Nếu você cần đặt lịch khám mới, vui lòng liên hệ với bộ phận tiếp tân hoặc đặt lịch trực tuyến.</p>
+                    <p style="color: #666; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; font-size: 12px;">
+                        Email này được gửi tự động từ hệ thống quản lý phòng khám. Vui lòng không trả lời email này.
+                    </p>
+                </div>
+            </div>
+            `;
+
+            await sendMail({
+                to: appointment.patient.email,
+                subject: "Thông báo hủy lịch khám",
+                html: emailHtml
+            }).catch(err => {
+                console.error("Error sending cancellation email:", err);
+                // Don't throw error, let the appointment cancellation succeed even if email fails
+            });
+        }
 
         return res.status(200).json({
             message: "Appointment cancelled",

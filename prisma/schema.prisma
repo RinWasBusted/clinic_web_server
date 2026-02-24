@@ -155,6 +155,8 @@ model Account {
 
 model Patient {
   patientID         String     @id @db.Uuid
+  email             String     
+  fullName          String
   citizenID         String     @unique @db.VarChar(12)
   height            Int?
   weight            Int?
@@ -188,6 +190,7 @@ model Doctor {
   timetables       Timetable[]
   examineLogs      ExamineLog[]
   prescriptions    Prescription[] @relation("PrescriptionDoctor")
+  appointments Appointment[]
 
   @@map("Doctor")
 }
@@ -295,7 +298,8 @@ model Appointment {
   patient              Patient           @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
   faculty              Faculty           @relation(fields: [facultyID], references: [facultyID], onDelete: Restrict)
   approvedByStaff      Staff?            @relation("AppointmentApprovedBy", fields: [approvedBy], references: [staffID], onDelete: SetNull)
-
+  doctorID String?     @db.Uuid
+  doctor   Doctor? @relation(fields: [doctorID], references: [doctorID], onDelete: SetNull)
   enterTickets         EnterTicket[]
   examineLogs          ExamineLog[]
 
