@@ -246,9 +246,9 @@ model Room {
   roomID      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   roomType    RoomType @unique
   roomName    String?  @db.VarChar(10)
-  fromFaculty String?    @db.Uuid
+  FacultyID   String?    @db.Uuid
 
-  faculty     Faculty? @relation(fields: [fromFaculty], references: [facultyID], onDelete: Restrict)
+  faculty     Faculty? @relation(fields: [FacultyID], references: [facultyID], onDelete: Restrict)
 
   timetables  Timetable[]
   appointments Appointment[]

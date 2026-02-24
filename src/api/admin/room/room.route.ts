@@ -36,7 +36,7 @@ const router = Router();
  *               roomName:
  *                 type: string
  *                 example: "Room A"
- *               fromFaculty:
+ *               FacultyID:
  *                 type: string
  *                 format: uuid
  *                 example: "550e8400-e29b-41d4-a716-446655440000"
@@ -58,7 +58,7 @@ const router = Router();
  *                       type: string
  *                     roomName:
  *                       type: string
- *                     fromFaculty:
+ *                     FacultyID:
  *                       type: string
  *       400:
  *         description: Bad request - Room type is required
@@ -95,7 +95,7 @@ router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"), CreateRoom
  *                         type: string
  *                       roomName:
  *                         type: string
- *                       fromFaculty:
+ *                       FacultyID:
  *                         type: string
  *                         format: uuid
  *                       faculty:
@@ -137,7 +137,7 @@ router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllRooms
  *                       type: string
  *                     roomName:
  *                       type: string
- *                     fromFaculty:
+ *                     FacultyID:
  *                       type: string
  *                     faculty:
  *                       type: object
@@ -176,7 +176,7 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetRoomB
  *                 enum: [examination, pharmacy, cashier, lab]
  *               roomName:
  *                 type: string
- *               fromFaculty:
+ *               FacultyID:
  *                 type: string
  *                 format: uuid
  *     responses:
