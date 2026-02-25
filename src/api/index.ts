@@ -6,6 +6,8 @@ import facyltyRoutes from "./admin/Faculty/faculty.route.js"
 import RoomRoutes  from "./admin/room/room.route.js"
 import TimetableRoutes from "./admin/timetable/timetable.route.js"
 import AppointmentRoutes from "./admin/appointment/appoint.route.js"
+import medicineRoutes from "./medicine/medicine.route.js";
+
 const router = Router();
 
 router.get("/", (req: Request, res: Response) => {
@@ -18,4 +20,6 @@ router.use("/admin/faculty",facyltyRoutes)
 router.use("/admin/room",RoomRoutes)
 router.use("/admin/timetables",TimetableRoutes)
 router.use("/admin/appointments", AppointmentRoutes)
+router.use("/medicine", medicineRoutes)
+
 export default router;
