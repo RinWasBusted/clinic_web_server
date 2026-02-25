@@ -18,7 +18,7 @@ export const register = async (req: Request, res: Response) => {
     return res.status(checkRoleResult.status).json({ message: checkRoleResult.message });
   }
   const password = firstName + "@" + lastName;
-  const code = random6Digits();
+  const code = random6Digits("NV");
   const hashed = await bcrypt.hash(password, 10);
   const createdUser = await prisma.account.create({
     data: {
