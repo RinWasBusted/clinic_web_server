@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { NextFunction } from "express-serve-static-core";
 import { Prisma } from "../../../utils/prisma.js";
 import { Empty, RegisterManyBody } from "../../../dtos/account.js";
+import random6Digits from "../../../utils/generateCode.js";
 export const register = async (req: Request, res: Response) => {
   const { firstName, lastName, role, email, birthDate, phoneNumber } = req.body;
   const currentRole = req.user?.role;
@@ -17,15 +18,8 @@ export const register = async (req: Request, res: Response) => {
     return res.status(checkRoleResult.status).json({ message: checkRoleResult.message });
   }
   const password = firstName + "@" + lastName;
+  const code = random6Digits();
   const hashed = await bcrypt.hash(password, 10);
-  console.log("FIELDS:", {
-  firstName,
-  lastName,
-  email,
-  role,
-  birthDate,
-  phoneNumber,
-});
   const createdUser = await prisma.account.create({
     data: {
       email,
@@ -34,7 +28,8 @@ export const register = async (req: Request, res: Response) => {
       role,
       birthDate,
       phoneNumber,
-      password: hashed
+      password: hashed,
+      DisplayID: code
     }
   })
   return res.status(201).json({

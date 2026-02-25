@@ -149,7 +149,7 @@ model Account {
   staff       Staff?
   pharmacist  Pharmacist?
   manager        Manager?
-
+  DisplayID   String?  @unique @db.VarChar(8)
   @@map("Account")
 }
 
@@ -158,10 +158,6 @@ model Patient {
   height            Int?
   weight            Int?
   blood             BloodType?
-  // sequence + displayID: nên làm bằng trigger/generated column nếu cần đúng logic
-  sequence          BigInt?    @db.BigInt
-  patientDisplayID  BigInt?    @unique @db.BigInt
-
   account           Account    @relation(fields: [patientID], references: [accountID], onDelete: Cascade)
 
   appointments      Appointment[]
@@ -176,8 +172,6 @@ model Patient {
 model Doctor {
   doctorID         String      @id @db.Uuid
   startDate DateTime @default(now()) @db.Date
-  sequence         BigInt?     @db.BigInt
-  doctorDisplayID  BigInt?     @unique @db.BigInt
   fromFaculty      String?    @db.Uuid
 
   account          Account     @relation(fields: [doctorID], references: [accountID], onDelete: Cascade)
@@ -195,27 +189,17 @@ model Doctor {
 model Staff {
   staffID        String    @id @db.Uuid
   startDate      DateTime  @db.Date
-  sequence       BigInt?   @db.BigInt
-  staffDisplayID BigInt?   @unique @db.BigInt
-
   account        Account   @relation(fields: [staffID], references: [accountID], onDelete: Cascade)
-
   approvedAppointments Appointment[] @relation("AppointmentApprovedBy")
-
   @@map("Staff")
 }
 
 model Pharmacist {
   pharmacistID         String    @id @db.Uuid
   startDate            DateTime  @db.Date
-  sequence             BigInt?   @db.BigInt
-  pharmacistDisplayID  BigInt?   @unique @db.BigInt
-
   account              Account   @relation(fields: [pharmacistID], references: [accountID], onDelete: Cascade)
-
   prescriptions        Prescription[] @relation("PrescriptionPharmacist")
   imexLogs             ImexMedicineLog[]
-
   @@map("Pharmacist")
 }
 
