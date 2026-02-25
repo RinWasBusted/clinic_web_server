@@ -11,7 +11,14 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       where: { email },
       select: { accountID: true, role: true, password: true },
     });
-
+    if (!account?.password)
+    {
+      return res.status(400).json(
+        {
+          message: "Password is required"
+        }
+      )
+    }
     if (!account || !bcrypt.compareSync(password, account.password)) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -83,6 +90,14 @@ export const updatePassword = async (req: Request, res: Response) => {
     where: { accountID: userId },
     select: { password: true },
   });
+  if (!account?.password)
+    {
+      return res.status(400).json(
+        {
+          message: "Password is required"
+        }
+      )
+    }
   if (!account || !bcrypt.compareSync(currentPassword, account.password)) {
     return res.status(401).json({ message: "Current password is incorrect" });
   }

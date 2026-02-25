@@ -3,6 +3,7 @@ import prisma, { Prisma } from "../../../utils/prisma.js";
 import { isAppointment, NotFoundError, verifyRefsForUpdate } from "./appointment.service.js";
 import { AppointmentStatus } from "../../../generated/prisma/index.js";
 import { sendMail } from "../../../utils/mailer.js";
+import random6Digits from "../../../utils/generateCode.js";
 
 export const CreateAppointment = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -23,7 +24,7 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                 }
             }
         });
-
+        const code = random6Digits("BN")
         if (!patient) {
             // Create new account and patient
             const newAccount = await prisma.account.create({
@@ -33,7 +34,8 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     phoneNumber,
                     email: email,
                     role: "patient",
-                    birthDate: new Date("1990-01-01") // Default or from request
+                    birthDate: scheduleDate,
+                    DisplayID: code
                 }
             });
 
