@@ -3,6 +3,8 @@ import {
   getMedicineTickets,
   updateMedicineTicketStatus,
 } from "./medicine-tickets.controller.js";
+import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorizeRoles } from "../../../middlewares/role.js";
 
 const medicineTicketsRouter = Router();
 
@@ -61,7 +63,7 @@ const medicineTicketsRouter = Router();
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.get("/", getMedicineTickets);
+medicineTicketsRouter.get("/", verifyAccessToken, authorizeRoles("pharmacist", "staff"), getMedicineTickets);
 
 /**
  * @swagger
@@ -125,6 +127,6 @@ medicineTicketsRouter.get("/", getMedicineTickets);
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.patch("/:id/status", updateMedicineTicketStatus);
+medicineTicketsRouter.patch("/:id/status", verifyAccessToken, authorizeRoles("pharmacist", "staff"), updateMedicineTicketStatus);
 
 export default medicineTicketsRouter;

@@ -6,6 +6,8 @@ import {
   deleteImexLog,
   getImexById,
 } from "./medicine-imex.controller.js";
+import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorizeRoles } from "../../../middlewares/role.js";
 
 const router = Router();
 
@@ -44,7 +46,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.get("/", getImexLogs);
+router.get("/", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), getImexLogs);
 
 /**
  * @swagger
@@ -70,7 +72,7 @@ router.get("/", getImexLogs);
  *       500:
  *         description: Server error
  */
-router.get("/:id", getImexById);
+router.get("/:id", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), getImexById);
 
 /**
  * @swagger
@@ -120,7 +122,7 @@ router.get("/:id", getImexById);
  *       500:
  *         description: Server error
  */
-router.post("/", createImexLog);
+router.post("/", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), createImexLog);
 
 /**
  * @swagger
@@ -173,7 +175,7 @@ router.post("/", createImexLog);
  *       500:
  *         description: Server error
  */
-router.patch("/:id", updateImexLog);
+router.patch("/:id", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), updateImexLog);
 
 /**
  * @swagger
@@ -201,6 +203,6 @@ router.patch("/:id", updateImexLog);
  *       500:
  *         description: Server error
  */
-router.delete("/:id", deleteImexLog);
+router.delete("/:id", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), deleteImexLog);
 
 export default router;
