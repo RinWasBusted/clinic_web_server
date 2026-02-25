@@ -7,7 +7,7 @@ function mustGetEnv(name: string): string {
   return v;
 }
 
-const JWT_SECRET = mustGetEnv("JWT_ACCESS_SECRET");
+const JWT_SECRET = mustGetEnv("JWT_SECRET");
 
 type AuthPayload = { id: string; email: string, role: string };
 
