@@ -138,7 +138,7 @@ model Account {
   role        AccountRole
   firstName   String      @db.VarChar(50)
   lastName    String      @db.VarChar(75)
-  password    String      @db.VarChar(100)
+  password    String?      @db.VarChar(100)
   email       String      @unique @db.VarChar(254)
   phoneNumber String?     @db.VarChar(12)
   createdAt   DateTime    @default(now()) @db.Timestamp(6)
@@ -148,16 +148,13 @@ model Account {
   doctor      Doctor?
   staff       Staff?
   pharmacist  Pharmacist?
-  root        Root?
+  manager        Manager?
 
   @@map("Account")
 }
 
 model Patient {
   patientID         String     @id @db.Uuid
-  email             String     
-  fullName          String
-  citizenID         String     @unique @db.VarChar(12)
   height            Int?
   weight            Int?
   blood             BloodType?
@@ -178,7 +175,7 @@ model Patient {
 
 model Doctor {
   doctorID         String      @id @db.Uuid
-  startDate        DateTime    @db.Date
+  startDate DateTime @default(now()) @db.Date
   sequence         BigInt?     @db.BigInt
   doctorDisplayID  BigInt?     @unique @db.BigInt
   fromFaculty      String?    @db.Uuid
@@ -222,13 +219,13 @@ model Pharmacist {
   @@map("Pharmacist")
 }
 
-model Root {
-  rootID  String  @id @db.Uuid
+model Manager {
+  managerID  String  @id @db.Uuid
   note    String? @db.VarChar(255)
 
-  account Account @relation(fields: [rootID], references: [accountID], onDelete: Cascade)
+  account Account @relation(fields: [managerID], references: [accountID], onDelete: Cascade)
 
-  @@map("Root")
+  @@map("Manager")
 }
 
 // =======================

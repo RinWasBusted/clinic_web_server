@@ -14,7 +14,11 @@ export const getAllAppointmentsQuerySchema = z
   .strict();
 export const createAppointmentBodySchema = z
   .object({
-    appointmentType: z.string().min(1).optional(), // nếu là enum thì đổi xuống dưới
+    firstName: z.string().min(1, "firstName is required"),
+    lastName: z.string().min(1, "lastName is required"),
+    phoneNumber: z.string().min(1, "phoneNumber is required"),
+    email: z.string().email().optional(),
+    appointmentType: z.string().min(1).optional(),
     scheduleDate: z
       .string()
       .min(1, "scheduleDate is required")
@@ -22,7 +26,6 @@ export const createAppointmentBodySchema = z
         message: "scheduleDate must be a valid date string (YYYY-MM-DD or ISO)",
       }),
     roomID: z.string().min(1).optional().nullable(),
-    patientID: z.string().min(1, "patientID is required"),
     facultyID: z.string().min(1, "facultyID is required"),
   })
   .strict();
