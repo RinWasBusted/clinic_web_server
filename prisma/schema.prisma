@@ -138,7 +138,7 @@ model Account {
   role        AccountRole
   firstName   String      @db.VarChar(50)
   lastName    String      @db.VarChar(75)
-  password    String      @db.VarChar(100)
+  password    String?      @db.VarChar(100)
   email       String      @unique @db.VarChar(254)
   phoneNumber String?     @db.VarChar(12)
   createdAt   DateTime    @default(now()) @db.Timestamp(6)
@@ -148,23 +148,16 @@ model Account {
   doctor      Doctor?
   staff       Staff?
   pharmacist  Pharmacist?
-  root        Root?
-
+  manager        Manager?
+  DisplayID   String?  @unique @db.VarChar(8)
   @@map("Account")
 }
 
 model Patient {
   patientID         String     @id @db.Uuid
-  email             String     
-  fullName          String
-  citizenID         String     @unique @db.VarChar(12)
   height            Int?
   weight            Int?
   blood             BloodType?
-  // sequence + displayID: nên làm bằng trigger/generated column nếu cần đúng logic
-  sequence          BigInt?    @db.BigInt
-  patientDisplayID  BigInt?    @unique @db.BigInt
-
   account           Account    @relation(fields: [patientID], references: [accountID], onDelete: Cascade)
 
   appointments      Appointment[]
@@ -178,9 +171,7 @@ model Patient {
 
 model Doctor {
   doctorID         String      @id @db.Uuid
-  startDate        DateTime    @db.Date
-  sequence         BigInt?     @db.BigInt
-  doctorDisplayID  BigInt?     @unique @db.BigInt
+  startDate DateTime @default(now()) @db.Date
   fromFaculty      String?    @db.Uuid
 
   account          Account     @relation(fields: [doctorID], references: [accountID], onDelete: Cascade)
@@ -198,37 +189,27 @@ model Doctor {
 model Staff {
   staffID        String    @id @db.Uuid
   startDate      DateTime  @db.Date
-  sequence       BigInt?   @db.BigInt
-  staffDisplayID BigInt?   @unique @db.BigInt
-
   account        Account   @relation(fields: [staffID], references: [accountID], onDelete: Cascade)
-
   approvedAppointments Appointment[] @relation("AppointmentApprovedBy")
-
   @@map("Staff")
 }
 
 model Pharmacist {
   pharmacistID         String    @id @db.Uuid
   startDate            DateTime  @db.Date
-  sequence             BigInt?   @db.BigInt
-  pharmacistDisplayID  BigInt?   @unique @db.BigInt
-
   account              Account   @relation(fields: [pharmacistID], references: [accountID], onDelete: Cascade)
-
   prescriptions        Prescription[] @relation("PrescriptionPharmacist")
   imexLogs             ImexMedicineLog[]
-
   @@map("Pharmacist")
 }
 
-model Root {
-  rootID  String  @id @db.Uuid
+model Manager {
+  managerID  String  @id @db.Uuid
   note    String? @db.VarChar(255)
 
-  account Account @relation(fields: [rootID], references: [accountID], onDelete: Cascade)
+  account Account @relation(fields: [managerID], references: [accountID], onDelete: Cascade)
 
-  @@map("Root")
+  @@map("Manager")
 }
 
 // =======================

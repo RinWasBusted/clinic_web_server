@@ -20,7 +20,7 @@ const router = Router();
  * @swagger
  * /admin/appointments:
  *   post:
- *     summary: Create a new appointment
+ *     summary: Create a new appointment (auto-create patient if not exists)
  *     tags: [Appointment]
  *     security:
  *       - bearerAuth: []
@@ -31,33 +31,41 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - patientID
+ *               - firstName
+ *               - lastName
+ *               - phoneNumber
  *               - facultyID
  *               - scheduleDate
  *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "Nguyễn"
+ *               lastName:
+ *                 type: string
+ *                 example: "Văn A"
+ *               phoneNumber:
+ *                 type: string
+ *                 example: "0912345678"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "patient@example.com"
  *               appointmentType:
  *                 type: string
  *                 enum: [examine, re_examine]
  *                 example: "examine"
  *               scheduleDate:
  *                 type: string
- *                 format: date
- *                 example: "2026-03-15"
+ *                 format: date-time
+ *                 example: "2026-03-15T10:30:00Z"
  *               roomID:
  *                 type: string
  *                 format: uuid
  *                 example: "550e8400-e29b-41d4-a716-446655440000"
- *               patientID:
- *                 type: string
- *                 format: uuid
- *                 example: "550e8400-e29b-41d4-a716-446655440001"
  *               facultyID:
  *                 type: string
  *                 format: uuid
  *                 example: "550e8400-e29b-41d4-a716-446655440002"
- *               note:
- *                 type: string
- *                 example: "Patient notes"
  *     responses:
  *       201:
  *         description: Appointment created successfully
@@ -81,7 +89,7 @@ const router = Router();
  *       400:
  *         description: Bad request - Missing required fields
  *       404:
- *         description: Patient, Faculty or Room not found
+ *         description: Faculty or Room not found
  */
 router.post("/", verifyAccessToken, authorizeRoles("manager", "staff"),validateBody(createAppointmentBodySchema), CreateAppointment);
 
