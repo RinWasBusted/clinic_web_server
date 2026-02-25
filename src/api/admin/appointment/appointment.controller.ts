@@ -6,18 +6,47 @@ import { sendMail } from "../../../utils/mailer.js";
 
 export const CreateAppointment = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { appointmentType, scheduleDate, roomID, patientID, facultyID } = req.body;
+        const { appointmentType, scheduleDate, roomID, firstName,
+            lastName, phoneNumber, email, facultyID } = req.body;
         const approvedBy = req.user?.id
         if (!approvedBy) {
             return res.status(404).json({
                 message: "Staff not found"
             })
         }
-        const patient = await prisma.patient.findUnique({ where: { patientID } });
-        if (!patient) {
 
-            return res.status(404).json({ message: "Patient not found" });
+        // Find or create patient with account
+        let patient = await prisma.patient.findFirst({
+            where: {
+                account: {
+                    phoneNumber: phoneNumber
+                }
+            }
+        });
+
+        if (!patient) {
+            // Create new account and patient
+            const newAccount = await prisma.account.create({
+                data: {
+                    firstName,
+                    lastName,
+                    phoneNumber,
+                    email: email,
+                    role: "patient",
+                    birthDate: new Date("1990-01-01") // Default or from request
+                }
+            });
+
+            patient = await prisma.patient.create({
+                data: {
+                    patientID: newAccount.accountID
+                },
+                include: {
+                    account: true
+                }
+            });
         }
+
         const faculty = await prisma.faculty.findUnique({ where: { facultyID } });
         if (!faculty) {
             return res.status(404).json({ message: "Faculty not found" });
@@ -28,6 +57,7 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                 return res.status(404).json({ message: "Room not found" });
             }
         }
+
         const lastAppointment = await prisma.appointment.findMany({
             orderBy: { createdAt: "desc" },
             take: 1,
@@ -42,7 +72,7 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                 appointmentType: appointmentType || "examine",
                 scheduleDate: new Date(scheduleDate),
                 roomID,
-                patientID,
+                patientID: patient.patientID,
                 facultyID,
                 appointmentDisplayID,
                 status: "pending",
@@ -270,7 +300,7 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
             where: { appointmentID },
             data: { status: "cancelled" },
             include: {
-                patient: true,
+                patient: { include: { account: true } },
                 faculty: true,
                 room: true,
                 doctor: { include: { account: true } }
@@ -278,7 +308,7 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
         });
 
         // Send cancellation email to patient
-        if (appointment.patient?.email) {
+        if (appointment.patient.account.firstName) {
             const scheduleDate = new Date(appointment.scheduleDate).toLocaleDateString('vi-VN', {
                 weekday: 'long',
                 year: 'numeric',
@@ -292,7 +322,7 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
             <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
                 <div style="background-color: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #e74c3c; margin-bottom: 20px;">Thông báo hủy lịch khám</h2>
-                    <p style="color: #333; line-height: 1.6;">Kính gửi <strong>${appointment.patient.fullName}</strong>,</p>
+                    <p style="color: #333; line-height: 1.6;">Kính gửi <strong>${appointment.patient.account.firstName}</strong>,</p>
                     <p style="color: #333; line-height: 1.6;">Rất tiếc, lịch khám của bạn đã được hủy.</p>
                     <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #e74c3c; margin: 20px 0;">
                         <p><strong>Thông tin lịch khám:</strong></p>
@@ -311,7 +341,7 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
             `;
 
             await sendMail({
-                to: appointment.patient.email,
+                to: appointment.patient.account.email,
                 subject: "Thông báo hủy lịch khám",
                 html: emailHtml
             }).catch(err => {

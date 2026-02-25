@@ -18,6 +18,14 @@ export const register = async (req: Request, res: Response) => {
   }
   const password = firstName + "@" + lastName;
   const hashed = await bcrypt.hash(password, 10);
+  console.log("FIELDS:", {
+  firstName,
+  lastName,
+  email,
+  role,
+  birthDate,
+  phoneNumber,
+});
   const createdUser = await prisma.account.create({
     data: {
       email,
