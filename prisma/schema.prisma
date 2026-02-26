@@ -188,7 +188,7 @@ model Doctor {
 
 model Staff {
   staffID        String    @id @db.Uuid
-  startDate      DateTime  @db.Date
+  startDate      DateTime  @default(now()) @db.Date
   account        Account   @relation(fields: [staffID], references: [accountID], onDelete: Cascade)
   approvedAppointments Appointment[] @relation("AppointmentApprovedBy")
   @@map("Staff")
@@ -196,7 +196,7 @@ model Staff {
 
 model Pharmacist {
   pharmacistID         String    @id @db.Uuid
-  startDate            DateTime  @db.Date
+  startDate            DateTime  @default(now()) @db.Date
   account              Account   @relation(fields: [pharmacistID], references: [accountID], onDelete: Cascade)
   prescriptions        Prescription[] @relation("PrescriptionPharmacist")
   imexLogs             ImexMedicineLog[]
@@ -205,6 +205,7 @@ model Pharmacist {
 
 model Manager {
   managerID  String  @id @db.Uuid
+  startDate DateTime @default(now()) @db.Date
   note    String? @db.VarChar(255)
 
   account Account @relation(fields: [managerID], references: [accountID], onDelete: Cascade)

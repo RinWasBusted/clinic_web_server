@@ -54,6 +54,7 @@ export const registerMany = async (req: Request<Empty, unknown, RegisterManyBody
       (async () => {
         const email = a.email.trim().toLowerCase();
         const password = a.firstName + "@" + a.lastName;
+        const hashed = await bcrypt.hash(password, 10);;
         const code = random6Digits("NV");
         await prisma.account.create({
           data: {
@@ -63,7 +64,7 @@ export const registerMany = async (req: Request<Empty, unknown, RegisterManyBody
             role: a.role,
             birthDate: a.birthDate,
             phoneNumber: a.phoneNumber,
-            password,
+            password:hashed,
             DisplayID: code
           },
         });
