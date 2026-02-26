@@ -15,7 +15,7 @@ router.use("/auth",authRoutes);
 router.use("/user",roleRoutes);
 router.use("/admin/account",adminAccountRoutes);
 router.use("/admin/faculty",facyltyRoutes)
-router.use("/admin/room",RoomRoutes)
+router.use("/admin/rooms",RoomRoutes)
 router.use("/admin/timetables",TimetableRoutes)
 router.use("/admin/appointments", AppointmentRoutes)
 export default router;

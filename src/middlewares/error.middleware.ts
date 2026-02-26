@@ -20,15 +20,15 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req: Request, re
   }
   if (isPrismaLikeError(err)) {
     if (err.code === "P2002") {
-      return res.status(409).json({ message: "Duplicate resource" });
+      return res.status(409).json({ message: "Duplicate resource",err });
     }
     if (err.code === "P2025") {
-      return res.status(404).json({ message: "Resource not found" });
+      return res.status(404).json({ message: "Resource not found",err });
     }
     if (err.code === "P9999") {
       return next();
     }
   }
   console.error(err);
-  return res.status(500).json({ message: "Internal Server Error" });
+  return res.status(500).json({ message: "Internal Server Error",err });
 };
