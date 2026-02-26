@@ -62,6 +62,14 @@ export const UpdateFacultyById = async (req: Request, res: Response, next: NextF
             where: { facultyID },
             data: data
         })
+        if (data.facultyName) {
+            const existingFaculty = await prisma.faculty.findUnique({ 
+                where: { facultyName: data.facultyName } 
+            });
+            if (existingFaculty && existingFaculty.facultyID !== facultyID) {
+                return res.status(409).json({ message: "Faculty with this name already exists" });
+            }
+        }
         if (result) {
             res.status(200).json({
                 message: "Update successful",

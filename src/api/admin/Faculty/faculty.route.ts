@@ -14,7 +14,7 @@ const router = Router();
 
 /**
  * @swagger
- * /admin/faculties:
+ * /admin/faculty:
  *   post:
  *     summary: Create a new faculty
  *     tags: [Faculty]
@@ -56,7 +56,7 @@ router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"), CreateFacu
 
 /**
  * @swagger
- * /admin/faculties:
+ * /admin/faculty:
  *   get:
  *     summary: Get all faculties
  *     tags: [Faculty]
@@ -84,7 +84,7 @@ router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllFacul
 
 /**
  * @swagger
- * /admin/faculties/{id}:
+ * /admin/faculty/{id}:
  *   get:
  *     summary: Get faculty by ID
  *     tags: [Faculty]
@@ -121,7 +121,7 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetFacul
 
 /**
  * @swagger
- * /admin/faculties/{id}:
+ * /admin/faculty/{id}:
  *   put:
  *     summary: Update faculty by ID
  *     tags: [Faculty]
@@ -165,7 +165,7 @@ router.put("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), UpdateFa
 
 /**
  * @swagger
- * /admin/faculties/{id}:
+ * /admin/faculty/{id}:
  *   delete:
  *     summary: Delete faculty by ID
  *     tags: [Faculty]
@@ -198,7 +198,7 @@ router.delete("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), Delet
 
 /**
  * @swagger
- * /admin/faculties/delete-many:
+ * /admin/faculty/delete-many:
  *   delete:
  *     summary: Delete multiple faculties
  *     tags: [Faculty]
