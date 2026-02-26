@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { validateBody, validateParams } from "../../../middlewares/validate.js";
-import { deleteAccountParamsSchema, registerManySchema, registerSchema } from "../../../schema/auth.schema.js";
+import { validateBody } from "../../../middlewares/validate.js";
+import { registerManySchema, registerSchema, UpdateAccountSchema } from "../../../schema/auth.schema.js";
 import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, registerMany, updatePassword, UpdateProfile } from "./account.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { authorizeRoles, checkRole} from "../../../middlewares/role.js";
@@ -333,7 +333,7 @@ router.get("/profile/:id", verifyAccessToken,checkRole, GetProfile)
  *       500:
  *         description: Internal server error
  */
-router.patch("/update-profile/:id", verifyAccessToken, validateParams(deleteAccountParamsSchema), UpdateProfile)
+router.patch("/update-profile/:id", verifyAccessToken,checkRole, validateBody(UpdateAccountSchema), UpdateProfile)
 /**
  * @swagger
  * /admin/account/update-password/{id}:
@@ -386,7 +386,7 @@ router.patch("/update-profile/:id", verifyAccessToken, validateParams(deleteAcco
  *       500:
  *         description: Internal server error
  */
-router.patch("/update-password/:id", verifyAccessToken, validateParams(deleteAccountParamsSchema), updatePassword)
+router.patch("/update-password/:id", verifyAccessToken, checkRole, updatePassword)
 /**
  * @swagger
  * /admin/account/{id}:
@@ -428,7 +428,7 @@ router.patch("/update-password/:id", verifyAccessToken, validateParams(deleteAcc
  *         description: Internal server error
  */
 
-router.delete("/:id", verifyAccessToken, deleteAccount)
+router.delete("/:id", verifyAccessToken,checkRole, deleteAccount)
 
 /**
  * @swagger
@@ -481,5 +481,5 @@ router.delete("/:id", verifyAccessToken, deleteAccount)
  *       500:
  *         description: Internal server error
  */
-router.post("/delete-many", verifyAccessToken, DeleteManyAccounts)
+router.post("/delete-many", verifyAccessToken,checkRole, DeleteManyAccounts)
 export default router;

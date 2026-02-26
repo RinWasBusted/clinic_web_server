@@ -4,7 +4,7 @@ export const registerSchema = z.object({
   firstName: z.string().min(1, "firstName required").max(50),
   lastName: z.string().min(1, "lastName required").max(75),
   email: z.string().email().max(254),
-  role: z.enum(["manager", "doctor", "staff", "machine"]),
+  role: z.enum(["manager", "doctor", "staff", "pharmacist"]),
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "birthDate must be YYYY-MM-DD")

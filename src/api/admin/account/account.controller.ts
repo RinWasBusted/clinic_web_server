@@ -39,22 +39,22 @@ export const register = async (req: Request, res: Response) => {
 }
 export const registerMany = async (req: Request<Empty, unknown, RegisterManyBody>, res: Response, next: NextFunction) => {
   try {
-    const accounts  = req.body;
+    const accounts = req.body;
     console.log(req.body)
     console.log(accounts)
-    if (!accounts)
-    {
+    if (!accounts) {
       return res.status(200).json({
         message: "Register successful 0 account"
       })
     }
     if (!Array.isArray(accounts)) {
-    return res.status(400).json({ message: "id must be a array" });
-  }
+      return res.status(400).json({ message: "id must be a array" });
+    }
     const tasks = accounts.map((a, index) =>
       (async () => {
         const email = a.email.trim().toLowerCase();
         const password = a.firstName + "@" + a.lastName;
+        const hashed = await bcrypt.hash(password, 10);;
         const code = random6Digits("NV");
         await prisma.account.create({
           data: {
@@ -64,7 +64,7 @@ export const registerMany = async (req: Request<Empty, unknown, RegisterManyBody
             role: a.role,
             birthDate: a.birthDate,
             phoneNumber: a.phoneNumber,
-            password,
+            password:hashed,
             DisplayID: code
           },
         });
@@ -118,28 +118,26 @@ export const GetAllAccounts = async (req: Request, res: Response) => {
   if (currentRole === "staff") {
     const accounts = await prisma.account.findMany({
       where: { role: { in: ["doctor", "pharmacist"] } },
-      select: {
-        accountID: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        birthDate: true,
-        phoneNumber: true,
+      omit: {
+        password: true,
       },
+      include: {
+        doctor: true,
+        pharmacist: true,
+      }
+
     });
     return res.status(200).json({ accounts });
   }
   const accounts = await prisma.account.findMany({
-    select: {
-      accountID: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      role: true,
-      birthDate: true,
-      phoneNumber: true,
+    omit: {
+      password: true,
     },
+    include: {
+      doctor: true,
+      pharmacist: true,
+      staff: true
+    }
   });
   return res.status(200).json({ accounts });
 }
@@ -150,38 +148,33 @@ export const GetProfile = async (req: Request, res: Response) => {
   }
   const currentUser = await prisma.account.findUnique({
     where: { accountID: accountIdToGet },
-    select: {
-      accountID: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      role: true,
-      birthDate: true,
-      phoneNumber: true,
-    },
+    omit: {
+    password: true,
+  },
+  include: {
+    doctor: true,
+    pharmacist: true,
+    staff: true,
+    manager: true
+  }
   });
   return res.status(200).json({ user: currentUser });
 }
 export const UpdateProfile = async (req: Request, res: Response) => {
   const accountIdToUpdate = req.params.id ?? "";
-  const currentRole = req.user?.role;
   if (Array.isArray(accountIdToUpdate)) {
     return res.status(400).json({ message: "id must be a string, not an array" });
   }
-  const user = await prisma.account.findUnique({
-    where: { accountID: accountIdToUpdate },
-    select: { password: true, role: true },
-  });
-  const checkRoleResult = checkRole(currentRole || "", user?.role || "")
-  if (checkRoleResult) {
-    return res.status(checkRoleResult.status).json({ message: checkRoleResult.message });
-  }
-  await prisma.account.update({
+  const result = await prisma.account.update({
     where: { accountID: accountIdToUpdate },
     data: req.body
 
   })
-  return res.status(200).json({ message: "Profile updated successfully" })
+  if (result)
+  {
+    return res.status(200).json({ message: "Profile updated successfully" })
+  }
+  return res.status(400).json({ message: "Profile updated failed" })
 }
 export const updatePassword = async (req: Request, res: Response) => {
   const accountIdToUpdate = req.params.id ?? "";
@@ -209,21 +202,15 @@ export const updatePassword = async (req: Request, res: Response) => {
 }
 export const deleteAccount = async (req: Request, res: Response) => {
   const accountIdToDelete = req.params.id ?? "";
-  const currentRole = req.user?.role;
   if (Array.isArray(accountIdToDelete)) {
     return res.status(400).json({ message: "id must be a string, not an array" });
   }
-  const accountToDelete = await prisma.account.findUnique({ where: { accountID: accountIdToDelete }, select: { role: true } })
-  if (!accountToDelete) {
-    return res.status(404).json({ message: "Account not found" });
-  }
-  const checkRoleResult = checkRole(currentRole || "", accountToDelete.role)
-  if (checkRoleResult) {
-    return res.status(checkRoleResult.status).json({ message: checkRoleResult.message });
-  }
-
-  await prisma.account.delete({ where: { accountID: accountIdToDelete } });
-  return res.status(200).json({ message: "Account deleted successfully" });
+   const result = await prisma.account.delete({ where: { accountID: accountIdToDelete } });
+   if (result)
+   {
+    return res.status(200).json({ message: "Account deleted successfully" })
+   }
+  return res.status(400).json({ message: "Account deleted Failed" });
 }
 export const DeleteManyAccounts = async (req: Request, res: Response) => {
   const { accountIDs } = req.body;
