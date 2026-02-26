@@ -1,4 +1,4 @@
-import type { Request, Response,  ErrorRequestHandler } from "express";
+import type { Request, Response,  ErrorRequestHandler, NextFunction } from "express";
 import { ZodError } from "zod";
 
 type PrismaLikeError = {
@@ -10,8 +10,8 @@ function isPrismaLikeError(err: unknown): err is PrismaLikeError {
   return typeof err === "object" && err !== null && "code" in err;
 }
 
-export const errorHandler: ErrorRequestHandler = (err: unknown, req: Request, res: Response) => {
-  // Zod
+export const errorHandler: ErrorRequestHandler = (err: unknown, req: Request, res: Response, 
+  next:NextFunction) => {
   if (err instanceof ZodError) {
     return res.status(400).json({
       message: "Invalid input",
@@ -24,6 +24,9 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req: Request, re
     }
     if (err.code === "P2025") {
       return res.status(404).json({ message: "Resource not found" });
+    }
+    if (err.code === "P9999") {
+      return next();
     }
   }
   console.error(err);

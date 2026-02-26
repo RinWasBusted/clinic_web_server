@@ -8,9 +8,6 @@ import {
   DeleteTimetableById,
   DeleteManyTimetables
 } from "./timetable.controller.js";
-import { validateBody } from "../../../middlewares/validate.js";
-import { createRoomSchema } from "../../../schema/room.schema.js";
-
 const router = Router();
 
 /**
@@ -79,7 +76,7 @@ const router = Router();
  *       404:
  *         description: Doctor or Room not found
  */
-router.post("/",validateBody(createRoomSchema) ,CreateTimetable);
+router.post("/",CreateTimetable);
 
 /**
  * @swagger

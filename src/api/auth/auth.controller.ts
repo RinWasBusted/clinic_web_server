@@ -51,15 +51,15 @@ export const GetProfile = async (req: Request, res: Response) => {
   }
   const account = await prisma.account.findUnique({
     where: { accountID: userId },
-    select: {
-      accountID: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      role: true,
-      birthDate: true,
-      phoneNumber: true,
-    },
+   omit: {
+        password: true,
+      },
+      include: {
+        doctor: true,
+        pharmacist: true,
+        staff: true,
+        manager: true
+      }
   });
   if (!account) {
     return res.status(404).json({ message: "User not found" });
