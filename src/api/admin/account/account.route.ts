@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { validateBody, validateParams } from "../../../middlewares/validate.js";
 import { deleteAccountParamsSchema, registerManySchema, registerSchema } from "../../../schema/auth.schema.js";
-import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, registerMany, updatePassword, UpdateProfile } from "./account.controller.js";
+import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, registerMany, updateAvatar, updatePassword, UpdateProfile } from "./account.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { authorizeRoles, checkRole} from "../../../middlewares/role.js";
+import upload from "../../../utils/multer.js";
 const router = Router();
 /**
  * @swagger
@@ -387,6 +388,70 @@ router.patch("/update-profile/:id", verifyAccessToken, validateParams(deleteAcco
  *         description: Internal server error
  */
 router.patch("/update-password/:id", verifyAccessToken, validateParams(deleteAccountParamsSchema), updatePassword)
+
+/**
+ * @swagger
+ * /admin/account/avatar/{id}:
+ *   patch:
+ *     summary: Update user avatar
+ *     description: Upload and update user's profile avatar. Users can only update their own avatar. Requires multipart/form-data with an image file.
+ *     tags:
+ *       - Admin/Account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The ID of the account to update avatar for
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file for avatar (jpg, jpeg, png, webp)
+ *             required:
+ *               - avatar
+ *     responses:
+ *       200:
+ *         description: Avatar updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Avatar updated successfully"
+ *       400:
+ *         description: Bad request - Missing or invalid file upload
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   enum: ["Bad Request: No file uploaded", "File size exceeds limit", "Invalid file type"]
+ *       401:
+ *         description: Unauthorized - User not authenticated
+ *       403:
+ *         description: Forbidden - Users can only update their own avatar
+ *       404:
+ *         description: Account not found
+ *       500:
+ *         description: Internal server error
+ */
+router.patch("/avatar/:id", verifyAccessToken, upload.single("avatar"), updateAvatar)
+
 /**
  * @swagger
  * /admin/account/{id}:

@@ -1,3 +1,5 @@
+import { prisma } from "../../../utils/prisma.js";
+
 const checkRole = (currentrole: string, accountToDeleterole: string) => {
   if (currentrole !== "manager" && currentrole !== "staff") {
     return { status: 403, message: "Forbidden: Only manager or staff can use " };
@@ -11,4 +13,12 @@ const checkRole = (currentrole: string, accountToDeleterole: string) => {
   return null;
 }
 
-export { checkRole }
+const updateAvatar = async (accountId: string, url: string) => {
+  await prisma.account.update({
+    where: { accountID: accountId },
+    data: { avatarUrl: url }
+  })
+  return { status: 200, message: "Avatar updated successfully" };
+}
+
+export { checkRole, updateAvatar }
