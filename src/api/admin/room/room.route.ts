@@ -151,7 +151,7 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetRoomB
 /**
  * @swagger
  * /admin/rooms/{id}:
- *   put:
+ *   patch:
  *     summary: Update room by ID
  *     tags: [Room]
  *     security:

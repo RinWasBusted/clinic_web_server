@@ -8,6 +8,8 @@ import {
   DeleteTimetableById,
   DeleteManyTimetables
 } from "./timetable.controller.js";
+import { authorizeRoles } from "../../../middlewares/role.js";
+import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 const router = Router();
 
 /**
@@ -76,7 +78,7 @@ const router = Router();
  *       404:
  *         description: Doctor or Room not found
  */
-router.post("/",CreateTimetable);
+router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"),CreateTimetable);
 
 /**
  * @swagger
@@ -120,7 +122,7 @@ router.post("/",CreateTimetable);
  *                       room:
  *                         type: object
  */
-router.get("/", GetAllTimetables);
+router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllTimetables);
 
 /**
  * @swagger
@@ -153,7 +155,7 @@ router.get("/", GetAllTimetables);
  *       404:
  *         description: Not Found - Timetable not found
  */
-router.get("/:id", GetTimetableById);
+router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetTimetableById);
 
 /**
  * @swagger
@@ -186,12 +188,12 @@ router.get("/:id", GetTimetableById);
  *       400:
  *         description: Bad request - Doctor ID is required
  */
-router.get("/doctor/:doctorID", GetTimetableByDoctor);
+router.get("/doctor/:doctorID",verifyAccessToken, authorizeRoles("manager", "staff"),GetTimetableByDoctor);
 
 /**
  * @swagger
  * /admin/timetables/{id}:
- *   put:
+ *   patch:
  *     summary: Update timetable by ID
  *     tags: [Timetable]
  *     security:
@@ -239,7 +241,7 @@ router.get("/doctor/:doctorID", GetTimetableByDoctor);
  *       404:
  *         description: Not Found - Timetable, Doctor or Room not found
  */
-router.put("/:id", UpdateTimetableById);
+router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), UpdateTimetableById);
 
 /**
  * @swagger
@@ -272,7 +274,7 @@ router.put("/:id", UpdateTimetableById);
  *       404:
  *         description: Not Found - Timetable not found
  */
-router.delete("/:id", DeleteTimetableById);
+router.delete("/:id",authorizeRoles("manager", "staff"), DeleteTimetableById);
 
 /**
  * @swagger
@@ -312,6 +314,6 @@ router.delete("/:id", DeleteTimetableById);
  *       400:
  *         description: Bad request
  */
-router.delete("/delete-many", DeleteManyTimetables);
+router.delete("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyTimetables);
 
 export default router;

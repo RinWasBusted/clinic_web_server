@@ -4,13 +4,9 @@ import prisma from "../../../utils/prisma.js";
 export const CreateRoom = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { roomType, roomName, FacultyID } = req.body;
-
-    if (!roomType) {
-      return res.status(400).json({ message: "Room type is required" });
-    }
-
+    
     const existingRoom = await prisma.room.findUnique({
-      where: { roomType }
+      where: { roomName }
     });
 
     if (existingRoom) {
@@ -52,7 +48,6 @@ export const GetRoomById = async (req: Request, res: Response, next: NextFunctio
     if (!roomID) {
       return res.status(400).json({ message: "Room ID is required" });
     }
-
     const room = await prisma.room.findUnique({
       where: { roomID },
       include: {
