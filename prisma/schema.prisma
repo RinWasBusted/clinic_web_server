@@ -263,7 +263,7 @@ model Timetable {
 
 model Appointment {
   appointmentID        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  appointmentDisplayID String            @unique @db.VarChar(6)
+  appointmentDisplayID String            @unique @db.VarChar(8)
   appointmentType      AppointmentType   @default(examine)
   scheduleDate         DateTime          @db.Date
 

@@ -177,7 +177,7 @@ router.get("/:id", verifyAccessToken, GetAppointmentById);
 /**
  * @swagger
  * /admin/appointments/{id}:
- *   put:
+ *   patch:
  *     summary: Update appointment by ID
  *     tags: [Appointment]
  *     security:

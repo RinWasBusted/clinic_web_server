@@ -1,8 +1,9 @@
 import { z } from "zod";
 export const getAllAppointmentsQuerySchema = z
   .object({
-    status: z.enum(["PENDING", "APPROVED", "CANCELLED"]),
-    facultyID: z.string().min(1).optional(),
+    status: z.enum(["pending", "approved", "canceled"]),
+    facultyID: z.string().min(1),
+    RoomID: z.string().min(1).optional(),
     patientID: z.string().min(1).optional(),
     scheduleDate: z
       .string()

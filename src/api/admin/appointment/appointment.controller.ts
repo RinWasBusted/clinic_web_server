@@ -17,15 +17,20 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
         }
 
         // Find or create patient with account
-        let patient = await prisma.patient.findFirst({
+        const  account = await prisma.patient.findFirst({
             where: {
                 account: {
                     phoneNumber: phoneNumber
                 }
             }
         });
-        const code = random6Digits("BN")
-        if (!patient) {
+        const faculty = await prisma.faculty.findUnique({ where: { facultyID } });
+        if (!faculty) {
+            return res.status(404).json({ message: "Faculty not found" });
+        }
+        const codePatient = random6Digits("BN")
+        const codeAppointment = random6Digits("BV")
+        if (!account) {
             // Create new account and patient
             const newAccount = await prisma.account.create({
                 data: {
@@ -35,51 +40,20 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     email: email,
                     role: "patient",
                     birthDate: scheduleDate,
-                    DisplayID: code
+                    DisplayID: codePatient
                 }
             });
-
-            patient = await prisma.patient.create({
-                data: {
-                    patientID: newAccount.accountID
-                },
-                include: {
-                    account: true
-                }
-            });
-        }
-
-        const faculty = await prisma.faculty.findUnique({ where: { facultyID } });
-        if (!faculty) {
-            return res.status(404).json({ message: "Faculty not found" });
-        }
-        if (roomID) {
-            const room = await prisma.room.findUnique({ where: { roomID } });
-            if (!room) {
-                return res.status(404).json({ message: "Room not found" });
-            }
-        }
-
-        const lastAppointment = await prisma.appointment.findMany({
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            select: { appointmentDisplayID: true }
-        });
-
-        const lastNum = lastAppointment[0]?.appointmentDisplayID ? parseInt(lastAppointment[0].appointmentDisplayID) : 0;
-        const appointmentDisplayID = String(lastNum + 1).padStart(6, "0");
-
-        const newAppointment = await prisma.appointment.create({
+            const newAppointment = await prisma.appointment.create({
             data: {
                 appointmentType: appointmentType || "examine",
                 scheduleDate: new Date(scheduleDate),
                 roomID,
-                patientID: patient.patientID,
+                patientID: newAccount.DisplayID ?? "",
                 facultyID,
-                appointmentDisplayID,
+                appointmentDisplayID: codeAppointment,
                 status: "pending",
                 depositStatus: "unpaid",
-                approvedBy
+                approvedBy: approvedBy
 
             },
             include: {
@@ -92,9 +66,38 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                 room: true,
                 approvedByStaff: true
             }
+            
         });
-
         return res.status(201).json({ appointment: newAppointment });
+        }
+    else {
+        const newAppointment = await prisma.appointment.create({
+            data: {
+                appointmentType: appointmentType || "examine",
+                scheduleDate: new Date(scheduleDate),
+                roomID,
+                patientID: account.patientID,
+                facultyID,
+                appointmentDisplayID: codeAppointment,
+                status: "pending",
+                depositStatus: "unpaid",
+                approvedBy: approvedBy
+
+            },
+            include: {
+                patient: {
+                    include: {
+                        account: true
+                    }
+                },
+                faculty: true,
+                room: true,
+                approvedByStaff: true
+            }
+            
+        });
+        return res.status(201).json({ appointment: newAppointment });
+    }        
     } catch (error) {
         next(error);
     }
@@ -310,7 +313,7 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
         });
 
         // Send cancellation email to patient
-        if (appointment.patient.account.firstName) {
+        if (appointment.patient?.account?.email) {
             const scheduleDate = new Date(appointment.scheduleDate).toLocaleDateString('vi-VN', {
                 weekday: 'long',
                 year: 'numeric',
@@ -328,10 +331,10 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
                     <p style="color: #333; line-height: 1.6;">Rất tiếc, lịch khám của bạn đã được hủy.</p>
                     <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #e74c3c; margin: 20px 0;">
                         <p><strong>Thông tin lịch khám:</strong></p>
-                        <p style="margin: 8px 0;"><strong>Mã lịch khám:</strong> ${appointmentID}</p>
+                        <p style="margin: 8px 0;"><strong>Mã lịch khám:</strong> ${appointment.appointmentDisplayID}</p>
                         <p style="margin: 8px 0;"><strong>Ngày khám:</strong> ${scheduleDate}</p>
                         <p style="margin: 8px 0;"><strong>Loại khám:</strong> ${appointment.appointmentType}</p>
-                        ${appointment.faculty ? `<p style="margin: 8px 0;"><strong>Bác sĩ:</strong> ${appointment.doctor}</p>` : ''}
+                        ${appointment.faculty ? `<p style="margin: 8px 0;"><strong>Bác sĩ:</strong> ${appointment.doctor?.account.lastName || ""}</p>` : ''}
                         ${appointment.room ? `<p style="margin: 8px 0;"><strong>Phòng:</strong> ${appointment.room.roomName}</p>` : ''}
                     </div>
                     <p style="color: #333; line-height: 1.6;">Nếu você cần đặt lịch khám mới, vui lòng liên hệ với bộ phận tiếp tân hoặc đặt lịch trực tuyến.</p>
@@ -343,7 +346,8 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
             `;
 
             await sendMail({
-                to: appointment.patient.account.email,
+                // to: appointment.patient.account.email,
+                to: "23521655@gm.uit.edu.vn",
                 subject: "Thông báo hủy lịch khám",
                 html: emailHtml
             }).catch(err => {
@@ -351,10 +355,13 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
                 // Don't throw error, let the appointment cancellation succeed even if email fails
             });
         }
-
+        else{
+            return res.status(400).json({
+            message: "Can't send email"
+        });
+        }
         return res.status(200).json({
-            message: "Appointment cancelled",
-            appointment
+            message: "Appointment cancelled"
         });
     } catch (error) {
         next(error);
