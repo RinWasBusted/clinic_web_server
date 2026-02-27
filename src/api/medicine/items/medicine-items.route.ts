@@ -5,6 +5,7 @@ import {
   getMedicineItems,
   updateMedicine,
   deleteMedicine,
+  createManyMedicine,
 } from "./medicine-items.controller.js";
 import upload from "../../../utils/multer.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
@@ -52,6 +53,106 @@ const medicineItemsRouter = Router();
  *         description: Server error
  */
 medicineItemsRouter.post("/", verifyAccessToken, authorizeRoles("manager", "staff"), upload.single("image"), createMedicine);
+
+/**
+ * @swagger
+ * /medicine/items/many:
+ *   post:
+ *     summary: Create multiple medicines at once
+ *     description: Bulk create medicines from a JSON array. Returns details of successful and failed creations.
+ *     tags:
+ *       - Medicine
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: array
+ *             items:
+ *               type: object
+ *               required:
+ *                 - medicineName
+ *                 - unit
+ *                 - price
+ *               properties:
+ *                 medicineName:
+ *                   type: string
+ *                   example: "Aspirin"
+ *                 unit:
+ *                   type: string
+ *                   enum: [bottle, capsule, patches]
+ *                   example: "bottle"
+ *                 price:
+ *                   type: number
+ *                   example: 50000
+ *                 description:
+ *                   type: string
+ *                   example: "Pain relief medicine"
+ *           example:
+ *             - medicineName: "Aspirin"
+ *               unit: "bottle"
+ *               price: 50000
+ *               description: "Pain relief"
+ *             - medicineName: "Ibuprofen"
+ *               unit: "capsule"
+ *               price: 35000
+ *               description: "Anti-inflammatory"
+ *     responses:
+ *       201:
+ *         description: Bulk creation completed with success and failure details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Medicines created successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     requestCount:
+ *                       type: integer
+ *                       example: 5
+ *                     successCount:
+ *                       type: integer
+ *                       example: 4
+ *                     failedCount:
+ *                       type: integer
+ *                       example: 1
+ *                     success:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           index:
+ *                             type: integer
+ *                           medicineName:
+ *                             type: string
+ *                     failed:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           index:
+ *                             type: integer
+ *                           medicineName:
+ *                             type: string
+ *                           reason:
+ *                             type: string
+ *                             enum: ["DUPLICATE_UNIQUE", "PRISMA_P2003", "Missing required fields for medicine"]
+ *       400:
+ *         description: Bad request - Medicines must be an array or missing required fields
+ *       401:
+ *         description: Unauthorized - Missing or invalid token
+ *       403:
+ *         description: Forbidden - Only manager or staff can access
+ *       500:
+ *         description: Server error
+ */
+medicineItemsRouter.post("/many", verifyAccessToken, authorizeRoles("manager", "staff"), createManyMedicine);
 
 /**
  * @swagger

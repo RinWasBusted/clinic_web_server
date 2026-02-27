@@ -141,6 +141,7 @@ model Account {
   password    String?      @db.VarChar(100)
   email       String      @unique @db.VarChar(254)
   phoneNumber String?     @db.VarChar(12)
+  avatarUrl   String?     @db.VarChar(255)
   createdAt   DateTime    @default(now()) @db.Timestamp(6)
   birthDate   DateTime    @db.Date
   refreshTokens RefreshToken[]
