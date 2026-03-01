@@ -7,10 +7,20 @@ declare global {
       role?: string;
       email?: string;
     }
+    interface Pagination {
+      totalItems: number;
+      totalPages: number;
+      itemCount: number;
+      currentPage: number;
+    }
     interface Request {
       user?: User;
       currentRole?: string;
       id?: string;
+    }
+
+    interface Response {
+      paginate: (data: unknown[], pagination: Pagination) => void;
     }
   }
 }
