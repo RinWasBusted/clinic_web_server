@@ -5,7 +5,7 @@ export const CreateRoom = async (req: Request, res: Response, next: NextFunction
   try {
     const { roomType, roomName, FacultyID } = req.body;
     
-    const existingRoom = await prisma.room.findUnique({
+    const existingRoom = await prisma.room.findFirst({
       where: { roomName }
     });
 
