@@ -123,7 +123,6 @@ model RefreshToken {
   userId      String?  @map("user_id_id") @db.Uuid
   hashedToken String   @unique(map: "refresh_tokens_hashed_token_idx") @db.VarChar
   revoked     Boolean  @default(false)
-
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   expiresAt   DateTime @map("expire_at") @db.Timestamptz(3)
@@ -143,6 +142,7 @@ model Account {
   phoneNumber String?     @db.VarChar(12)
   createdAt   DateTime    @default(now()) @db.Timestamp(6)
   birthDate   DateTime    @db.Date
+  avatarUrl   String?
   refreshTokens RefreshToken[]
   patient     Patient?
   doctor      Doctor?
