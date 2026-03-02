@@ -121,6 +121,11 @@ export const DeleteManyRooms = async (req: Request, res: Response, next: NextFun
   try {
     const { roomIds } = req.body;
     const results = [];
+    if (!Array.isArray(roomIds) || roomIds.length === 0) {
+    return res.status(400).json({
+        message: "roomIds must be a non-empty array"
+    });
+  }
     for (const id of roomIds) {
       const activeAppointments = await prisma.appointment.findMany({
         where: {
