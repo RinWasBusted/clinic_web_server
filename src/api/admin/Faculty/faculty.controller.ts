@@ -50,14 +50,8 @@ export const GetFacultyById = async (req: Request, res: Response, next: NextFunc
 }
 export const UpdateFacultyById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const facultyID = req.params.id;
+        const facultyID = req.faculty?.facultyID;
         const data = req.body;
-        if (!facultyID) {
-            return res.status(404).json({ message: "Faculty not found" });
-        }
-        if (Array.isArray(facultyID)) {
-            return res.status(400).json({ message: "id must be a string, not an array" });
-        }
         const result = await prisma.faculty.update({
             where: { facultyID },
             data: data
@@ -79,15 +73,18 @@ export const UpdateFacultyById = async (req: Request, res: Response, next: NextF
 }
 export const DeleteFacultyById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const facultyID = req.params.id;
-        if (!facultyID) {
-            return res.status(404).json({ message: "Faculty not found" });
+        const facultyID = req.faculty?.facultyID ||"";
+        const rooms = await prisma.room.findMany({
+            where: { FacultyID: facultyID }
+        });
+        if (rooms.length > 0) {
+            return res.status(400).json({
+                message: "Cannot delete faculty with associated rooms. Please remove or reassign the rooms first."
+            });
         }
-        if (Array.isArray(facultyID)) {
-            return res.status(400).json({ message: "id must be a string, not an array" });
-        }
-        const result = await prisma.faculty.delete({
-            where: { facultyID }
+        const result = await prisma.faculty.update({
+            where: { facultyID },
+            data: { status: "INACTIVE" }
         })
         if (result) {
             return res.status(200).json({
@@ -106,22 +103,37 @@ export const DeleteFacultyById = async (req: Request, res: Response, next: NextF
 export const DeleteManyFaculty = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { FacultyIds, } = req.body;
-        if (!Array.isArray(FacultyIds) || FacultyIds.length === 0) {
-            return res.status(400).json({ message: "FacultyIds must be a non-empty array" });
-        }
-        const result = await prisma.faculty.deleteMany({
-            where: { facultyID: { in: FacultyIds } },
+        const results = [];
+        for (const id of FacultyIds) {
+            const rooms = await prisma.room.findMany({
+            where: {
+                FacultyID: id
+            }
         });
-        if (result) {
-            return res.status(200).json({
-                message: "Delete Successful"
-            })
+        if (rooms.length > 0) {
+            results.push({
+                id,
+                status: "failed",
+                message: "Cannot delete faculty with associated rooms. Please remove or reassign the rooms first."
+            });
         }
-        else {
-            return res.status(400).json({
-                message: "Delete fail"
-            })
+            const faculty = await prisma.faculty.findUnique({ where: { facultyID: id } });
+            if (!faculty) {
+                results.push({ id, status: "not found" });
+                continue;
+            }
+            else {
+                await prisma.faculty.update({
+                    where: { facultyID: id },
+                    data: { status: "INACTIVE" }
+                });
+                results.push({ id, status: "deleted" });
+            }
         }
+        return res.status(200).json({
+            message: "Delete successful",
+            results
+        })
     } catch (error) {
         return next(error)
     }

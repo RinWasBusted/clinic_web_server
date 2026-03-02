@@ -9,6 +9,7 @@ import {
 } from "./faculty.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { authorizeRoles } from "../../../middlewares/role.js";
+import { validateStatusFaculty } from "../../../middlewares/statusFaculty.middleware.js";
 
 const router = Router();
 
@@ -122,7 +123,7 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetFacul
 /**
  * @swagger
  * /admin/faculty/{id}:
- *   put:
+ *   patch:
  *     summary: Update faculty by ID
  *     tags: [Faculty]
  *     security:
@@ -161,12 +162,12 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetFacul
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.put("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), UpdateFacultyById);
+router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"),validateStatusFaculty, UpdateFacultyById);
 
 /**
  * @swagger
  * /admin/faculty/{id}:
- *   delete:
+ *   post:
  *     summary: Delete faculty by ID
  *     tags: [Faculty]
  *     security:
@@ -194,12 +195,12 @@ router.put("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), UpdateFa
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.delete("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteFacultyById);
+router.post("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), validateStatusFaculty, DeleteFacultyById);
 
 /**
  * @swagger
  * /admin/faculty/delete-many:
- *   delete:
+ *   post:
  *     summary: Delete multiple faculties
  *     tags: [Faculty]
  *     security:
@@ -232,6 +233,6 @@ router.delete("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), Delet
  *       400:
  *         description: Bad request
  */
-router.delete("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyFaculty);
+router.post("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyFaculty);
 
 export default router;
