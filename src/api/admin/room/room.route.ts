@@ -9,6 +9,7 @@ import {
 } from "./room.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { authorizeRoles } from "../../../middlewares/role.js";
+import { validateStatusRoom } from "../../../middlewares/statusRoom.middleware.js";
 
 const router = Router();
 
@@ -196,12 +197,12 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetRoomB
  *       404:
  *         description: Not Found - Room not found
  */
-router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), UpdateRoomById);
+router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"),validateStatusRoom, UpdateRoomById);
 
 /**
  * @swagger
  * /admin/rooms/{id}:
- *   delete:
+ *   post:
  *     summary: Delete room by ID
  *     tags: [Room]
  *     security:
@@ -229,12 +230,12 @@ router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), Update
  *       404:
  *         description: Not Found - Room not found
  */
-router.delete("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteRoomById);
+router.post("/:id",verifyAccessToken,authorizeRoles("manager", "staff"),validateStatusRoom, DeleteRoomById);
 
 /**
  * @swagger
  * /admin/rooms/delete-many:
- *   delete:
+ *   post:
  *     summary: Delete multiple rooms
  *     tags: [Room]
  *     security:
@@ -269,6 +270,6 @@ router.delete("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), Delet
  *       400:
  *         description: Bad request
  */
-router.delete("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyRooms);
+router.post("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyRooms);
 
 export default router;

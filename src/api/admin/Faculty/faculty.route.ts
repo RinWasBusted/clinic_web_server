@@ -166,39 +166,6 @@ router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"),validat
 
 /**
  * @swagger
- * /admin/faculty/{id}:
- *   post:
- *     summary: Delete faculty by ID
- *     tags: [Faculty]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Faculty ID
- *     responses:
- *       200:
- *         description: Faculty deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Delete Successful"
- *       400:
- *         description: Bad request
- *       404:
- *         description: Not Found - Faculty not found
- */
-router.post("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), validateStatusFaculty, DeleteFacultyById);
-
-/**
- * @swagger
  * /admin/faculty/delete-many:
  *   post:
  *     summary: Delete multiple faculties
@@ -234,5 +201,38 @@ router.post("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), validat
  *         description: Bad request
  */
 router.post("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyFaculty);
+
+/**
+ * @swagger
+ * /admin/faculty/{id}:
+ *   post:
+ *     summary: Delete faculty by ID
+ *     tags: [Faculty]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Faculty ID
+ *     responses:
+ *       200:
+ *         description: Faculty deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Delete Successful"
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Not Found - Faculty not found
+ */
+router.post("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), validateStatusFaculty, DeleteFacultyById);
 
 export default router;
