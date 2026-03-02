@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../../utils/prisma.js";
-import { checkRole } from "./account.services.js";
+import { checkRole, updateAvatar as updateAvatarService } from "./account.services.js";
 import bcrypt from "bcryptjs";
 import { NextFunction } from "express-serve-static-core";
 import { Prisma } from "../../../utils/prisma.js";
@@ -196,6 +196,37 @@ export const updatePassword = async (req: Request, res: Response) => {
     data: { password: hashedNewPassword },
   });
   return res.status(200).json({ message: "Password updated successfully" });
+}
+export const updateAvatar = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const accountIdToUpdate = req.params.id ?? "";
+    
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+    }
+    
+    if (accountIdToUpdate !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden: You can only update your own avatar" });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ message: "Bad Request: No file uploaded" });
+    }
+    
+    const accountExists = await prisma.account.findUnique({
+      where: { accountID: accountIdToUpdate },
+      select: { accountID: true }
+    });
+    
+    if (!accountExists) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+    
+    await updateAvatarService(accountIdToUpdate, req.file.path);
+    return res.status(200).json({ message: "Avatar updated successfully" });
+  } catch (error) {
+    return next(error);
+  }
 }
 export const deleteAccount = async (req: Request, res: Response) => {
   const accountIdToDelete = req.params.id ?? "";

@@ -5,7 +5,7 @@ export const CreateRoom = async (req: Request, res: Response, next: NextFunction
   try {
     const { roomType, roomName, FacultyID } = req.body;
     
-    const existingRoom = await prisma.room.findUnique({
+    const existingRoom = await prisma.room.findFirst({
       where: { roomName }
     });
 
@@ -116,14 +116,59 @@ export const DeleteManyRooms = async (req: Request, res: Response, next: NextFun
     });
   }
     for (const id of roomIds) {
-      const result = await prisma.room.update({
-        where: { roomID: id },
-        data: { status: "INACTIVE" }
+      const activeAppointments = await prisma.appointment.findMany({
+        where: {
+          roomID: id,
+          status: "approved"
+        }
       });
-      if (result) {
-        results.push(result);
-      } else {
-        results.push({ id, status: "not found" });
+    if (activeAppointments.length > 0) {
+      results.push({
+        id,
+        message: "Cannot delete room with active appointments",
+        activeAppointmentsCount: activeAppointments.length
+      });
+    if (activeAppointments.length > 0) {
+      results.push({
+        id,
+        message: "Cannot delete room with active appointments",
+        activeAppointmentsCount: activeAppointments.length
+      });
+    }
+      else {
+        const result = await prisma.room.update({
+          where: { roomID: id },
+          data: { status: "INACTIVE" }
+        });
+        if (result) {
+          results.push({
+            id,
+            message: "Delete successful"
+          });
+        } else {
+          results.push({
+            id,
+            message: "Room not found"
+          });
+        }
+      }
+    }
+      else {
+        const result = await prisma.room.update({
+          where: { roomID: id },
+          data: { status: "INACTIVE" }
+        });
+        if (result) {
+          results.push({
+            id,
+            message: "Delete successful"
+          });
+        } else {
+          results.push({
+            id,
+            message: "Room not found"
+          });
+        }
       }
     }
     return res.status(200).json({
