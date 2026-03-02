@@ -8,32 +8,41 @@ const pool = new Pool({
 
 const adapter = new PrismaPg(pool);
 const prismaClient = new PrismaClient({ adapter });
+
+// Danh sách các bảng dùng is_active
+const ACTIVE_MODELS = ['Account']; 
+// Danh sách các bảng dùng status (ẩn đi những dữ liệu đã bị xóa mềm)
+const STATUS_MODELS = ['Faculty', 'Room'];
+
 const prisma = prismaClient.$extends({
   query: {
     $allModels: {
-      async findFirst({ args, query }) {
-        args.where = { 
-          ...args.where, 
-          is_active: true
-        };
+      async findFirst({ model, args, query }) {
+        if (model && ACTIVE_MODELS.includes(model)) {
+          args.where = { ...args.where, is_active: true };
+        } else if (model && STATUS_MODELS.includes(model)) {
+          args.where = { ...args.where, status: { not: 'DELETED' } };
+        }
         return query(args);
       },
-      async findMany({ args, query }) {
-        args.where = { 
-          ...args.where, 
-          is_active: true
-        };
+      async findMany({ model, args, query }) {
+        if (model && ACTIVE_MODELS.includes(model)) {
+          args.where = { ...args.where, is_active: true };
+        } else if (model && STATUS_MODELS.includes(model)) {
+          args.where = { ...args.where, status: { not: 'DELETED' } };
+        }
         return query(args);
       },
-      async count({ args, query }) {
-        args.where = { 
-          ...args.where, 
-          is_active: true
-        };
+      async count({ model, args, query }) {
+        if (model && ACTIVE_MODELS.includes(model)) {
+          args.where = { ...args.where, is_active: true };
+        } else if (model && STATUS_MODELS.includes(model)) {
+          args.where = { ...args.where, status: { not: 'DELETED' } };
+        }
         return query(args);
       }
     },
-}
+  }
 });
 
 export { prisma, Prisma, prismaClient as prismaRaw }; 
