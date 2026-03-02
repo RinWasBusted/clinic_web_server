@@ -5,7 +5,7 @@ export const CreateRoom = async (req: Request, res: Response, next: NextFunction
   try {
     const { roomType, roomName, FacultyID } = req.body;
     
-    const existingRoom = await prisma.room.findUnique({
+    const existingRoom = await prisma.room.findFirst({
       where: { roomName }
     });
 
@@ -134,6 +134,30 @@ export const DeleteManyRooms = async (req: Request, res: Response, next: NextFun
         message: "Cannot delete room with active appointments",
         activeAppointmentsCount: activeAppointments.length
       });
+    if (activeAppointments.length > 0) {
+      results.push({
+        roomId,
+        message: "Cannot delete room with active appointments",
+        activeAppointmentsCount: activeAppointments.length
+      });
+    }
+      else {
+        const result = await prisma.room.update({
+          where: { roomID: roomId },
+          data: { status: "INACTIVE" }
+        });
+        if (result) {
+          results.push({
+            roomId,
+            message: "Delete successful"
+          });
+        } else {
+          results.push({
+            roomId,
+            message: "Room not found"
+          });
+        }
+      }
     }
       else {
         const result = await prisma.room.update({
