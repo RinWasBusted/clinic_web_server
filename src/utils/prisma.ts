@@ -1,4 +1,3 @@
-// Thêm Prisma vào dòng import đầu tiên
 import { PrismaClient, Prisma } from "../generated/prisma/index.js"; 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
@@ -8,8 +7,34 @@ const pool = new Pool({
 });
 
 const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+const prismaClient = new PrismaClient({ adapter });
+const prisma = prismaClient.$extends({
+  query: {
+    $allModels: {
+      async findFirst({ args, query }) {
+        args.where = { 
+          ...args.where, 
+          is_active: true
+        };
+        return query(args);
+      },
+      async findMany({ args, query }) {
+        args.where = { 
+          ...args.where, 
+          is_active: true
+        };
+        return query(args);
+      },
+      async count({ args, query }) {
+        args.where = { 
+          ...args.where, 
+          is_active: true
+        };
+        return query(args);
+      }
+    },
+}
+});
 
-// Export thêm Prisma để dùng cho việc bắt lỗi (Error Handling) ở các file khác
-export { prisma, Prisma }; 
+export { prisma, Prisma, prismaClient as prismaRaw }; 
 export default prisma;

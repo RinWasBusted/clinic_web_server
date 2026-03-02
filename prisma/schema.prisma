@@ -151,7 +151,7 @@ model Account {
   createdAt   DateTime    @default(now()) @db.Timestamp(6)
   birthDate   DateTime    @db.Date
   avatarUrl   String?
-  is_active    Boolean     @default(true)
+  is_active  Boolean  @default(true)
   refreshTokens RefreshToken[]
   patient     Patient?
   doctor      Doctor?
