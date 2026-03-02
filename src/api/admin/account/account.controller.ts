@@ -161,12 +161,9 @@ export const GetProfile = async (req: Request, res: Response) => {
   return res.status(200).json({ user: currentUser });
 }
 export const UpdateProfile = async (req: Request, res: Response) => {
-  const accountIdToUpdate = req.params.id ?? "";
-  if (Array.isArray(accountIdToUpdate)) {
-    return res.status(400).json({ message: "id must be a string, not an array" });
-  }
+  const currentAccount = req.userAccount;
   const result = await prisma.account.update({
-    where: { accountID: accountIdToUpdate },
+    where: { accountID: currentAccount?.accountID },
     data: req.body
 
   })

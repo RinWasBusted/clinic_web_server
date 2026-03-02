@@ -113,10 +113,18 @@ enum ServiceType {
   medicine
   test
 }
-
-// =======================
-// Account + subtypes (1-1)
-// =======================
+enum EntityStatus {
+  ACTIVE       // Đang hoạt động bình thường
+  INACTIVE     // Tạm ngưng 
+  DELETED      // Xóa mềm 
+  MAINTENANCE  // Đang bảo trì 
+}
+enum MedicineStatus {
+  IN_STOCK
+  OUT_OF_STOCK
+  DISCONTINUED
+  DELETED
+}
 model RefreshToken {
   id          Int      @id @default(autoincrement())
 
@@ -144,6 +152,7 @@ model Account {
   createdAt   DateTime    @default(now()) @db.Timestamp(6)
   birthDate   DateTime    @db.Date
   avatarUrl   String?
+  is_active  Boolean  @default(true)
   refreshTokens RefreshToken[]
   patient     Patient?
   doctor      Doctor?
@@ -160,7 +169,6 @@ model Patient {
   weight            Int?
   blood             BloodType?
   account           Account    @relation(fields: [patientID], references: [accountID], onDelete: Cascade)
-
   appointments      Appointment[]
   enterTickets      EnterTicket[]
   examineLogs       ExamineLog[]
@@ -220,6 +228,7 @@ model Manager {
 model Faculty {
   facultyID   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facultyName String      @unique
+  status EntityStatus     @default(ACTIVE)
   rooms       Room[]
   doctors     Doctor[]
   appointments Appointment[]
@@ -230,10 +239,11 @@ model Faculty {
 
 model Room {
   roomID      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status      EntityStatus     @default(ACTIVE)
   roomType    RoomType 
   roomName    String?  @unique @db.VarChar(10)
   FacultyID   String?    @db.Uuid
-
+  is_active    Boolean     @default(true)
   faculty     Faculty? @relation(fields: [FacultyID], references: [facultyID], onDelete: Restrict)
 
   timetables  Timetable[]

@@ -1,4 +1,5 @@
 import "express";
+import { Account, Room } from "../generated/prisma/index.js";
 
 declare global {
   namespace Express {
@@ -17,6 +18,8 @@ declare global {
       user?: User;
       currentRole?: string;
       id?: string;
+      userAccount?: Account; 
+      room?: Room;
     }
 
     interface Response {

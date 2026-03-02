@@ -4,6 +4,7 @@ import { registerManySchema, registerSchema, UpdateAccountSchema } from "../../.
 import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, registerMany, updateAvatar, updatePassword, UpdateProfile } from "./account.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { authorizeRoles, checkRole} from "../../../middlewares/role.js";
+import { validateActiveAccount } from "../../../middlewares/acctive.middleware.js";
 import upload from "../../../utils/multer.js";
 const router = Router();
 /**
@@ -334,7 +335,7 @@ router.get("/profile/:id", verifyAccessToken,checkRole, GetProfile)
  *       500:
  *         description: Internal server error
  */
-router.patch("/update-profile/:id", verifyAccessToken,checkRole, validateBody(UpdateAccountSchema), UpdateProfile)
+router.patch("/update-profile/:id", verifyAccessToken,checkRole, validateBody(UpdateAccountSchema),validateActiveAccount, UpdateProfile)
 /**
  * @swagger
  * /admin/account/update-password/{id}:
