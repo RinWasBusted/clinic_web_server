@@ -1,5 +1,5 @@
 import "express";
-import { Account, Room } from "../generated/prisma/index.js";
+import { Account, Faculty, Room } from "../generated/prisma/index.js";
 
 declare global {
   namespace Express {
@@ -14,6 +14,7 @@ declare global {
       id?: string;
       userAccount?: Account; 
       room?: Room;
+      faculty?: Faculty;
     }
   }
 }

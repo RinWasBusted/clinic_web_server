@@ -67,17 +67,8 @@ export const GetRoomById = async (req: Request, res: Response, next: NextFunctio
 
 export const UpdateRoomById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const roomID = req.params.id;
+    const roomID = req.room?.roomID;
     const data = req.body;
-
-    if (!roomID) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    if (Array.isArray(roomID)) {
-      return res.status(400).json({ message: "id must be a string, not an array" });
-    }
-
     const result = await prisma.room.update({
       where: { roomID },
       data,
@@ -99,18 +90,10 @@ export const UpdateRoomById = async (req: Request, res: Response, next: NextFunc
 
 export const DeleteRoomById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const roomID = req.params.id;
-
-    if (!roomID) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    if (Array.isArray(roomID)) {
-      return res.status(400).json({ message: "id must be a string, not an array" });
-    }
-
-    const result = await prisma.room.delete({
-      where: { roomID }
+    const roomID = req.room?.roomID;
+    const result = await prisma.room.update({
+      where: { roomID },
+      data: { status: "INACTIVE" }
     });
 
     if (result) {
@@ -126,17 +109,22 @@ export const DeleteRoomById = async (req: Request, res: Response, next: NextFunc
 export const DeleteManyRooms = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { roomIds } = req.body;
-
-    const result = await prisma.room.deleteMany({
-      where: { roomID: { in: roomIds } }
-    });
-
-    if (result) {
-      return res.status(200).json({
-        message: "Delete successful",
-        deletedCount: result.count
+    const results = [];
+    for (const id of roomIds) {
+      const result = await prisma.room.update({
+        where: { roomID: id },
+        data: { status: "INACTIVE" }
       });
+      if (result) {
+        results.push(result);
+      } else {
+        results.push({ id, status: "not found" });
+      }
     }
+    return res.status(200).json({
+      message: "Delete successful",
+      results
+    });
   } catch (error) {
     next(error);
   }

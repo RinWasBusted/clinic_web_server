@@ -22,7 +22,12 @@ enum AccountRole {
   patient
   pharmacist
 }
-
+enum DoctorStatus {
+  ACTIVE         // Đang làm việc bình thường (Cho phép đặt lịch)
+  STOP_BOOKING   // Ngừng nhận bệnh mới (Chỉ khám nợ cũ)
+  ON_LEAVE       // Nghỉ phép/Ốm đột xuất (Tạm khóa lịch)
+  INACTIVE       // Đã nghỉ việc hoàn toàn
+}
 enum BloodType {
   a
   o
@@ -115,7 +120,8 @@ enum ServiceType {
 }
 enum EntityStatus {
   ACTIVE       // Đang hoạt động bình thường
-  INACTIVE     // Tạm ngưng 
+  INACTIVE     // Tạm ngưng
+  STOP_BOOKING // Ngừng đặt lịch mới nhưng vẫn duy trì các lịch đã đặt
   DELETED      // Xóa mềm 
   MAINTENANCE  // Đang bảo trì 
 }
@@ -148,9 +154,10 @@ model Account {
   password    String?      @db.VarChar(100)
   email       String      @unique @db.VarChar(254)
   phoneNumber String?     @db.VarChar(12)
+  avatarUrl   String?     @db.VarChar(255)
   createdAt   DateTime    @default(now()) @db.Timestamp(6)
   birthDate   DateTime    @db.Date
-  avatarUrl   String?
+  // avatarUrl   String?
   is_active  Boolean  @default(true)
   refreshTokens RefreshToken[]
   patient     Patient?
@@ -181,7 +188,7 @@ model Doctor {
   doctorID         String      @id @db.Uuid
   startDate DateTime @default(now()) @db.Date
   fromFaculty      String?    @db.Uuid
-
+  status DoctorStatus @default(ACTIVE)
   account          Account     @relation(fields: [doctorID], references: [accountID], onDelete: Cascade)
 
   faculty          Faculty?    @relation(fields: [fromFaculty], references: [facultyID], onDelete: Restrict)
