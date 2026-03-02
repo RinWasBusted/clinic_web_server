@@ -73,7 +73,15 @@ export const UpdateFacultyById = async (req: Request, res: Response, next: NextF
 }
 export const DeleteFacultyById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const facultyID = req.faculty?.facultyID;
+        const facultyID = req.faculty?.facultyID ||"";
+        const rooms = await prisma.room.findMany({
+            where: { FacultyID: facultyID }
+        });
+        if (rooms.length > 0) {
+            return res.status(400).json({
+                message: "Cannot delete faculty with associated rooms. Please remove or reassign the rooms first."
+            });
+        }
         const result = await prisma.faculty.update({
             where: { facultyID },
             data: { status: "INACTIVE" }
@@ -97,6 +105,18 @@ export const DeleteManyFaculty = async (req: Request, res: Response, next: NextF
         const { FacultyIds, } = req.body;
         const results = [];
         for (const id of FacultyIds) {
+            const rooms = await prisma.room.findMany({
+            where: {
+                FacultyID: id
+            }
+        });
+        if (rooms.length > 0) {
+            results.push({
+                id,
+                status: "failed",
+                message: "Cannot delete faculty with associated rooms. Please remove or reassign the rooms first."
+            });
+        }
             const faculty = await prisma.faculty.findUnique({ where: { facultyID: id } });
             if (!faculty) {
                 results.push({ id, status: "not found" });

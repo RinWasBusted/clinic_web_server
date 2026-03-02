@@ -90,7 +90,18 @@ export const UpdateRoomById = async (req: Request, res: Response, next: NextFunc
 
 export const DeleteRoomById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const roomID = req.room?.roomID;
+    const roomID = req.room?.roomID ||"";
+    const activeAppointments = await prisma.appointment.findMany({
+      where: {
+        roomID,
+        status: "approved"
+      }
+    });
+    if (activeAppointments.length > 0) {
+      return res.status(400).json({
+        message: "Cannot delete room with active appointments. Please reschedule or cancel them first."
+      });
+    }
     const result = await prisma.room.update({
       where: { roomID },
       data: { status: "INACTIVE" }
@@ -111,14 +122,35 @@ export const DeleteManyRooms = async (req: Request, res: Response, next: NextFun
     const { roomIds } = req.body;
     const results = [];
     for (const id of roomIds) {
-      const result = await prisma.room.update({
-        where: { roomID: id },
-        data: { status: "INACTIVE" }
+      const activeAppointments = await prisma.appointment.findMany({
+        where: {
+          roomID: id,
+          status: "approved"
+        }
       });
-      if (result) {
-        results.push(result);
-      } else {
-        results.push({ id, status: "not found" });
+    if (activeAppointments.length > 0) {
+      results.push({
+        id,
+        message: "Cannot delete room with active appointments",
+        activeAppointmentsCount: activeAppointments.length
+      });
+    }
+      else {
+        const result = await prisma.room.update({
+          where: { roomID: id },
+          data: { status: "INACTIVE" }
+        });
+        if (result) {
+          results.push({
+            id,
+            message: "Delete successful"
+          });
+        } else {
+          results.push({
+            id,
+            message: "Room not found"
+          });
+        }
       }
     }
     return res.status(200).json({
