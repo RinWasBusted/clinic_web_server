@@ -151,7 +151,7 @@ model Account {
   avatarUrl   String?     @db.VarChar(255)
   createdAt   DateTime    @default(now()) @db.Timestamp(6)
   birthDate   DateTime    @db.Date
-  avatarUrl   String?
+  // avatarUrl   String?
   is_active  Boolean  @default(true)
   refreshTokens RefreshToken[]
   patient     Patient?

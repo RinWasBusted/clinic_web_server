@@ -127,16 +127,40 @@ export const DeleteManyRooms = async (req: Request, res: Response, next: NextFun
   try {
     const { roomIds } = req.body;
 
-    const result = await prisma.room.deleteMany({
-      where: { roomID: { in: roomIds } }
-    });
-
-    if (result) {
-      return res.status(200).json({
-        message: "Delete successful",
-        deletedCount: result.count
+    const results = [];
+    for (const roomId of roomIds) {
+      const activeAppointments = await prisma.appointment.findMany({
+        where: {
+          roomID: roomId,
+          status: "approved"
+        }
+      });
+    if (activeAppointments.length > 0) {
+      results.push({
+        roomId,
+        message: "Cannot delete room with active appointments",
+        activeAppointmentsCount: activeAppointments.length
       });
     }
+      else {
+        const result = await prisma.room.update({
+          where: { roomID: roomId },
+          data: { status: "INACTIVE" }
+        });
+        if (result) {
+          results.push({
+            roomId,
+            message: "Delete successful"
+          });
+        } else {
+          results.push({
+            roomId,
+            message: "Room not found"
+          });
+        }
+      }
+    }
+    return res.status(200).json({ results });
   } catch (error) {
     next(error);
   }
