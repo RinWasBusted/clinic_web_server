@@ -17,7 +17,7 @@ declare global {
     interface Request {
       user?: User;
       currentRole?: string;
-      id?: string;
+      id?: string | null;
       userAccount?: Account; 
       room?: Room;
       faculty?: Faculty;
