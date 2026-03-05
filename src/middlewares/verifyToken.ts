@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt, { type JwtPayload } from "jsonwebtoken";
+import { findRefreshTokenInWhitelist } from "../api/auth/auth.service.js";
 
 function mustGetEnv(name: string): string {
   const v = process.env[name];
@@ -38,3 +39,22 @@ export function verifyAccessToken(req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ message: "Invalid or expired access token" });
   }
 }
+export const verifyRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
+  const refreshToken = req.cookies?.refreshToken;
+  console.log("Refresh token in cookie:", refreshToken);
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: "Missing refresh token" });
+  }
+
+  const tokenInDb = await findRefreshTokenInWhitelist(refreshToken);
+  if (!tokenInDb) {
+    // clear đúng path bạn set refresh cookie
+    res.clearCookie("refreshToken", { path: "/auth/refresh" });
+    res.clearCookie("accessToken", { path: "/" });
+    return res.status(401).json({ message: "Refresh token revoked or expired" });
+  }
+
+  req.id = tokenInDb.userId;
+  return next();
+};

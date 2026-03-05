@@ -1,13 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../utils/prisma.js";
 import { generateTokens } from "../../utils/jwt.js";
-import { addRefreshTokenToCookieToWhitelist } from "./auth.service.js";
+import { addRefreshTokenToCookieToWhitelist, deleteRefreshTokenFromWhitelist } from "./auth.service.js";
 import bcrypt from "bcryptjs";
 export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
+  console.log(password)
 
   try {
-    const account = await prisma.account.findUnique({
+    const account = await prisma.account.findFirst({
       where: { email },
       select: { accountID: true, role: true, password: true },
     });
@@ -15,7 +16,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
     {
       return res.status(400).json(
         {
-          message: "Password is required"
+          message: "Not have account with this email or password is required"
         }
       )
     }
@@ -35,6 +36,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+    console.log("Refresh token generated:", req.cookies.refreshToken);
     await addRefreshTokenToCookieToWhitelist({ refreshToken, userId: account.accountID })
     return res.status(200).json({
       message: "Login successful",
@@ -42,6 +44,53 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
     });
   } catch (error) {
     next(error)
+  }
+};
+export const refreshTokens = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) return res.status(401).json({ message: "Missing refresh token" });
+
+    const userId = req.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    // rotate: xóa refresh cũ
+    await deleteRefreshTokenFromWhitelist(refreshToken);
+
+    // lấy thông tin user để tạo access token
+    const account = await prisma.account.findUnique({
+      where: { accountID: userId },
+      select: { email: true, role: true },
+    });
+    if (!account) return res.status(401).json({ message: "Unauthorized" });
+
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens({
+      id: userId,
+      email: account.email,
+      role: account.role,
+    });
+
+    await addRefreshTokenToCookieToWhitelist({ refreshToken: newRefreshToken, userId });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 60 * 60 * 1000,
+      path: "/",
+    });
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/auth/refresh",
+    });
+
+    return res.status(200).json({ message: "Token refreshed" });
+  } catch (err) {
+    next(err);
   }
 };
 export const GetProfile = async (req: Request, res: Response) => {
@@ -110,11 +159,13 @@ export const updatePassword = async (req: Request, res: Response) => {
   return res.status(200).json({ message: "Password updated successfully" });
 }
 export const logout = async (req: Request, res: Response) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies?.refreshToken;
+
   if (refreshToken) {
-    await prisma.refreshToken.deleteMany({ where: { hashedToken: refreshToken } });
+    await deleteRefreshTokenFromWhitelist(refreshToken);
   }
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
+
+  res.clearCookie("accessToken", { path: "/" });
+  res.clearCookie("refreshToken", { path: "/" });
   return res.status(200).json({ message: "Logged out successfully" });
-}
+};
