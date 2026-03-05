@@ -344,8 +344,8 @@ model ExamineLog {
   createdAt        DateTime      @default(now()) @db.Timestamp(6)
   status           ExamineStatus @default(draft)
 
-  sequence         BigInt?       @db.BigInt
-  examineDisplayID BigInt?       @unique @db.BigInt
+  sequence         Int          @default(autoincrement())
+  examineDisplayID String?       @unique @db.VarChar(12)
 
   note             String?       @db.VarChar(255)
 

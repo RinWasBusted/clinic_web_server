@@ -19,8 +19,7 @@ interface RawTicketDataType {
   orderNum: number;
   patient: {
     account: {
-      firstName: string;
-      lastName: string;
+      fullName: string;
       birthDate: Date;
     };
   };
@@ -43,6 +42,11 @@ class EnterTicketService {
       patient: {
         select: {
           patientID: true,
+          account: {
+            select: {
+              fullName: true,
+            },
+          },
         },
       },
       room: {
@@ -58,9 +62,8 @@ class EnterTicketService {
         select: {
           account: {
             select: {
-              firstName: true,
-              lastName: true,
               birthDate: true,
+              fullName: true,
             },
           },
         },
@@ -187,7 +190,8 @@ class EnterTicketService {
       where: { ticketID },
       include: this.ticketProjection,
     });
-    return ticket;
+
+    return { ...ticket };
   }
 
   async updateEnterTicket(ticketID: string, status: TicketStatus) {
@@ -252,7 +256,7 @@ class EnterTicketService {
       if (!ticket) return null;
       return {
         orderNum: ticket.orderNum,
-        patientName: `${ticket.patient.account.firstName} ${ticket.patient.account.lastName}`,
+        patientName: `${ticket.patient.account.fullName}`,
         birthDate: toLocalDateString(ticket.patient.account.birthDate),
         roomName: ticket.room.roomName,
       };

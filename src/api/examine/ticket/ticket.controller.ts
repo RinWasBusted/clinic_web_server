@@ -25,7 +25,7 @@ export async function viewEnterTicket(req: Request, res: Response, next: NextFun
     const { id: ticketID } = req.params ?? {};
     const ticket = await EnterTicketService.getEnterTicketByID(ticketID as string);
     if (!ticket) {
-      return res.status(404).json({ message: "Ticket not found" });
+      return res.status(404).json({ message: "Không tìm thấy" });
     }
     return res.json(ticket);
   } catch (error) {
@@ -39,10 +39,10 @@ export async function updateEnterTicket(req: Request, res: Response, next: NextF
     const { status } = req.body ?? {};
     const updatedTicket = await EnterTicketService.updateEnterTicket(ticketID as string, status);
     if (!updatedTicket) {
-      return res.status(404).json({ message: "Ticket not found" });
+      return res.status(404).json({ message: "Không tìm thấy" });
     } else {
       return res.json({
-        message: "Ticket status updated successfully",
+        message: "Trạng thái ticket đã được cập nhật thành công",
         ticket: updatedTicket,
       });
     }
@@ -56,7 +56,7 @@ export async function getNextTicket(req: Request, res: Response, next: NextFunct
     const { roomID } = req.query;
     const nextTicket = await EnterTicketService.callNextTicket(roomID as string);
     return res.json({
-      message: nextTicket ? "Next ticket called successfully" : "No pending tickets in the queue",
+      message: nextTicket ? "Đã gọi STT tiếp theo" : "Không còn STT nào trong danh sách chờ",
       ticket: nextTicket,
     });
   } catch (error) {
