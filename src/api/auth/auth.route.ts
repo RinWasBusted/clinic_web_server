@@ -1,6 +1,6 @@
 import { Router } from "express";
-import {  GetProfile, loginUser,updatePassword, UpdateProfile } from "./auth.controller.js";
-import { verifyAccessToken } from "../../middlewares/verifyToken.js";
+import {  GetProfile, loginUser,refreshTokens,updatePassword, UpdateProfile } from "./auth.controller.js";
+import { verifyAccessToken, verifyRefreshToken } from "../../middlewares/verifyToken.js";
 import { logout } from "./auth.controller.js";
 import { validateBody,   } from "../../middlewares/validate.js";
 import { UpdateAccountSchema } from "../../schema/auth.schema.js";
@@ -54,6 +54,31 @@ const router = Router();
  */
 router.post("/login", loginUser);
 
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Refresh the access token using the refresh token via HTTP-only cookies. No request body needed.
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: Access token refreshed successfully. New tokens are set in HTTP-only cookies.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Token refreshed"
+ *       401:
+ *         description: Unauthorized - Invalid or expired refresh token
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/refresh", verifyRefreshToken, refreshTokens);
 
 
 /**
