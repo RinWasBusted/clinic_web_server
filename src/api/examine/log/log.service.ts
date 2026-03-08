@@ -1,6 +1,7 @@
 import { ExamineStatus } from "../../../generated/prisma/index.js";
 import _o from "../../../utils/data/object.js";
 import prisma from "../../../utils/prisma.js";
+import { ObjectType, RecordType } from "../../../utils/types/index.js";
 
 type ExamineLogPayload = {
   appointmentID: string;
@@ -123,17 +124,22 @@ class ExamineLogService {
     return updatedExamineLog;
   }
 
-  beautifyExamineLog(examineLog: any) {
-    const details = examineLog.details.map((detail: any) => {
-      return _o.killPrefix(_o.flatten(detail), "disease");
-    });
-    const newExamineLog = { ...examineLog, details };
-    return newExamineLog;
+  beautifyExamineLog(examineLog: ObjectType): ObjectType | null {
+    const rawDetails = examineLog.details;
+    if (rawDetails && Array.isArray(rawDetails)) {
+      const details = rawDetails.map((detail: unknown) => {
+        const flattenedDetail: RecordType = _o.flatten(detail as RecordType);
+        return _o.killPrefix(flattenedDetail, "disease");
+      });
+      const newExamineLog: ObjectType = { ...examineLog, details };
+      return newExamineLog;
+    }
+    return null;
   }
 
   // Not yet finished
-  async getPrintableExamineLog(examineID: string) {
-    const examineLog = await prisma.examineLog.findUnique({
+  async getPrintableExamineLog(examineID: string): Promise<ObjectType | null> {
+    const examineLog = (await prisma.examineLog.findUnique({
       where: { examineID },
       include: {
         details: {
@@ -150,7 +156,7 @@ class ExamineLogService {
       omit: {
         sequence: true,
       },
-    });
+    })) satisfies ObjectType | null;
 
     if (!examineLog) return null;
     return this.beautifyExamineLog(examineLog);

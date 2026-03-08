@@ -7,8 +7,9 @@ import RoomRoutes from "./admin/room/room.route.js";
 import TimetableRoutes from "./admin/timetable/timetable.route.js";
 import AppointmentRoutes from "./admin/appointment/appoint.route.js";
 import medicineRoutes from "./medicine/medicine.route.js";
-import examineRouter from "./examine/examine.route.js";
+import ExamineRouter from "./examine/examine.route.js";
 import { paginateMiddleware } from "../middlewares/paginate.js";
+import PrescriptionRouter from "./prescription/prescription.route.js";
 
 const router = Router();
 
@@ -27,6 +28,6 @@ router.use("/admin/timetables", TimetableRoutes);
 router.use("/admin/appointments", AppointmentRoutes);
 router.use("/medicine", medicineRoutes);
 
-router.use("/examine", examineRouter);
-
+router.use("/examine", ExamineRouter);
+router.use("/prescription", PrescriptionRouter);
 export default router;

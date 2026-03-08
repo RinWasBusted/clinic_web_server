@@ -171,9 +171,6 @@ model Account {
 
 model Patient {
   patientID         String     @id @db.Uuid
-  height            Int?
-  weight            Int?
-  blood             BloodType?
   account           Account    @relation(fields: [patientID], references: [accountID], onDelete: Cascade)
   appointments      Appointment[]
   enterTickets      EnterTicket[]
@@ -347,6 +344,12 @@ model ExamineLog {
   sequence         Int          @default(autoincrement())
   examineDisplayID String?       @unique @db.VarChar(12)
 
+  // Health metrics
+  height            Int?
+  weight            Int?
+  blood             BloodType?
+
+
   note             String?       @db.VarChar(255)
 
   appointment      Appointment   @relation(fields: [appointmentID], references: [appointmentID], onDelete: Cascade)
@@ -441,6 +444,8 @@ model Prescription {
   createdAt      DateTime  @default(now()) @db.Timestamp(6)
   payAmount      Decimal?  @default(0) @db.Decimal(12, 2)
   note           String?   @db.VarChar(255)
+
+  needReExamine  Boolean   @default(true)
 
   examine        ExamineLog   @relation(fields: [examineID], references: [examineID], onDelete: Cascade)
   doctor         Doctor       @relation("PrescriptionDoctor", fields: [doctorID], references: [doctorID], onDelete: Restrict)
