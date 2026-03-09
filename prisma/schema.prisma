@@ -157,6 +157,7 @@ model RefreshToken {
 // RBAC Authorization 
 model Permission {
   permissionID   String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code           String  @unique @db.VarChar(64)
   permissionName String  @db.VarChar(255)
   description    String? @db.VarChar(255)
 
@@ -190,7 +191,8 @@ model RolePermission {
 
 model Account {
   accountID     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  //role          AccountRole
+  // Keep the old roleName to be compatible with old code, but it will be deprecated soon. Use roleID + relation instead
+  roleName      AccountRole    @default(patient)
   firstName     String         @db.VarChar(50)
   lastName      String         @db.VarChar(75)
   password      String?        @db.VarChar(100)
