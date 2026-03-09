@@ -10,7 +10,7 @@ function mustGetEnv(name: string): string {
 
 const JWT_SECRET = mustGetEnv("JWT_SECRET");
 
-type AuthPayload = { id: string; email: string, role: string };
+type AuthPayload = { id: string; email: string; role: string };
 
 //tự tạo type Request có user
 export interface AuthedRequest extends Request {
@@ -32,7 +32,6 @@ export function verifyAccessToken(req: Request, res: Response, next: NextFunctio
     if (typeof decoded === "string" || !isAuthPayload(decoded)) {
       return res.status(401).json({ message: "Invalid token payload" });
     }
-
     req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
     return next();
   } catch {
