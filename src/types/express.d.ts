@@ -18,9 +18,12 @@ declare global {
       user?: User;
       currentRole?: string;
       id?: string | null;
-      userAccount?: Account; 
+      userAccount?: Account;
       room?: Room;
       faculty?: Faculty;
+
+      // For update validation middleware
+      targetItem?: unknown;
     }
 
     interface Response {

@@ -1,8 +1,11 @@
 import { Router } from "express";
 import enterTicketRouter from "./ticket/ticket.route.js";
+import examineLogRouter from "./log/log.route.js";
 
-const examineRouter = Router();
+const ExamineRouter = Router();
 
-examineRouter.use("/ticket", enterTicketRouter);
+ExamineRouter.use("/ticket", enterTicketRouter);
 
-export default examineRouter;
+ExamineRouter.use("/", examineLogRouter);
+
+export default ExamineRouter;
