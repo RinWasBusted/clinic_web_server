@@ -90,6 +90,11 @@ enum ExamineStatus {
   done
 }
 
+enum PrescriptionStatus {
+  draft
+  done
+}
+
 enum MedicineUnit {
   bottle
   capsule
@@ -489,17 +494,19 @@ model Medicine {
 }
 
 model Prescription {
-  prescriptionID String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  examineID      String   @db.Uuid
-  doctorID       String   @db.Uuid
-  pharmacistID   String?  @db.Uuid
-  createdAt      DateTime @default(now()) @db.Timestamp(6)
-  payAmount      Decimal? @default(0) @db.Decimal(12, 2)
-  note           String?  @db.VarChar(255)
+  prescriptionID String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  examineID      String             @db.Uuid
+  doctorID       String             @db.Uuid
+  pharmacistID   String?            @db.Uuid
+  createdAt      DateTime           @default(now()) @db.Timestamp(6)
+  payAmount      Decimal?           @default(0) @db.Decimal(12, 2)
+  note           String?            @db.VarChar(255)
+  status         PrescriptionStatus @default(draft)
 
   // The end date of treatment, used for: re-examination date + status?: active
-  finishTreatmentDate DateTime @db.Timestamp(6)
-  needReExamine       Boolean  @default(true)
+  // finishTreatmentDate DateTime @db.Timestamp(6)
+  needReExamine      Boolean @default(true)
+  totalTreatmentDays Int     @default(0)
 
   examine    ExamineLog  @relation(fields: [examineID], references: [examineID], onDelete: Cascade)
   doctor     Doctor      @relation("PrescriptionDoctor", fields: [doctorID], references: [doctorID], onDelete: Restrict)
@@ -515,7 +522,7 @@ model PrescriptionDetails {
   prescriptionID String  @db.Uuid
   medicineID     Int
   quantity       Int     @default(0)
-  usage          String? @db.VarChar(255)
+  usage          String  @db.VarChar(255)
   note           String? @db.VarChar(255)
 
   prescription Prescription @relation(fields: [prescriptionID], references: [prescriptionID], onDelete: Cascade)

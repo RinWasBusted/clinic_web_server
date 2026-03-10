@@ -1,6 +1,8 @@
 import { PrismaClient, Prisma } from "../generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import AccountExtension from "./model/extension/account.js";
+import AllExtension from "./model/extension/all.js";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -45,20 +47,8 @@ const prisma = prismaClient
       },
     },
   })
-  .$extends({
-    name: "accountFullName",
-    result: {
-      account: {
-        fullName: {
-          needs: { firstName: true, lastName: true },
-          compute(account) {
-            // Display as Vietnamese format: LastName FirstName
-            return `${account.lastName} ${account.firstName}`;
-          },
-        },
-      },
-    },
-  });
+  .$extends(AccountExtension)
+  .$extends(AllExtension);
 
 export { prisma, Prisma, prismaClient as prismaRaw };
 export default prisma;
