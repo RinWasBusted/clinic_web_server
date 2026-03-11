@@ -9,6 +9,7 @@ const examineLogBaseSchema = z.object(
     status: z.enum(enumValueOf.examineLog, "Trạng thái đơn khám bị sai"),
     diagnose: z.array(z.string("Kiểm tra lại mã bệnh theo đúng định dạng ICD-10").max(255)).optional(),
     note: z.string().max(255).optional(),
+    treatmentPlan: z.string().max(255),
   },
   "Thông tin đơn khám không hợp lệ"
 );

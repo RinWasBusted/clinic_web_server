@@ -21,6 +21,69 @@ const enterTicketRouter = Router();
  *   name: EnterTicket
  *   description: Ticket management for examination queue
  */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     TicketWithRelations:
+ *       type: object
+ *       properties:
+ *         ticketID:
+ *           type: string
+ *           format: uuid
+ *           example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+ *         orderNum:
+ *           type: integer
+ *           example: 4
+ *         appointmentID:
+ *           type: string
+ *           format: uuid
+ *           example: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+ *         patientID:
+ *           type: string
+ *           format: uuid
+ *           example: "d4e5f6a7-b8c9-0123-defa-234567890123"
+ *         roomID:
+ *           type: string
+ *           format: uuid
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         checkIn:
+ *           type: string
+ *           format: date-time
+ *           example: "2026-03-05T07:00:00.000+07:00"
+ *         status:
+ *           type: string
+ *           enum: [pending, in_check, skip, done]
+ *           example: "in_check"
+ *         note:
+ *           type: string
+ *           nullable: true
+ *           example: null
+ *         patient:
+ *           type: object
+ *           properties:
+ *             patientID:
+ *               type: string
+ *               format: uuid
+ *               example: "d4e5f6a7-b8c9-0123-defa-234567890123"
+ *             account:
+ *               type: object
+ *               properties:
+ *                 fullName:
+ *                   type: string
+ *                   example: "Nguyen Van A"
+ *         room:
+ *           type: object
+ *           properties:
+ *             roomID:
+ *               type: string
+ *               format: uuid
+ *               example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *             roomName:
+ *               type: string
+ *               example: "Room 101"
+ */
 /**
  * @swagger
  * /examine/ticket/current:

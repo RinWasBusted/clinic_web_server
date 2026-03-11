@@ -14,7 +14,7 @@ import {
  * @swagger
  * tags:
  *   name: Examine
- *   description: Examine log management (doctor only)
+ *   description: Examine log management (doctor only). (Lưu ý chưa setup ràng buộc như bên medicine). Tag @Huynhnhatphu khi test bị lỗi
  */
 
 const examineLogRouter = Router();
@@ -134,6 +134,7 @@ examineLogRouter.get("/:id", authorizeRoles("doctor"), getExamineLogHandler);
  *               - patientID
  *               - symptoms
  *               - status
+ *               - treatmentPlan
  *             properties:
  *               appointmentID:
  *                 type: string
@@ -155,6 +156,11 @@ examineLogRouter.get("/:id", authorizeRoles("doctor"), getExamineLogHandler);
  *                 enum: [draft, done]
  *                 description: Initial status of the examine log
  *                 example: "draft"
+ *               treatmentPlan:
+ *                 type: string
+ *                 maxLength: 255
+ *                 description: Doctor's treatment plan for the patient
+ *                 example: "Nghỉ ngơi, uống thuốc theo toa"
  *               diagnose:
  *                 type: array
  *                 description: List of ICD-10 disease codes
@@ -172,6 +178,7 @@ examineLogRouter.get("/:id", authorizeRoles("doctor"), getExamineLogHandler);
  *             patientID: "c3d4e5f6-a7b8-9012-cdef-123456789012"
  *             symptoms: "Đau đầu, sốt nhẹ"
  *             status: "draft"
+ *             treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
  *             diagnose: ["J00"]
  *             note: "Bệnh nhân dị ứng Penicillin"
  *     responses:
@@ -207,9 +214,15 @@ examineLogRouter.get("/:id", authorizeRoles("doctor"), getExamineLogHandler);
  *                       type: string
  *                     status:
  *                       type: string
+ *                     treatmentPlan:
+ *                       type: string
+ *                       nullable: true
  *                     note:
  *                       type: string
  *                       nullable: true
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
  *                     details:
  *                       type: array
  *                       items:
@@ -270,6 +283,10 @@ examineLogRouter.post("/new", authorizeRoles("doctor"), validateBody(examineLogS
  *                 type: string
  *                 enum: [draft, done]
  *                 example: "done"
+ *               treatmentPlan:
+ *                 type: string
+ *                 maxLength: 255
+ *                 example: "Nghỉ ngơi, uống thuốc theo toa"
  *               diagnose:
  *                 type: array
  *                 items:
@@ -283,6 +300,7 @@ examineLogRouter.post("/new", authorizeRoles("doctor"), validateBody(examineLogS
  *           example:
  *             symptoms: "Ho, khó thở"
  *             status: "done"
+ *             treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
  *             diagnose: ["J00", "J06.9"]
  *             note: "Cần theo dõi thêm"
  *     responses:
@@ -297,6 +315,7 @@ examineLogRouter.post("/new", authorizeRoles("doctor"), validateBody(examineLogS
  *                 examineDisplayID: "KH2600000001"
  *                 symptoms: "Ho, khó thở"
  *                 status: "done"
+ *                 treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
  *                 note: "Cần theo dõi thêm"
  *                 details:
  *                   - diseaseID: "J00"
@@ -347,6 +366,36 @@ examineLogRouter.put("/:id", authorizeRoles("doctor"), validateBody(examineLogSc
  *                 examineLog:
  *                   type: object
  *                   description: Examine log data enriched with patient, appointment, and prescription info for printing
+ *                   properties:
+ *                     examineID:
+ *                       type: string
+ *                       format: uuid
+ *                     examineDisplayID:
+ *                       type: string
+ *                       example: "KH2600000001"
+ *                     symptoms:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [draft, done]
+ *                     treatmentPlan:
+ *                       type: string
+ *                       nullable: true
+ *                     note:
+ *                       type: string
+ *                       nullable: true
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     details:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           diseaseID:
+ *                             type: string
+ *                           diseaseName:
+ *                             type: string
  *       401:
  *         description: Unauthorized — missing or invalid access token
  *       403:
