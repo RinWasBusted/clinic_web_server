@@ -78,7 +78,7 @@ const router = Router();
  *       404:
  *         description: Doctor or Room not found
  */
-router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"),CreateTimetable);
+router.post("/",verifyAccessToken,authorizeRoles("root", "staff"),CreateTimetable);
 
 /**
  * @swagger
@@ -122,7 +122,7 @@ router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"),CreateTimet
  *                       room:
  *                         type: object
  */
-router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllTimetables);
+router.get("/",verifyAccessToken,authorizeRoles("root", "staff"), GetAllTimetables);
 
 /**
  * @swagger
@@ -188,7 +188,7 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetTimet
  *       400:
  *         description: Bad request - Doctor ID is required
  */
-router.get("/doctor/:doctorID",verifyAccessToken, authorizeRoles("manager", "staff"),GetTimetableByDoctor);
+router.get("/doctor/:doctorID",verifyAccessToken, GetTimetableByDoctor);
 
 /**
  * @swagger

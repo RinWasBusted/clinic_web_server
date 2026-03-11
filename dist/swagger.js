@@ -31,8 +31,22 @@ const options = {
     apis: ['./src/api/**/*.ts']
 };
 const swaggerSpec = swaggerJsdoc(options);
+// export const setupSwagger = (app) => {
+//     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+//     console.log('Swagger UI available at http://localhost:3000/api-docs');
+// };
 export const setupSwagger = (app) => {
+    // 1. Giữ nguyên dòng hiển thị UI của bạn
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    
+    // 2. THÊM ĐOẠN NÀY: Tạo route trả về file JSON thô
+    app.get('/api-docs.json', (req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(swaggerSpec);
+    });
+
+    // 3. (Tùy chọn) Thêm log để dễ nhìn
     console.log('Swagger UI available at http://localhost:3000/api-docs');
+    console.log('Swagger JSON available at http://localhost:3000/api-docs.json');
 };
 //# sourceMappingURL=swagger.js.map
