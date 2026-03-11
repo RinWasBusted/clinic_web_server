@@ -8,6 +8,7 @@ type ExamineLogPayload = {
   patientID: string;
   symptoms: string;
   status: ExamineStatus;
+  treatmentPlan: string;
   examinedBy: string;
   diagnose: string[];
   note?: string;
@@ -25,7 +26,7 @@ class ExamineLogService {
   }
 
   async submit(payload: ExamineLogPayload) {
-    const { appointmentID, patientID, symptoms, status, examinedBy, diagnose, note } = payload;
+    const { appointmentID, patientID, symptoms, status, examinedBy, diagnose, note, treatmentPlan } = payload;
     const newExamineLog = await prisma.$transaction(async (tx) => {
       // Only get the examine log with ID and sequence. Used for further transactions
       const examineLite = await tx.examineLog.create({
@@ -36,6 +37,7 @@ class ExamineLogService {
           status,
           examinedBy,
           note,
+          treatmentPlan,
         },
         select: {
           examineID: true,
@@ -89,7 +91,7 @@ class ExamineLogService {
   }
 
   async updateExamineLog(examineID: string, payload: Partial<ExamineLogPayload>) {
-    const { symptoms, status, diagnose, note } = payload;
+    const { symptoms, status, diagnose, note, treatmentPlan } = payload;
     const updatedExamineLog = await prisma.$transaction(async (tx) => {
       // If diagnose is provided, delete all old diagnose and create new ones
       if (diagnose) {
@@ -107,6 +109,7 @@ class ExamineLogService {
           symptoms,
           status,
           note,
+          treatmentPlan,
         },
         include: {
           details: {
