@@ -32,47 +32,48 @@ class EnterTicketService {
   defaultCount: number;
   defaultPage: number;
   ticketProjection: Record<string, unknown>;
+  ticketListProjection: Record<string, unknown>;
   ticketDisplayProjection: Record<string, unknown>;
+
+  private readonly patientProjection = {
+    patient: {
+      select: {
+        patientID: true,
+        previousRecord: true,
+        account: {
+          select: {
+            address: true,
+            DisplayID: true,
+            fullName: true,
+            birthDate: true,
+            genderDisplay: true,
+          },
+        },
+      },
+    },
+  };
+  private readonly roomProjection = {
+    room: {
+      select: {
+        roomID: true,
+        roomName: true,
+      },
+    },
+  };
 
   constructor() {
     // Default pagination settings in case the client does not provide them
     this.defaultCount = 10;
     this.defaultPage = 1;
     this.ticketProjection = {
-      patient: {
-        select: {
-          patientID: true,
-          account: {
-            select: {
-              fullName: true,
-            },
-          },
-        },
-      },
-      room: {
-        select: {
-          roomID: true,
-          roomName: true,
-        },
-      },
+      ...this.patientProjection,
+      ...this.roomProjection,
     };
+    this.ticketListProjection = { ...this.patientProjection };
     this.ticketDisplayProjection = {
       orderNum: true,
-      patient: {
-        select: {
-          account: {
-            select: {
-              birthDate: true,
-              fullName: true,
-            },
-          },
-        },
-      },
-      room: {
-        select: {
-          roomName: true,
-        },
-      },
+      ...this.patientProjection,
+      ...this.roomProjection,
     };
   }
   async findAppointment(payload: AppointmentPayload): Promise<TicketPayload> {
@@ -159,7 +160,7 @@ class EnterTicketService {
     if (status) where.status = status as TicketStatus;
     if (roomID) where.roomID = roomID;
 
-    const include = this.ticketProjection;
+    const include = this.ticketListProjection;
     const orderBy = { orderNum: "asc" };
 
     // Paginate service
