@@ -142,6 +142,11 @@ enum MedicineStatus {
   DELETED
 }
 
+enum Gender {
+  male
+  female
+}
+
 model RefreshToken {
   id Int @id @default(autoincrement())
 
@@ -195,17 +200,21 @@ model RolePermission {
 // =======================
 
 model Account {
-  accountID     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountID   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   // Keep the old roleName to be compatible with old code, but it will be deprecated soon. Use roleID + relation instead
-  roleName      AccountRole    @default(patient)
-  firstName     String         @db.VarChar(50)
-  lastName      String         @db.VarChar(75)
-  password      String?        @db.VarChar(100)
-  email         String         @unique @db.VarChar(254)
-  phoneNumber   String?        @db.VarChar(12)
-  avatarUrl     String?        @db.VarChar(255)
-  createdAt     DateTime       @default(now()) @db.Timestamp(6)
-  birthDate     DateTime       @db.Date
+  roleName    AccountRole @default(patient)
+  firstName   String      @db.VarChar(50)
+  lastName    String      @db.VarChar(75)
+  password    String?     @db.VarChar(100)
+  email       String      @unique @db.VarChar(254)
+  phoneNumber String?     @db.VarChar(12)
+  avatarUrl   String?     @db.VarChar(255)
+  createdAt   DateTime    @default(now()) @db.Timestamp(6)
+  birthDate   DateTime    @db.Date
+  // Gender (in english)
+  gender      Gender?     @default(male)
+  address     String?
+
   // avatarUrl   String?
   is_active     Boolean        @default(true)
   refreshTokens RefreshToken[]
@@ -225,7 +234,11 @@ model Account {
 }
 
 model Patient {
-  patientID        String           @id @db.Uuid
+  patientID String @id @db.Uuid
+
+  // Tiền sử bệnh nền
+  previousRecord String?
+
   account          Account          @relation(fields: [patientID], references: [accountID], onDelete: Cascade)
   appointments     Appointment[]
   enterTickets     EnterTicket[]

@@ -11,6 +11,13 @@ const AccountExtension = Prisma.defineExtension({
           return `${account.lastName} ${account.firstName}`;
         },
       },
+      genderDisplay: {
+        // Hiển thị giới tính theo định dạng tiếng Việt
+        needs: { gender: true },
+        compute(account) {
+          return account.gender === "male" ? "Nam" : "Nữ";
+        },
+      },
     },
   },
 });
