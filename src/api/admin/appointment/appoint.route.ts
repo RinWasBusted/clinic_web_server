@@ -7,12 +7,16 @@ import {
   ApproveAppointment,
   CancelAppointment,
   DeleteAppointmentById,
-  DeleteManyAppointments
+  DeleteManyAppointments,
 } from "./appointment.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
+
 import { validateBody, validateQuery } from "../../../middlewares/validate.js";
-import { createAppointmentBodySchema, getAllAppointmentsQuerySchema, updateAppointmentBodySchema } from "../../../schema/apointment.schama.js";
+import {
+  createAppointmentBodySchema,
+  getAllAppointmentsQuerySchema,
+  updateAppointmentBodySchema,
+} from "../../../schema/apointment.schama.js";
 
 const router = Router();
 
@@ -91,7 +95,7 @@ const router = Router();
  *       404:
  *         description: Faculty or Room not found
  */
-router.post("/", verifyAccessToken, authorizeRoles("manager", "staff"),validateBody(createAppointmentBodySchema), CreateAppointment);
+router.post("/", verifyAccessToken, CreateAppointment);
 
 /**
  * @swagger
@@ -139,7 +143,7 @@ router.post("/", verifyAccessToken, authorizeRoles("manager", "staff"),validateB
  *                   items:
  *                     type: object
  */
-router.get("/", verifyAccessToken,validateQuery(getAllAppointmentsQuerySchema), GetAllAppointments);
+router.get("/", verifyAccessToken, validateQuery(getAllAppointmentsQuerySchema), GetAllAppointments);
 
 /**
  * @swagger
@@ -235,7 +239,7 @@ router.get("/:id", verifyAccessToken, GetAppointmentById);
  *       404:
  *         description: Not Found - Appointment, Patient, Faculty, Room or Staff not found
  */
-router.patch("/:id", verifyAccessToken, authorizeRoles("manager", "staff"),validateBody(updateAppointmentBodySchema), UpdateAppointmentById);
+router.patch("/:id", verifyAccessToken, UpdateAppointmentById);
 
 /**
  * @swagger
@@ -287,7 +291,7 @@ router.patch("/:id", verifyAccessToken, authorizeRoles("manager", "staff"),valid
  *       404:
  *         description: Not Found - Appointment, Staff or Room not found
  */
-router.patch("/:id/approve", verifyAccessToken, authorizeRoles("manager", "staff"), ApproveAppointment);
+router.patch("/:id/approve", verifyAccessToken, ApproveAppointment);
 
 /**
  * @swagger
@@ -320,7 +324,7 @@ router.patch("/:id/approve", verifyAccessToken, authorizeRoles("manager", "staff
  *       404:
  *         description: Not Found - Appointment not found
  */
-router.patch("/:id/cancel", verifyAccessToken, authorizeRoles("manager", "staff"), CancelAppointment);
+router.patch("/:id/cancel", verifyAccessToken, CancelAppointment);
 
 /**
  * @swagger
@@ -353,7 +357,7 @@ router.patch("/:id/cancel", verifyAccessToken, authorizeRoles("manager", "staff"
  *       404:
  *         description: Not Found - Appointment not found
  */
-router.delete("/:id", verifyAccessToken, authorizeRoles("manager", "staff"), DeleteAppointmentById);
+router.delete("/:id", verifyAccessToken, DeleteAppointmentById);
 
 /**
  * @swagger
@@ -393,6 +397,6 @@ router.delete("/:id", verifyAccessToken, authorizeRoles("manager", "staff"), Del
  *       400:
  *         description: Bad request
  */
-router.delete("/delete-many", verifyAccessToken, authorizeRoles("manager", "staff"), DeleteManyAppointments);
+router.delete("/delete-many", verifyAccessToken, DeleteManyAppointments);
 
 export default router;

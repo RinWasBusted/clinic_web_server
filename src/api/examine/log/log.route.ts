@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { validateBody } from "../../../middlewares/validate.js";
 import examineLogSchema from "../../../schema/examineLog.schema.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
+
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import {
   createExamineLogHandler,
@@ -108,7 +108,7 @@ examineLogRouter.use(verifyAccessToken);
  *       500:
  *         description: Internal server error
  */
-examineLogRouter.get("/:id", authorizeRoles("doctor"), getExamineLogHandler);
+examineLogRouter.get("/:id", getExamineLogHandler);
 
 /**
  * @swagger
@@ -239,7 +239,7 @@ examineLogRouter.get("/:id", authorizeRoles("doctor"), getExamineLogHandler);
  *       500:
  *         description: Internal server error
  */
-examineLogRouter.post("/new", authorizeRoles("doctor"), validateBody(examineLogSchema.create), createExamineLogHandler);
+examineLogRouter.post("/new", createExamineLogHandler);
 
 /**
  * @swagger
@@ -331,7 +331,7 @@ examineLogRouter.post("/new", authorizeRoles("doctor"), validateBody(examineLogS
  *       500:
  *         description: Internal server error
  */
-examineLogRouter.put("/:id", authorizeRoles("doctor"), validateBody(examineLogSchema.update), updateExamineLogHandler);
+examineLogRouter.put("/:id", updateExamineLogHandler);
 
 /**
  * @swagger
@@ -405,6 +405,6 @@ examineLogRouter.put("/:id", authorizeRoles("doctor"), validateBody(examineLogSc
  *       500:
  *         description: Internal server error
  */
-examineLogRouter.get("/:id/print", authorizeRoles("doctor"), getPrintableExamineLogHandler);
+examineLogRouter.get("/:id/print", getPrintableExamineLogHandler);
 
 export default examineLogRouter;

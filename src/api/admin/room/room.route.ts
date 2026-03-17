@@ -5,10 +5,10 @@ import {
   GetRoomById,
   UpdateRoomById,
   DeleteRoomById,
-  DeleteManyRooms
+  DeleteManyRooms,
 } from "./room.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
+
 import { validateStatusRoom } from "../../../middlewares/statusRoom.middleware.js";
 
 const router = Router();
@@ -66,7 +66,7 @@ const router = Router();
  *       409:
  *         description: Conflict - Room with this type already exists
  */
-router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"), CreateRoom);
+router.post("/", verifyAccessToken, CreateRoom);
 
 /**
  * @swagger
@@ -102,7 +102,7 @@ router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"), CreateRoom
  *                       faculty:
  *                         type: object
  */
-router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllRooms);
+router.get("/", verifyAccessToken, GetAllRooms);
 
 /**
  * @swagger
@@ -147,7 +147,7 @@ router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllRooms
  *       404:
  *         description: Not Found - Room not found
  */
-router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetRoomById);
+router.get("/:id", verifyAccessToken, GetRoomById);
 
 /**
  * @swagger
@@ -197,7 +197,7 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetRoomB
  *       404:
  *         description: Not Found - Room not found
  */
-router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"),validateStatusRoom, UpdateRoomById);
+router.patch("/:id", verifyAccessToken, UpdateRoomById);
 
 /**
  * @swagger
@@ -230,7 +230,7 @@ router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"),validat
  *       404:
  *         description: Not Found - Room not found
  */
-router.post("/:id",verifyAccessToken,authorizeRoles("manager", "staff"),validateStatusRoom, DeleteRoomById);
+router.post("/:id", verifyAccessToken, DeleteRoomById);
 
 /**
  * @swagger
@@ -270,6 +270,6 @@ router.post("/:id",verifyAccessToken,authorizeRoles("manager", "staff"),validate
  *       400:
  *         description: Bad request
  */
-router.post("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyRooms);
+router.post("/delete-many", verifyAccessToken, DeleteManyRooms);
 
 export default router;

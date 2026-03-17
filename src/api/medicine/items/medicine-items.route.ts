@@ -9,7 +9,6 @@ import {
 } from "./medicine-items.controller.js";
 import upload from "../../../utils/multer.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
 
 const medicineItemsRouter = Router();
 
@@ -52,7 +51,7 @@ const medicineItemsRouter = Router();
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.post("/", verifyAccessToken, authorizeRoles("manager", "staff"), upload.single("image"), createMedicine);
+medicineItemsRouter.post("/", verifyAccessToken, createMedicine);
 
 /**
  * @swagger
@@ -152,7 +151,7 @@ medicineItemsRouter.post("/", verifyAccessToken, authorizeRoles("manager", "staf
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.post("/many", verifyAccessToken, authorizeRoles("manager", "staff"), createManyMedicine);
+medicineItemsRouter.post("/many", verifyAccessToken, createManyMedicine);
 
 /**
  * @swagger
@@ -248,7 +247,7 @@ medicineItemsRouter.get("/:id", verifyAccessToken, getMedicineById);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.patch("/:id", verifyAccessToken, authorizeRoles("manager", "staff"), upload.single("image"), updateMedicine);
+medicineItemsRouter.patch("/:id", verifyAccessToken, updateMedicine);
 
 /**
  * @swagger
@@ -272,6 +271,6 @@ medicineItemsRouter.patch("/:id", verifyAccessToken, authorizeRoles("manager", "
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.delete("/:id", verifyAccessToken, authorizeRoles("manager", "staff"), deleteMedicine);
+medicineItemsRouter.delete("/:id", verifyAccessToken, deleteMedicine);
 
 export default medicineItemsRouter;

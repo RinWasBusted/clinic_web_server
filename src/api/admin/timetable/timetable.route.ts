@@ -6,9 +6,9 @@ import {
   GetTimetableByDoctor,
   UpdateTimetableById,
   DeleteTimetableById,
-  DeleteManyTimetables
+  DeleteManyTimetables,
 } from "./timetable.controller.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
+
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 const router = Router();
 
@@ -78,7 +78,7 @@ const router = Router();
  *       404:
  *         description: Doctor or Room not found
  */
-router.post("/",verifyAccessToken,authorizeRoles("root", "staff"),CreateTimetable);
+router.post("/", verifyAccessToken, CreateTimetable);
 
 /**
  * @swagger
@@ -122,7 +122,7 @@ router.post("/",verifyAccessToken,authorizeRoles("root", "staff"),CreateTimetabl
  *                       room:
  *                         type: object
  */
-router.get("/",verifyAccessToken,authorizeRoles("root", "staff"), GetAllTimetables);
+router.get("/", verifyAccessToken, GetAllTimetables);
 
 /**
  * @swagger
@@ -155,7 +155,7 @@ router.get("/",verifyAccessToken,authorizeRoles("root", "staff"), GetAllTimetabl
  *       404:
  *         description: Not Found - Timetable not found
  */
-router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetTimetableById);
+router.get("/:id", verifyAccessToken, GetTimetableById);
 
 /**
  * @swagger
@@ -188,7 +188,7 @@ router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetTimet
  *       400:
  *         description: Bad request - Doctor ID is required
  */
-router.get("/doctor/:doctorID",verifyAccessToken, GetTimetableByDoctor);
+router.get("/doctor/:doctorID", verifyAccessToken, GetTimetableByDoctor);
 
 /**
  * @swagger
@@ -241,7 +241,7 @@ router.get("/doctor/:doctorID",verifyAccessToken, GetTimetableByDoctor);
  *       404:
  *         description: Not Found - Timetable, Doctor or Room not found
  */
-router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), UpdateTimetableById);
+router.patch("/:id", verifyAccessToken, UpdateTimetableById);
 
 /**
  * @swagger
@@ -274,7 +274,7 @@ router.patch("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), Update
  *       404:
  *         description: Not Found - Timetable not found
  */
-router.delete("/:id",authorizeRoles("manager", "staff"), DeleteTimetableById);
+router.delete("/:id", DeleteTimetableById);
 
 /**
  * @swagger
@@ -314,6 +314,6 @@ router.delete("/:id",authorizeRoles("manager", "staff"), DeleteTimetableById);
  *       400:
  *         description: Bad request
  */
-router.delete("/delete-many",verifyAccessToken,authorizeRoles("manager", "staff"), DeleteManyTimetables);
+router.delete("/delete-many", verifyAccessToken, DeleteManyTimetables);
 
 export default router;
