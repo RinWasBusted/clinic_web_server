@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyAccessToken } from "../../middlewares/verifyToken.js";
-import { authorizeRoles } from "../../middlewares/role.js";
+
 import {
   createPrescriptionHandler,
   deletePrescriptionHandler,
@@ -53,7 +53,7 @@ import { validateUpdateHandler } from "./prescription.middleware.js";
  */
 
 const PrescriptionRouter = Router();
-PrescriptionRouter.use(verifyAccessToken, authorizeRoles("doctor"));
+PrescriptionRouter.use(verifyAccessToken);
 
 /**
  * @swagger

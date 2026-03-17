@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
+
 import {
   generateNewTicket,
   getCurrentTicket,
@@ -404,7 +404,7 @@ enterTicketRouter.use(verifyAccessToken);
  *             schema:
  *               $ref: '#/components/schemas/InternalServerError'
  */
-enterTicketRouter.get("/next", authorizeRoles("doctor"), validateQuery(enterTicketSchema.query), getNextTicket);
+enterTicketRouter.get("/next", getNextTicket);
 
 /**
  * @swagger
@@ -492,7 +492,7 @@ enterTicketRouter.get("/next", authorizeRoles("doctor"), validateQuery(enterTick
  *             schema:
  *               $ref: '#/components/schemas/InternalServerError'
  */
-enterTicketRouter.patch("/:id", authorizeRoles("doctor"), validateBody(enterTicketSchema.update), updateEnterTicket);
+enterTicketRouter.patch("/:id", updateEnterTicket);
 
 /**
  * @swagger
@@ -547,7 +547,7 @@ enterTicketRouter.patch("/:id", authorizeRoles("doctor"), validateBody(enterTick
  *             schema:
  *               $ref: '#/components/schemas/InternalServerError'
  */
-enterTicketRouter.get("/:id", authorizeRoles("doctor"), viewEnterTicket);
+enterTicketRouter.get("/:id", viewEnterTicket);
 
 /**
  * @swagger
@@ -652,7 +652,7 @@ enterTicketRouter.get("/:id", authorizeRoles("doctor"), viewEnterTicket);
  *             schema:
  *               $ref: '#/components/schemas/InternalServerError'
  */
-enterTicketRouter.post("/", authorizeRoles("staff"), validateBody(enterTicketSchema.new), generateNewTicket);
+enterTicketRouter.post("/", generateNewTicket);
 
 /**
  * @swagger
@@ -763,7 +763,7 @@ enterTicketRouter.post("/", authorizeRoles("staff"), validateBody(enterTicketSch
  */
 enterTicketRouter.get(
   "/",
-  authorizeRoles("staff", "doctor"),
+
   validateQuery(enterTicketSchema.viewList),
   viewWaitingList
 );

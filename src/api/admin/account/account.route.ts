@@ -1,9 +1,19 @@
 import { Router } from "express";
 import { validateBody } from "../../../middlewares/validate.js";
 import { registerManySchema, registerSchema, UpdateAccountSchema } from "../../../schema/auth.schema.js";
-import { deleteAccount, DeleteManyAccounts, GetAllAccounts, GetProfile, register, registerMany, updateAvatar, updatePassword, UpdateProfile } from "./account.controller.js";
+import {
+  deleteAccount,
+  DeleteManyAccounts,
+  GetAllAccounts,
+  GetProfile,
+  register,
+  registerMany,
+  updateAvatar,
+  updatePassword,
+  UpdateProfile,
+} from "./account.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
-import { authorizeRoles, checkRole} from "../../../middlewares/role.js";
+import { checkRole } from "../../../middlewares/role.js";
 import { validateActiveAccount } from "../../../middlewares/acctive.middleware.js";
 import upload from "../../../utils/multer.js";
 const router = Router();
@@ -60,7 +70,7 @@ const router = Router();
  *       500:
  *         description: Internal server error
  */
-router.post("/register",verifyAccessToken,validateBody(registerSchema),register);
+router.post("/register", verifyAccessToken, validateBody(registerSchema), register);
 /**
  * @swagger
  * /admin/account/register-many:
@@ -163,7 +173,7 @@ router.post("/register",verifyAccessToken,validateBody(registerSchema),register)
  *       500:
  *         description: Internal server error
  */
-router.post("/register-many", verifyAccessToken, validateBody(registerManySchema),registerMany)
+router.post("/register-many", verifyAccessToken, validateBody(registerManySchema), registerMany);
 /**
  * @swagger
  * /admin/account:
@@ -212,7 +222,7 @@ router.post("/register-many", verifyAccessToken, validateBody(registerManySchema
  *       500:
  *         description: Internal server error
  */
-router.get("",verifyAccessToken,authorizeRoles("manager", "staff"),GetAllAccounts)
+router.get("", verifyAccessToken, GetAllAccounts);
 
 /**
  * @swagger
@@ -273,7 +283,7 @@ router.get("",verifyAccessToken,authorizeRoles("manager", "staff"),GetAllAccount
  *       500:
  *         description: Internal server error
  */
-router.get("/profile/:id", verifyAccessToken,checkRole, GetProfile)
+router.get("/profile/:id", verifyAccessToken, checkRole, GetProfile);
 
 /**
  * @swagger
@@ -335,7 +345,14 @@ router.get("/profile/:id", verifyAccessToken,checkRole, GetProfile)
  *       500:
  *         description: Internal server error
  */
-router.patch("/update-profile/:id", verifyAccessToken,checkRole, validateBody(UpdateAccountSchema),validateActiveAccount, UpdateProfile)
+router.patch(
+  "/update-profile/:id",
+  verifyAccessToken,
+  checkRole,
+  validateBody(UpdateAccountSchema),
+  validateActiveAccount,
+  UpdateProfile
+);
 /**
  * @swagger
  * /admin/account/update-password/{id}:
@@ -388,7 +405,7 @@ router.patch("/update-profile/:id", verifyAccessToken,checkRole, validateBody(Up
  *       500:
  *         description: Internal server error
  */
-router.patch("/update-password/:id", verifyAccessToken, checkRole, updatePassword)
+router.patch("/update-password/:id", verifyAccessToken, checkRole, updatePassword);
 
 /**
  * @swagger
@@ -451,7 +468,7 @@ router.patch("/update-password/:id", verifyAccessToken, checkRole, updatePasswor
  *       500:
  *         description: Internal server error
  */
-router.patch("/avatar/:id", verifyAccessToken, upload.single("avatar"), updateAvatar)
+router.patch("/avatar/:id", verifyAccessToken, upload.single("avatar"), updateAvatar);
 
 /**
  * @swagger
@@ -494,7 +511,7 @@ router.patch("/avatar/:id", verifyAccessToken, upload.single("avatar"), updateAv
  *         description: Internal server error
  */
 
-router.delete("/:id", verifyAccessToken,checkRole, deleteAccount)
+router.delete("/:id", verifyAccessToken, checkRole, deleteAccount);
 
 /**
  * @swagger
@@ -547,5 +564,5 @@ router.delete("/:id", verifyAccessToken,checkRole, deleteAccount)
  *       500:
  *         description: Internal server error
  */
-router.post("/delete-many", verifyAccessToken,checkRole, DeleteManyAccounts)
+router.post("/delete-many", verifyAccessToken, checkRole, DeleteManyAccounts);
 export default router;

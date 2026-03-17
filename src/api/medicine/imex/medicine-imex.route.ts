@@ -1,13 +1,6 @@
 import { Router } from "express";
-import {
-  getImexLogs,
-  createImexLog,
-  updateImexLog,
-  deleteImexLog,
-  getImexById,
-} from "./medicine-imex.controller.js";
+import { getImexLogs, createImexLog, updateImexLog, deleteImexLog, getImexById } from "./medicine-imex.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
 
 const router = Router();
 
@@ -46,7 +39,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.get("/", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), getImexLogs);
+router.get("/", verifyAccessToken, getImexLogs);
 
 /**
  * @swagger
@@ -72,7 +65,7 @@ router.get("/", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacis
  *       500:
  *         description: Server error
  */
-router.get("/:id", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), getImexById);
+router.get("/:id", verifyAccessToken, getImexById);
 
 /**
  * @swagger
@@ -122,7 +115,7 @@ router.get("/:id", verifyAccessToken, authorizeRoles("manager", "staff", "pharma
  *       500:
  *         description: Server error
  */
-router.post("/", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), createImexLog);
+router.post("/", verifyAccessToken, createImexLog);
 
 /**
  * @swagger
@@ -175,7 +168,7 @@ router.post("/", verifyAccessToken, authorizeRoles("manager", "staff", "pharmaci
  *       500:
  *         description: Server error
  */
-router.patch("/:id", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), updateImexLog);
+router.patch("/:id", verifyAccessToken, updateImexLog);
 
 /**
  * @swagger
@@ -203,6 +196,6 @@ router.patch("/:id", verifyAccessToken, authorizeRoles("manager", "staff", "phar
  *       500:
  *         description: Server error
  */
-router.delete("/:id", verifyAccessToken, authorizeRoles("manager", "staff", "pharmacist"), deleteImexLog);
+router.delete("/:id", verifyAccessToken, deleteImexLog);
 
 export default router;

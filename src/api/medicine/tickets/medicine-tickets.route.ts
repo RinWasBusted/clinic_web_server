@@ -1,10 +1,6 @@
 import { Router } from "express";
-import {
-  getMedicineTickets,
-  updateMedicineTicketStatus,
-} from "./medicine-tickets.controller.js";
+import { getMedicineTickets, updateMedicineTicketStatus } from "./medicine-tickets.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
 
 const medicineTicketsRouter = Router();
 
@@ -63,7 +59,7 @@ const medicineTicketsRouter = Router();
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.get("/", verifyAccessToken, authorizeRoles("pharmacist", "staff"), getMedicineTickets);
+medicineTicketsRouter.get("/", verifyAccessToken, getMedicineTickets);
 
 /**
  * @swagger
@@ -127,6 +123,6 @@ medicineTicketsRouter.get("/", verifyAccessToken, authorizeRoles("pharmacist", "
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.patch("/:id/status", verifyAccessToken, authorizeRoles("pharmacist", "staff"), updateMedicineTicketStatus);
+medicineTicketsRouter.patch("/:id/status", verifyAccessToken, updateMedicineTicketStatus);
 
 export default medicineTicketsRouter;
