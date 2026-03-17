@@ -1,31 +1,32 @@
-import { createClient, SocketTimeoutError } from "redis";
+import { createClient } from "redis";
 
 const redisClientConfig = {
   host: "localhost", // Redis server host
   port: 6379, // Redis server port
   password: "", // Redis server password (if required)
 };
+const MAX_RETRIES = 5; // Maximum number of reconnection attempts before giving up
+const RETRY_DURATION = 5000; // Base duration (in ms) for reconnection attempts, will be multiplied by the retry count for exponential backoff
 
-const RedisClient = await createClient({
-  ...redisClientConfig,
+const RedisClient = createClient({
   socket: {
-    reconnectStrategy: (retries, cause) => {
-      // By default, do not reconnect on socket timeout.
-      if (cause instanceof SocketTimeoutError) {
-        return false;
+    ...redisClientConfig,
+    reconnectStrategy: (retries) => {
+      if (retries >= MAX_RETRIES) {
+        console.error(`Exceeded maximum reconnection attempts (${MAX_RETRIES}). Giving up.`);
+        return new Error("Max retries reached"); // Returning an Error stops retrying
       }
-      // Generate a random jitter between 0 – 200 ms:
       const jitter = Math.floor(Math.random() * 200);
-      // Delay is an exponential back off, (times^2) * 50 ms, with a maximum value of 2000 ms:
-      const delay = Math.min(Math.pow(2, retries) * 50, 2000);
-
+      const delay = Math.min(Math.pow(2, retries) * 50, RETRY_DURATION);
+      console.log(`Attempt ${retries + 1}/${MAX_RETRIES} in ${delay + jitter}ms`);
       return delay + jitter;
     },
   },
-})
-  .on("error", (err) => console.log("Cannot connect to redis server. Please recheck your configuration.", err))
-  .on("connect", () => console.log("Connected to Redis server successfully."))
-  .connect();
+});
+
+RedisClient.on("error", () => {});
+RedisClient.on("reconnecting", () => console.log("Reconnecting to Redis server..."));
+RedisClient.on("ready", () => console.log("The redis server is connected!"));
 
 export default RedisClient;
 export type RedisClientType = typeof RedisClient;

@@ -11,30 +11,47 @@ class CacheService implements CacheServiceInterface {
     this.ttl = ttl * 86400; // Convert days to seconds
   }
 
-  test() {
-    console.log("CacheService is working");
+  get isConnected() {
+    return this.redis.isReady;
   }
 
   async set(key: string, value: string) {
-    return this.redis.set(key, value, {
-      expiration: {
-        type: "EX",
-        value: this.ttl,
-      },
-    });
+    if (this.isConnected) {
+      return this.redis.set(key, value, {
+        expiration: {
+          type: "EX",
+          value: this.ttl,
+        },
+      });
+    } else {
+      console.warn("Redis server is not connected. Cache set operation failed.");
+    }
   }
 
   async get(key: string) {
-    const value = await this.redis.get(key);
-    return value;
+    if (this.isConnected) {
+      const value = await this.redis.get(key);
+      return value;
+    } else {
+      console.warn("Redis server is not connected. Cache get operation failed.");
+      return null;
+    }
   }
 
   async delete(key: string) {
-    await this.redis.del(key);
+    if (this.isConnected) {
+      await this.redis.del(key);
+    } else {
+      console.warn("Redis server is not connected. Cache delete operation failed.");
+    }
   }
 
   async clear() {
-    await this.redis.flushDb();
+    if (this.isConnected) {
+      await this.redis.flushDb();
+    } else {
+      console.warn("Redis server is not connected. Cache clear operation failed.");
+    }
   }
 }
 

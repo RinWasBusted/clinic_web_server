@@ -20,6 +20,10 @@ class RBACService extends CacheService {
    * @param permissionList (array of permission names, not IDs) Permissions to be associated with the role.
    */
   async cacheRole(roleName: string, permissionList: string[]) {
+    if (!this.isConnected) {
+      console.warn("Redis server is not connected. Cache operation failed.");
+      return null;
+    }
     const key = this.generateRoleKey(roleName);
     await this.redis.del(key); // Clear existing permissions for the role
     if (permissionList.length > 0) {
@@ -35,7 +39,11 @@ class RBACService extends CacheService {
    * @param roleName Name of the role to retrieve permissions for. The service handle the key name generation internally, so only the role name is needed.
    * @returns string array of permission names associated with the role. If the role does not exist or has no permissions, an empty array is returned.
    */
-  async getCachedRole(roleName: string): Promise<string[]> {
+  async getCachedRole(roleName: string): Promise<string[] | null> {
+    if (!this.isConnected) {
+      console.warn("Redis server is not connected. Cache operation failed.");
+      return null;
+    }
     const key = this.generateRoleKey(roleName);
     const permissions = await this.redis.lRange(key, 0, -1);
     return permissions;
@@ -46,6 +54,10 @@ class RBACService extends CacheService {
    * @param roleName Name of the role for which to delete cached permissions.
    */
   async deleteCachedRole(roleName: string) {
+    if (!this.isConnected) {
+      console.warn("Redis server is not connected. Cache operation failed.");
+      return;
+    }
     const key = this.generateRoleKey(roleName);
     await this.redis.del(key);
   }
@@ -56,6 +68,10 @@ class RBACService extends CacheService {
    * @returns Boolean indicating whether the cache for the specified role exists. Returns true if the cache exists, false otherwise.
    */
   async checkCachedRoleExists(roleName: string): Promise<boolean> {
+    if (!this.isConnected) {
+      console.warn("Redis server is not connected. Cache operation failed.");
+      return false;
+    }
     const key = this.generateRoleKey(roleName);
     const exists = await this.redis.exists(key);
     return exists === 1; // Redis returns 1 if the key exists, 0 otherwise
