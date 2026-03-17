@@ -70,15 +70,30 @@ export const getMedicineItemsService = async (
   pageSize: number
 ) => {
   const skip = (page - 1) * pageSize;
+  const trimmedSearch = search.trim();
+  const whereClause =
+    trimmedSearch.length === 0
+      ? undefined
+      : {
+          OR: [
+            {
+              medicineName: {
+                startsWith: trimmedSearch,
+                mode: "insensitive" as const,
+              },
+            },
+            {
+              medicineName: {
+                contains: ` ${trimmedSearch}`,
+                mode: "insensitive" as const,
+              },
+            },
+          ],
+        };
 
   const [data, totalItems] = await Promise.all([
     prisma.medicine.findMany({
-      where: {
-        medicineName: {
-          contains: search,
-          mode: "insensitive" as const,
-        },
-      },
+      where: whereClause,
       select: {
         medicineID: true,
         medicineName: true,
@@ -96,12 +111,7 @@ export const getMedicineItemsService = async (
       },
     }),
     prisma.medicine.count({
-      where: {
-        medicineName: {
-          contains: search,
-          mode: "insensitive" as const,
-        },
-      },
+      where: whereClause,
     }),
   ]);
 

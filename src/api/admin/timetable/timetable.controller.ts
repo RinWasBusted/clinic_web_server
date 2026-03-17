@@ -91,20 +91,33 @@ export const GetTimetableByDoctor = async (req: Request, res: Response, next: Ne
         }
 
         const timetables = await prisma.timetable.findMany({
-            where: { doctorID },
+            where: {
+                doctorID: "8e129159-4a1f-4f30-b57b-13c53a0219cf"
+            },
             include: {
                 doctor: {
                     include: {
-                        account: true
+                        account: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true
+                            }
+                        }
                     }
                 },
                 room: {
-                    include: {
-                        faculty: true
+                    select: {
+                        roomName: true,
+                        faculty: {
+                            select: {
+                                facultyName: true
+                            }
+                        }
                     }
                 }
             }
-        });
+        })
 
         return res.status(200).json({ timetables });
     } catch (error) {

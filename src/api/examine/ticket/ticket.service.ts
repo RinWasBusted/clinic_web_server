@@ -19,8 +19,7 @@ interface RawTicketDataType {
   orderNum: number;
   patient: {
     account: {
-      firstName: string;
-      lastName: string;
+      fullName: string;
       birthDate: Date;
     };
   };
@@ -33,43 +32,48 @@ class EnterTicketService {
   defaultCount: number;
   defaultPage: number;
   ticketProjection: Record<string, unknown>;
+  ticketListProjection: Record<string, unknown>;
   ticketDisplayProjection: Record<string, unknown>;
+
+  private readonly patientProjection = {
+    patient: {
+      select: {
+        patientID: true,
+        previousRecord: true,
+        account: {
+          select: {
+            address: true,
+            DisplayID: true,
+            fullName: true,
+            birthDate: true,
+            genderDisplay: true,
+          },
+        },
+      },
+    },
+  };
+  private readonly roomProjection = {
+    room: {
+      select: {
+        roomID: true,
+        roomName: true,
+      },
+    },
+  };
 
   constructor() {
     // Default pagination settings in case the client does not provide them
     this.defaultCount = 10;
     this.defaultPage = 1;
     this.ticketProjection = {
-      patient: {
-        select: {
-          patientID: true,
-        },
-      },
-      room: {
-        select: {
-          roomID: true,
-          roomName: true,
-        },
-      },
+      ...this.patientProjection,
+      ...this.roomProjection,
     };
+    this.ticketListProjection = { ...this.patientProjection };
     this.ticketDisplayProjection = {
       orderNum: true,
-      patient: {
-        select: {
-          account: {
-            select: {
-              firstName: true,
-              lastName: true,
-              birthDate: true,
-            },
-          },
-        },
-      },
-      room: {
-        select: {
-          roomName: true,
-        },
-      },
+      ...this.patientProjection,
+      ...this.roomProjection,
     };
   }
   async findAppointment(payload: AppointmentPayload): Promise<TicketPayload> {
@@ -156,7 +160,7 @@ class EnterTicketService {
     if (status) where.status = status as TicketStatus;
     if (roomID) where.roomID = roomID;
 
-    const include = this.ticketProjection;
+    const include = this.ticketListProjection;
     const orderBy = { orderNum: "asc" };
 
     // Paginate service
@@ -187,7 +191,8 @@ class EnterTicketService {
       where: { ticketID },
       include: this.ticketProjection,
     });
-    return ticket;
+
+    return { ...ticket };
   }
 
   async updateEnterTicket(ticketID: string, status: TicketStatus) {
@@ -252,7 +257,7 @@ class EnterTicketService {
       if (!ticket) return null;
       return {
         orderNum: ticket.orderNum,
-        patientName: `${ticket.patient.account.firstName} ${ticket.patient.account.lastName}`,
+        patientName: `${ticket.patient.account.fullName}`,
         birthDate: toLocalDateString(ticket.patient.account.birthDate),
         roomName: ticket.room.roomName,
       };

@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import prisma from "../utils/prisma.js";
-type Role = "manager" | "staff" | "doctor" | "pharmacist";
+type Role = "manager" | "staff" | "doctor" | "pharmacist" | "root";
 const roleRank: Record<Role, number> = {
   manager: 2,
   staff: 1,
   doctor: 0,
   pharmacist: 0,
+  root: 3,
 };
 
 // Change name to roleName for compatibility with old code.

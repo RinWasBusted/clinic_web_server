@@ -9,7 +9,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
   try {
     const account = await prisma.account.findFirst({
       where: { email },
-      select: { accountID: true, roleName: true, password: true },
+      select: { accountID: true, roleName: true, password: true, firstName: true, lastName: true },
     });
     if (!account?.password) {
       return res.status(400).json({
@@ -36,7 +36,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
     await addRefreshTokenToCookieToWhitelist({ refreshToken, userId: account.accountID });
     return res.status(200).json({
       message: "Login successful",
-      user: { id: account.accountID, role: account.roleName },
+      user: { id: account.accountID, role: account.roleName, firstName: account.firstName, lastName: account.lastName },
     });
   } catch (error) {
     next(error);

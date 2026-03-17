@@ -90,6 +90,11 @@ enum ExamineStatus {
   done
 }
 
+enum PrescriptionStatus {
+  draft
+  done
+}
+
 enum MedicineUnit {
   bottle
   capsule
@@ -135,6 +140,11 @@ enum MedicineStatus {
   OUT_OF_STOCK
   DISCONTINUED
   DELETED
+}
+
+enum Gender {
+  male
+  female
 }
 
 model RefreshToken {
@@ -190,17 +200,21 @@ model RolePermission {
 // =======================
 
 model Account {
-  accountID     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountID   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   // Keep the old roleName to be compatible with old code, but it will be deprecated soon. Use roleID + relation instead
-  roleName      AccountRole    @default(patient)
-  firstName     String         @db.VarChar(50)
-  lastName      String         @db.VarChar(75)
-  password      String?        @db.VarChar(100)
-  email         String         @unique @db.VarChar(254)
-  phoneNumber   String?        @db.VarChar(12)
-  avatarUrl     String?        @db.VarChar(255)
-  createdAt     DateTime       @default(now()) @db.Timestamp(6)
-  birthDate     DateTime       @db.Date
+  roleName    AccountRole @default(patient)
+  firstName   String      @db.VarChar(50)
+  lastName    String      @db.VarChar(75)
+  password    String?     @db.VarChar(100)
+  email       String      @unique @db.VarChar(254)
+  phoneNumber String?     @db.VarChar(12)
+  avatarUrl   String?     @db.VarChar(255)
+  createdAt   DateTime    @default(now()) @db.Timestamp(6)
+  birthDate   DateTime    @db.Date
+  // Gender (in english)
+  gender      Gender?     @default(male)
+  address     String?
+
   // avatarUrl   String?
   is_active     Boolean        @default(true)
   refreshTokens RefreshToken[]
@@ -220,10 +234,11 @@ model Account {
 }
 
 model Patient {
-  patientID        String           @id @db.Uuid
-  height           Int?
-  weight           Int?
-  blood            BloodType?
+  patientID String @id @db.Uuid
+
+  // Tiền sử bệnh nền
+  previousRecord String?
+
   account          Account          @relation(fields: [patientID], references: [accountID], onDelete: Cascade)
   appointments     Appointment[]
   enterTickets     EnterTicket[]
@@ -395,16 +410,18 @@ model ExamineLog {
   createdAt     DateTime      @default(now()) @db.Timestamp(6)
   status        ExamineStatus @default(draft)
 
-  sequence         BigInt? @db.BigInt
+  sequence         Int     @default(autoincrement())
   examineDisplayID String? @unique @db.VarChar(12)
-
-  treatmentPlan String? @db.VarChar(255)
-  note          String? @db.VarChar(255)
 
   // Health metrics
   height Int?
   weight Int?
   blood  BloodType?
+
+  treatmentPlan String? @db.VarChar(255)
+  note          String? @db.VarChar(255)
+
+  // Health metrics
 
   appointment Appointment @relation(fields: [appointmentID], references: [appointmentID], onDelete: Cascade)
   patient     Patient     @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
@@ -490,17 +507,19 @@ model Medicine {
 }
 
 model Prescription {
-  prescriptionID String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  examineID      String   @db.Uuid
-  doctorID       String   @db.Uuid
-  pharmacistID   String?  @db.Uuid
-  createdAt      DateTime @default(now()) @db.Timestamp(6)
-  payAmount      Decimal? @default(0) @db.Decimal(12, 2)
-  note           String?  @db.VarChar(255)
+  prescriptionID String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  examineID      String             @db.Uuid
+  doctorID       String             @db.Uuid
+  pharmacistID   String?            @db.Uuid
+  createdAt      DateTime           @default(now()) @db.Timestamp(6)
+  payAmount      Decimal?           @default(0) @db.Decimal(12, 2)
+  note           String?            @db.VarChar(255)
+  status         PrescriptionStatus @default(draft)
 
   // The end date of treatment, used for: re-examination date + status?: active
-  finishTreatmentDate DateTime @db.Timestamp(6)
-  needReExamine       Boolean  @default(true)
+  // finishTreatmentDate DateTime @db.Timestamp(6)
+  needReExamine      Boolean @default(true)
+  totalTreatmentDays Int     @default(0)
 
   examine    ExamineLog  @relation(fields: [examineID], references: [examineID], onDelete: Cascade)
   doctor     Doctor      @relation("PrescriptionDoctor", fields: [doctorID], references: [doctorID], onDelete: Restrict)
@@ -516,7 +535,7 @@ model PrescriptionDetails {
   prescriptionID String  @db.Uuid
   medicineID     Int
   quantity       Int     @default(0)
-  usage          String? @db.VarChar(255)
+  usage          String  @db.VarChar(255)
   note           String? @db.VarChar(255)
 
   prescription Prescription @relation(fields: [prescriptionID], references: [prescriptionID], onDelete: Cascade)

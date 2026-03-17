@@ -81,7 +81,7 @@ router.post("/",verifyAccessToken,authorizeRoles("manager", "staff"), CreateFacu
  *                       facultyName:
  *                         type: string
  */
-router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllFaculties);
+router.get("/",verifyAccessToken,authorizeRoles("root", "staff"), GetAllFaculties);
 
 /**
  * @swagger
@@ -118,7 +118,7 @@ router.get("/",verifyAccessToken,authorizeRoles("manager", "staff"), GetAllFacul
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.get("/:id",verifyAccessToken,authorizeRoles("manager", "staff"), GetFacultyById);
+router.get("/:id",verifyAccessToken,authorizeRoles("root", "staff"), GetFacultyById);
 
 /**
  * @swagger
