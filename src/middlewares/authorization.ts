@@ -14,11 +14,10 @@ import type { Request, Response, NextFunction } from "express";
  * @param roleList `string[]` List of required permission. If empty, in default, is treated as no permission required.
  * @param partial `boolean` Check if they have any, or all permission listed in `roleList`
  */
-export async function authorization(roleList: string[] = [], partial: boolean = true) {
+export function authorization(roleList: string[] = [], partial: boolean = true) {
   return function (req: Request, res: Response, next: NextFunction) {
     // Expected the permissions to be stored in req.user.permissions, arrayed.
     const userPermissions = req.user?.permissions as string[] | undefined;
-
     if (!userPermissions) {
       return res.status(401).json({ message: "Unauthorized" });
     }
