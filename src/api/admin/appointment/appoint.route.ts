@@ -11,12 +11,9 @@ import {
 } from "./appointment.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 
-import { validateBody, validateQuery } from "../../../middlewares/validate.js";
-import {
-  createAppointmentBodySchema,
-  getAllAppointmentsQuerySchema,
-  updateAppointmentBodySchema,
-} from "../../../schema/apointment.schama.js";
+import {  validateQuery } from "../../../middlewares/validate.js";
+import { getAllAppointmentsQuerySchema } from "../../../schema/appointment.schama.js";
+
 
 const router = Router();
 

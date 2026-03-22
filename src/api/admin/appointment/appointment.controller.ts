@@ -17,7 +17,7 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
         }
 
         // Find or create patient with account
-        const  account = await prisma.patient.findFirst({
+        const account = await prisma.patient.findFirst({
             where: {
                 account: {
                     phoneNumber: phoneNumber
@@ -38,66 +38,66 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     lastName,
                     phoneNumber,
                     email: email,
-                    role: "patient",
+                    //role: "patient",
                     birthDate: scheduleDate,
                     DisplayID: codePatient
                 }
             });
             const newAppointment = await prisma.appointment.create({
-            data: {
-                appointmentType: appointmentType || "examine",
-                scheduleDate: new Date(scheduleDate),
-                roomID,
-                patientID: newAccount.DisplayID ?? "",
-                facultyID,
-                appointmentDisplayID: codeAppointment,
-                status: "pending",
-                depositStatus: "unpaid",
-                approvedBy: approvedBy
+                data: {
+                    appointmentType: appointmentType || "examine",
+                    scheduleDate: new Date(scheduleDate),
+                    roomID,
+                    patientID: newAccount.DisplayID ?? "",
+                    facultyID,
+                    appointmentDisplayID: codeAppointment,
+                    status: "pending",
+                    depositStatus: "unpaid",
+                    approvedBy: approvedBy
 
-            },
-            include: {
-                patient: {
-                    include: {
-                        account: true
-                    }
                 },
-                faculty: true,
-                room: true,
-                approvedByStaff: true
-            }
-            
-        });
-        return res.status(201).json({ appointment: newAppointment });
+                include: {
+                    patient: {
+                        include: {
+                            account: true
+                        }
+                    },
+                    faculty: true,
+                    room: true,
+                    approvedByStaff: true
+                }
+
+            });
+            return res.status(201).json({ appointment: newAppointment });
         }
-    else {
-        const newAppointment = await prisma.appointment.create({
-            data: {
-                appointmentType: appointmentType || "examine",
-                scheduleDate: new Date(scheduleDate),
-                roomID,
-                patientID: account.patientID,
-                facultyID,
-                appointmentDisplayID: codeAppointment,
-                status: "pending",
-                depositStatus: "unpaid",
-                approvedBy: approvedBy
+        else {
+            const newAppointment = await prisma.appointment.create({
+                data: {
+                    appointmentType: appointmentType || "examine",
+                    scheduleDate: new Date(scheduleDate),
+                    roomID,
+                    patientID: account.patientID,
+                    facultyID,
+                    appointmentDisplayID: codeAppointment,
+                    status: "pending",
+                    depositStatus: "unpaid",
+                    approvedBy: approvedBy
 
-            },
-            include: {
-                patient: {
-                    include: {
-                        account: true
-                    }
                 },
-                faculty: true,
-                room: true,
-                approvedByStaff: true
-            }
-            
-        });
-        return res.status(201).json({ appointment: newAppointment });
-    }        
+                include: {
+                    patient: {
+                        include: {
+                            account: true
+                        }
+                    },
+                    faculty: true,
+                    room: true,
+                    approvedByStaff: true
+                }
+
+            });
+            return res.status(201).json({ appointment: newAppointment });
+        }
     } catch (error) {
         next(error);
     }
@@ -108,13 +108,14 @@ export const GetAllAppointments = async (req: Request, res: Response, next: Next
         const { status, facultyID, patientID, scheduleDate } = req.query;
 
         const where: Prisma.AppointmentWhereInput = {};
-        if (!isAppointment(status)) {
+        if (status !== undefined && !isAppointment(status)) {
             return res.status(400).json({
                 message: "Invalid role value",
                 allowed: Object.values(AppointmentStatus),
             });
         }
-        if (status) {
+
+        if (isAppointment(status)) {
             where.status = status;
         }
         if (facultyID && typeof facultyID === "string") where.facultyID = facultyID;
@@ -245,9 +246,9 @@ export const UpdateAppointmentById = async (req: Request, res: Response, next: N
         }
     } catch (err) {
         if (err instanceof NotFoundError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    }
-    next(err);
+            return res.status(err.statusCode).json({ message: err.message });
+        }
+        next(err);
     }
 };
 
@@ -355,10 +356,10 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
                 // Don't throw error, let the appointment cancellation succeed even if email fails
             });
         }
-        else{
+        else {
             return res.status(400).json({
-            message: "Can't send email"
-        });
+                message: "Can't send email"
+            });
         }
         return res.status(200).json({
             message: "Appointment cancelled"
