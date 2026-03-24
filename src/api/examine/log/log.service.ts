@@ -15,6 +15,29 @@ type ExamineLogPayload = {
 };
 
 class ExamineLogService {
+  private readonly diseaseProjection = {
+    details: {
+      select: {
+        diseaseID: true,
+      },
+    },
+  };
+
+  private readonly prescriptionProjection = {
+    details: {
+      select: {
+        medicineID: true,
+        medicine: {
+          select: {
+            medicineName: true,
+          },
+        },
+        quantity: true,
+        usage: true,
+      },
+    },
+  };
+
   constructor(private prefix: string = "") {
     this.prefix = prefix;
   }
@@ -58,13 +81,7 @@ class ExamineLogService {
       const updatedExamineLog = await tx.examineLog.update({
         where: { examineID },
         data: { examineDisplayID },
-        include: {
-          details: {
-            select: {
-              diseaseID: true,
-            },
-          },
-        },
+        include: { ...this.diseaseProjection },
         omit: {
           sequence: true,
         },
@@ -75,19 +92,41 @@ class ExamineLogService {
     return newExamineLog;
   }
 
-  async getExamineLogByID(examineID: string) {
-    const examineLog = await prisma.examineLog.findUnique({
-      where: { examineID },
-      include: {
-        details: {
-          select: {
-            diseaseID: true,
+  async getExamineLogByID(examineID: string, isFull: boolean = false) {
+    if (!isFull) {
+      return await prisma.examineLog.findUnique({
+        where: { examineID },
+        include: {
+          ...this.diseaseProjection,
+        },
+        omit: { sequence: true },
+      });
+    } else {
+      // Get full with prescription
+      const raw = await prisma.prescription.findUnique({
+        where: { examineID },
+        include: {
+          ...this.prescriptionProjection,
+          examine: {
+            omit: { sequence: true },
+            include: {
+              ...this.diseaseProjection,
+            },
           },
         },
-      },
-      omit: { sequence: true },
-    });
-    return examineLog;
+      });
+
+      return {
+        ...raw?.examine,
+        prescription: raw
+          ? {
+              details: raw.details,
+              totalTreatmentDays: raw.totalTreatmentDays,
+              needReExamine: raw.needReExamine,
+            }
+          : null,
+      };
+    }
   }
 
   async updateExamineLog(examineID: string, payload: Partial<ExamineLogPayload>) {
@@ -112,11 +151,7 @@ class ExamineLogService {
           treatmentPlan,
         },
         include: {
-          details: {
-            select: {
-              diseaseID: true,
-            },
-          },
+          ...this.diseaseProjection,
         },
         omit: {
           sequence: true,

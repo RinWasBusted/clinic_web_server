@@ -47,6 +47,7 @@ class EnterTicketService {
             fullName: true,
             birthDate: true,
             genderDisplay: true,
+            phoneNumber: true,
           },
         },
       },
@@ -61,6 +62,14 @@ class EnterTicketService {
     },
   };
 
+  private readonly appointmentProjection = {
+    appointment: {
+      select: {
+        reason: true,
+      },
+    },
+  };
+
   constructor() {
     // Default pagination settings in case the client does not provide them
     this.defaultCount = 10;
@@ -69,7 +78,7 @@ class EnterTicketService {
       ...this.patientProjection,
       ...this.roomProjection,
     };
-    this.ticketListProjection = { ...this.patientProjection };
+    this.ticketListProjection = { ...this.patientProjection, ...this.appointmentProjection };
     this.ticketDisplayProjection = {
       orderNum: true,
       ...this.patientProjection,
