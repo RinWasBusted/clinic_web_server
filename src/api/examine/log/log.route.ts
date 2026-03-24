@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { validateBody } from "../../../middlewares/validate.js";
-import examineLogSchema from "../../../schema/examineLog.schema.js";
+// import { validateBody } from "../../../middlewares/validate.js";
+// import examineLogSchema from "../../../schema/examineLog.schema.js";
 
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import {
   createExamineLogHandler,
   getExamineLogHandler,
+  getExamineLogWithPrescriptionHandler,
   getPrintableExamineLogHandler,
   updateExamineLogHandler,
 } from "./log.controller.js";
@@ -13,8 +14,135 @@ import {
 /**
  * @swagger
  * tags:
- *   name: Examine
- *   description: Examine log management (doctor only). (Lưu ý chưa setup ràng buộc như bên medicine). Tag @Huynhnhatphu khi test bị lỗi
+ *   - name: Examine
+ *     description: Examine log management for patient examinations
+ *
+ * components:
+ *   schemas:
+ *     BloodType:
+ *       type: string
+ *       enum: [a, o, b, ab]
+ *       nullable: true
+ *       example: a
+ *
+ *     ExamineStatus:
+ *       type: string
+ *       enum: [draft, done]
+ *       example: draft
+ *
+ *     ExamineDiseaseDetail:
+ *       type: object
+ *       properties:
+ *         diseaseID:
+ *           type: string
+ *           maxLength: 5
+ *           example: J00
+ *         diseaseName:
+ *           type: string
+ *           nullable: true
+ *           example: Cảm lạnh thông thường
+ *
+ *     ExamineLogBase:
+ *       type: object
+ *       properties:
+ *         examineID:
+ *           type: string
+ *           format: uuid
+ *           example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+ *         examineDisplayID:
+ *           type: string
+ *           nullable: true
+ *           example: KH2600000001
+ *         appointmentID:
+ *           type: string
+ *           format: uuid
+ *           example: b2c3d4e5-f6a7-8901-bcde-f12345678901
+ *         patientID:
+ *           type: string
+ *           format: uuid
+ *           example: c3d4e5f6-a7b8-9012-cdef-123456789012
+ *         examinedBy:
+ *           type: string
+ *           format: uuid
+ *           example: d4e5f6a7-b8c9-0123-defa-234567890123
+ *         symptoms:
+ *           type: string
+ *           maxLength: 255
+ *           example: Đau đầu, sốt nhẹ
+ *         status:
+ *           $ref: '#/components/schemas/ExamineStatus'
+ *         height:
+ *           type: integer
+ *           nullable: true
+ *           example: 170
+ *         weight:
+ *           type: integer
+ *           nullable: true
+ *           example: 65
+ *         blood:
+ *           $ref: '#/components/schemas/BloodType'
+ *         treatmentPlan:
+ *           type: string
+ *           nullable: true
+ *           maxLength: 255
+ *           example: Nghỉ ngơi, uống thuốc theo toa
+ *         note:
+ *           type: string
+ *           nullable: true
+ *           maxLength: 255
+ *           example: Bệnh nhân dị ứng Penicillin
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2026-03-24T02:15:30.000Z
+ *         details:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/ExamineDiseaseDetail'
+ *
+ *     PrescriptionDetail:
+ *       type: object
+ *       properties:
+ *         medicineID:
+ *           type: integer
+ *           example: 12
+ *         medicine:
+ *           type: object
+ *           properties:
+ *             medicineName:
+ *               type: string
+ *               example: Paracetamol 500mg
+ *         quantity:
+ *           type: integer
+ *           example: 10
+ *         usage:
+ *           type: string
+ *           example: Uống sau ăn, ngày 2 lần
+ *
+ *     ExaminePrescriptionBundle:
+ *       type: object
+ *       nullable: true
+ *       properties:
+ *         details:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/PrescriptionDetail'
+ *         totalTreatmentDays:
+ *           type: integer
+ *           nullable: true
+ *           example: 5
+ *         needReExamine:
+ *           type: boolean
+ *           nullable: true
+ *           example: false
+ *
+ *     ExamineLogWithPrescription:
+ *       allOf:
+ *         - $ref: '#/components/schemas/ExamineLogBase'
+ *         - type: object
+ *           properties:
+ *             prescription:
+ *               $ref: '#/components/schemas/ExaminePrescriptionBundle'
  */
 
 const examineLogRouter = Router();
@@ -27,8 +155,8 @@ examineLogRouter.use(verifyAccessToken);
  *   get:
  *     summary: Get an examine log by ID
  *     description: |
- *       Returns the full examine log record including diagnose details.
- *       Only accessible by doctors.
+ *       Returns examine log detail with diagnosed disease IDs.
+ *       Response can contain `examineLog: null` when the record is not found.
  *     tags:
  *       - Examine
  *     security:
@@ -44,48 +172,16 @@ examineLogRouter.use(verifyAccessToken);
  *         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
  *     responses:
  *       200:
- *         description: Examine log retrieved successfully
+ *         description: Examine log retrieved successfully (or null when not found)
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 examineLog:
- *                   type: object
- *                   properties:
- *                     examineID:
- *                       type: string
- *                       format: uuid
- *                     examineDisplayID:
- *                       type: string
- *                       example: "KH2600000001"
- *                     appointmentID:
- *                       type: string
- *                       format: uuid
- *                     patientID:
- *                       type: string
- *                       format: uuid
- *                     examinedBy:
- *                       type: string
- *                       format: uuid
- *                     symptoms:
- *                       type: string
- *                     status:
- *                       type: string
- *                       enum: [draft, done]
- *                     diagnose:
- *                       type: string
- *                       nullable: true
- *                     note:
- *                       type: string
- *                       nullable: true
- *                     details:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           diseaseID:
- *                             type: string
+ *                   oneOf:
+ *                     - $ref: '#/components/schemas/ExamineLogBase'
+ *                     - type: 'null'
  *             example:
  *               examineLog:
  *                 examineID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
@@ -95,16 +191,16 @@ examineLogRouter.use(verifyAccessToken);
  *                 examinedBy: "d4e5f6a7-b8c9-0123-defa-234567890123"
  *                 symptoms: "Đau đầu, sốt nhẹ"
  *                 status: "draft"
- *                 diagnose: null
+ *                 height: 170
+ *                 weight: 65
+ *                 blood: "a"
+ *                 treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
  *                 note: null
+ *                 createdAt: "2026-03-24T02:15:30.000Z"
  *                 details:
  *                   - diseaseID: "J00"
  *       401:
  *         description: Unauthorized — missing or invalid access token
- *       403:
- *         description: Forbidden — only doctors can access this endpoint
- *       404:
- *         description: Examine log not found
  *       500:
  *         description: Internal server error
  */
@@ -135,6 +231,7 @@ examineLogRouter.get("/:id", getExamineLogHandler);
  *               - symptoms
  *               - status
  *               - treatmentPlan
+ *               - diagnose
  *             properties:
  *               appointmentID:
  *                 type: string
@@ -161,6 +258,18 @@ examineLogRouter.get("/:id", getExamineLogHandler);
  *                 maxLength: 255
  *                 description: Doctor's treatment plan for the patient
  *                 example: "Nghỉ ngơi, uống thuốc theo toa"
+ *               height:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: Patient's height in cm
+ *                 example: 170
+ *               weight:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: Patient's weight in kg
+ *                 example: 65
+ *               blood:
+ *                 $ref: '#/components/schemas/BloodType'
  *               diagnose:
  *                 type: array
  *                 description: List of ICD-10 disease codes
@@ -179,6 +288,9 @@ examineLogRouter.get("/:id", getExamineLogHandler);
  *             symptoms: "Đau đầu, sốt nhẹ"
  *             status: "draft"
  *             treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
+ *             height: 170
+ *             weight: 65
+ *             blood: "a"
  *             diagnose: ["J00"]
  *             note: "Bệnh nhân dị ứng Penicillin"
  *     responses:
@@ -193,43 +305,7 @@ examineLogRouter.get("/:id", getExamineLogHandler);
  *                   type: string
  *                   example: "Tạo mới hồ sơ khám bệnh thành công"
  *                 data:
- *                   type: object
- *                   properties:
- *                     examineID:
- *                       type: string
- *                       format: uuid
- *                     examineDisplayID:
- *                       type: string
- *                       example: "KH2600000001"
- *                     appointmentID:
- *                       type: string
- *                       format: uuid
- *                     patientID:
- *                       type: string
- *                       format: uuid
- *                     examinedBy:
- *                       type: string
- *                       format: uuid
- *                     symptoms:
- *                       type: string
- *                     status:
- *                       type: string
- *                     treatmentPlan:
- *                       type: string
- *                       nullable: true
- *                     note:
- *                       type: string
- *                       nullable: true
- *                     createdAt:
- *                       type: string
- *                       format: date-time
- *                     details:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           diseaseID:
- *                             type: string
+ *                   $ref: '#/components/schemas/ExamineLogBase'
  *       400:
  *         description: Validation error (invalid body fields or invalid ICD-10 format)
  *       401:
@@ -287,6 +363,16 @@ examineLogRouter.post("/new", createExamineLogHandler);
  *                 type: string
  *                 maxLength: 255
  *                 example: "Nghỉ ngơi, uống thuốc theo toa"
+ *               height:
+ *                 type: integer
+ *                 nullable: true
+ *                 example: 170
+ *               weight:
+ *                 type: integer
+ *                 nullable: true
+ *                 example: 65
+ *               blood:
+ *                 $ref: '#/components/schemas/BloodType'
  *               diagnose:
  *                 type: array
  *                 items:
@@ -301,6 +387,9 @@ examineLogRouter.post("/new", createExamineLogHandler);
  *             symptoms: "Ho, khó thở"
  *             status: "done"
  *             treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
+ *             height: 170
+ *             weight: 65
+ *             blood: "a"
  *             diagnose: ["J00", "J06.9"]
  *             note: "Cần theo dõi thêm"
  *     responses:
@@ -315,6 +404,9 @@ examineLogRouter.post("/new", createExamineLogHandler);
  *                 examineDisplayID: "KH2600000001"
  *                 symptoms: "Ho, khó thở"
  *                 status: "done"
+ *                 height: 170
+ *                 weight: 65
+ *                 blood: "a"
  *                 treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
  *                 note: "Cần theo dõi thêm"
  *                 details:
@@ -324,10 +416,6 @@ examineLogRouter.post("/new", createExamineLogHandler);
  *         description: Validation error
  *       401:
  *         description: Unauthorized — missing or invalid access token
- *       403:
- *         description: Forbidden — only doctors can access this endpoint
- *       404:
- *         description: Examine log not found
  *       500:
  *         description: Internal server error
  */
@@ -340,8 +428,7 @@ examineLogRouter.put("/:id", updateExamineLogHandler);
  *     summary: Get printable examine log by ID
  *     description: |
  *       Returns a formatted version of the examine log suitable for printing.
- *       Includes patient information, diagnoses, and prescription details.
- *       Only accessible by doctors.
+ *       Includes diagnosis names for rendering printable content.
  *     tags:
  *       - Examine
  *     security:
@@ -364,47 +451,94 @@ examineLogRouter.put("/:id", updateExamineLogHandler);
  *               type: object
  *               properties:
  *                 examineLog:
- *                   type: object
- *                   description: Examine log data enriched with patient, appointment, and prescription info for printing
- *                   properties:
- *                     examineID:
- *                       type: string
- *                       format: uuid
- *                     examineDisplayID:
- *                       type: string
- *                       example: "KH2600000001"
- *                     symptoms:
- *                       type: string
- *                     status:
- *                       type: string
- *                       enum: [draft, done]
- *                     treatmentPlan:
- *                       type: string
- *                       nullable: true
- *                     note:
- *                       type: string
- *                       nullable: true
- *                     createdAt:
- *                       type: string
- *                       format: date-time
- *                     details:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           diseaseID:
- *                             type: string
- *                           diseaseName:
- *                             type: string
+ *                   oneOf:
+ *                     - $ref: '#/components/schemas/ExamineLogBase'
+ *                     - type: 'null'
+ *             example:
+ *               examineLog:
+ *                 examineID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                 examineDisplayID: "KH2600000001"
+ *                 appointmentID: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+ *                 patientID: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+ *                 examinedBy: "d4e5f6a7-b8c9-0123-defa-234567890123"
+ *                 symptoms: "Đau đầu, sốt nhẹ"
+ *                 status: "done"
+ *                 treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
+ *                 note: null
+ *                 createdAt: "2026-03-24T02:15:30.000Z"
+ *                 details:
+ *                   - diseaseID: "J00"
+ *                     diseaseName: "Cảm lạnh thông thường"
  *       401:
  *         description: Unauthorized — missing or invalid access token
- *       403:
- *         description: Forbidden — only doctors can access this endpoint
- *       404:
- *         description: Examine log not found
  *       500:
  *         description: Internal server error
  */
 examineLogRouter.get("/:id/print", getPrintableExamineLogHandler);
+
+/**
+ * @swagger
+ * /examine/{id}/full:
+ *   get:
+ *     summary: Get examine log with prescription details
+ *     description: |
+ *       Returns examine log details and attached prescription summary (if any).
+ *       If no prescription exists, `prescription` is `null`.
+ *       If examine log does not exist, `examineLog` can be `null`.
+ *     tags:
+ *       - Examine
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID of the examine log
+ *         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *     responses:
+ *       200:
+ *         description: Full examine log retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 examineLog:
+ *                   oneOf:
+ *                     - $ref: '#/components/schemas/ExamineLogWithPrescription'
+ *                     - type: 'null'
+ *             example:
+ *               examineLog:
+ *                 examineID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                 examineDisplayID: "KH2600000001"
+ *                 appointmentID: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+ *                 patientID: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+ *                 examinedBy: "d4e5f6a7-b8c9-0123-defa-234567890123"
+ *                 symptoms: "Đau đầu, sốt nhẹ"
+ *                 status: "done"
+ *                 treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
+ *                 note: "Ổn định"
+ *                 createdAt: "2026-03-24T02:15:30.000Z"
+ *                 details:
+ *                   - diseaseID: "J00"
+ *                 prescription:
+ *                   details:
+ *                     - medicineID: 12
+ *                       medicine:
+ *                         medicineName: "Paracetamol 500mg"
+ *                       quantity: 10
+ *                       usage: "Uống sau ăn, ngày 2 lần"
+ *                   totalTreatmentDays: 5
+ *                   needReExamine: false
+ *       401:
+ *         description: Unauthorized — missing or invalid access token
+ *       500:
+ *         description: Internal server error
+ */
+
+examineLogRouter.get("/:id/full", getExamineLogWithPrescriptionHandler);
 
 export default examineLogRouter;

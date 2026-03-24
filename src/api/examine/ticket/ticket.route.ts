@@ -52,6 +52,10 @@ const enterTicketRouter = Router();
  *           type: string
  *           nullable: true
  *           example: "Nam"
+ *         phoneNumber:
+ *           type: string
+ *           nullable: true
+ *           example: "0901234567"
  *
  *     TicketPatient:
  *       type: object
@@ -150,6 +154,16 @@ const enterTicketRouter = Router();
  *           example: null
  *         patient:
  *           $ref: '#/components/schemas/TicketPatient'
+ *         appointment:
+ *           $ref: '#/components/schemas/TicketAppointmentLite'
+
+ *     TicketAppointmentLite:
+ *       type: object
+ *       properties:
+ *         reason:
+ *           type: string
+ *           nullable: true
+ *           example: "Đau bụng kéo dài 2 ngày"
  *
  *     CurrentServingTicket:
  *       type: object
@@ -372,6 +386,7 @@ enterTicketRouter.use(verifyAccessToken);
  *                         fullName: "Nguyen Van A"
  *                         birthDate: "1990-01-01T00:00:00.000Z"
  *                         genderDisplay: "Nam"
+ *                         phoneNumber: "0901234567"
  *                     room:
  *                       roomID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
  *                       roomName: "Room 101"
@@ -731,6 +746,9 @@ enterTicketRouter.post("/", generateNewTicket);
  *                       fullName: "Nguyen Van A"
  *                       birthDate: "1990-01-01T00:00:00.000Z"
  *                       genderDisplay: "Nam"
+ *                       phoneNumber: "0901234567"
+ *                   appointment:
+ *                     reason: "Khám đau họng kéo dài"
  *               pagination:
  *                 totalItems: 1
  *                 totalPages: 1

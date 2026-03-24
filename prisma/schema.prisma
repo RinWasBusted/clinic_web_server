@@ -355,6 +355,8 @@ model Appointment {
   facultyID  String  @db.Uuid
   approvedBy String? @db.Uuid
 
+  reason String? @default("")
+
   status        AppointmentStatus @default(pending)
   depositStatus DepositStatus     @default(unpaid)
   createdAt     DateTime          @default(now()) @db.Timestamp(6)
@@ -427,9 +429,9 @@ model ExamineLog {
   patient     Patient     @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
   doctor      Doctor      @relation(fields: [examinedBy], references: [doctorID], onDelete: Restrict)
 
-  details       ExamineLogDetails[]
-  tests         TestLog[]
-  prescriptions Prescription[]
+  details      ExamineLogDetails[]
+  tests        TestLog[]
+  prescription Prescription?
 
   @@map("ExamineLog")
 }
@@ -508,7 +510,7 @@ model Medicine {
 
 model Prescription {
   prescriptionID String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  examineID      String             @db.Uuid
+  examineID      String             @unique @db.Uuid
   doctorID       String             @db.Uuid
   pharmacistID   String?            @db.Uuid
   createdAt      DateTime           @default(now()) @db.Timestamp(6)
