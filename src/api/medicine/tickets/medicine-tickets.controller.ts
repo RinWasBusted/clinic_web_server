@@ -5,12 +5,7 @@ import {
   createMedicineTicketService,
 } from "./medicine-tickets.service.js";
 
-/**
- * Get medicine tickets by date and roomId
- * Query params:
- *   - date: Optional date in YYYY-MM-DD format (defaults to today)
- *   - roomId: Optional room ID to filter by specific pharmacy room
- */
+
 export const getMedicineTickets = async (
   req: Request,
   res: Response,
@@ -43,13 +38,6 @@ export const getMedicineTickets = async (
   }
 };
 
-/**
- * Update medicine ticket status
- * Params:
- *   - id: Ticket ID
- * Body:
- *   - status: New status (pending or done)
- */
 export const updateMedicineTicketStatus = async (
   req: Request,
   res: Response,
@@ -89,12 +77,7 @@ export const updateMedicineTicketStatus = async (
   }
 };
 
-/**
- * Create a new medicine ticket
- * Body:
- *   - prescriptionID: Prescription ID
- *   - roomID: Room ID
- */
+
 export const createMedicineTicket = async (
   req: Request,
   res: Response,
