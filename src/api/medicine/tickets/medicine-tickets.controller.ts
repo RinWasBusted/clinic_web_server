@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import {
   getMedicineTicketsService,
   updateMedicineTicketStatusService,
+  createMedicineTicketService,
 } from "./medicine-tickets.service.js";
 
 /**
@@ -82,6 +83,44 @@ export const updateMedicineTicketStatus = async (
     return res.status(200).json({
       message: "Medicine ticket status updated successfully",
       data: updatedTicket,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Create a new medicine ticket
+ * Body:
+ *   - prescriptionID: Prescription ID
+ *   - roomID: Room ID
+ */
+export const createMedicineTicket = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { prescriptionID, roomID } = req.body;
+
+    // Validate required fields
+    if (!prescriptionID) {
+      return res.status(400).json({
+        message: "prescriptionID is required",
+      });
+    }
+
+    if (!roomID) {
+      return res.status(400).json({
+        message: "roomID is required",
+      });
+    }
+
+    const newTicket = await createMedicineTicketService(prescriptionID, roomID);
+
+    return res.status(201).json({
+      message: "Medicine ticket created successfully",
+      data: newTicket,
     });
   } catch (error) {
     next(error);

@@ -1,12 +1,7 @@
 import prisma from "../../../utils/prisma.js";
 import type { Prisma } from "../../../generated/prisma/index.js";
 
-/**
- * Get medicine tickets by date and roomId
- * @param date - Date to filter tickets (format: YYYY-MM-DD). If not provided, defaults to today
- * @param roomId - Room ID to filter tickets
- * @returns List of medicine tickets sorted by orderNum ascending
- */
+
 export const getMedicineTicketsService = async (
   date?: string,
   roomId?: string
@@ -48,12 +43,51 @@ export const getMedicineTicketsService = async (
   return tickets;
 };
 
-/**
- * Update medicine ticket status
- * @param ticketId - Ticket ID
- * @param status - New status (pending or done)
- * @returns Updated medicine ticket
- */
+export const createMedicineTicketService = async (
+  prescriptionID: string,
+  roomID: string
+) => {
+  // Get today's date range
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+  // Count existing tickets for today in the same room
+  const existingTicketsCount = await prisma.medicineTicket.count({
+    where: {
+      roomID: roomID,
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+  });
+
+  // Calculate next order number (start from 1 if no tickets exist)
+  const orderNum = existingTicketsCount + 1;
+
+  // Create the medicine ticket
+  const newTicket = await prisma.medicineTicket.create({
+    data: {
+      prescriptionID: prescriptionID,
+      roomID: roomID,
+      orderNum: orderNum,
+      status: "pending",
+    },
+    select: {
+      ticketID: true,
+      orderNum: true,
+      status: true,
+      prescriptionID: true,
+      roomID: true,
+      createdAt: true,
+    },
+  });
+
+  return newTicket;
+};
+
+
 export const updateMedicineTicketStatusService = async (
   ticketId: string,
   status: "pending" | "done"

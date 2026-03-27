@@ -2,11 +2,78 @@ import { Router } from "express";
 import {
   getMedicineTickets,
   updateMedicineTicketStatus,
+  createMedicineTicket,
 } from "./medicine-tickets.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { authorizeRoles } from "../../../middlewares/role.js";
 
 const medicineTicketsRouter = Router();
+
+/**
+ * @swagger
+ * /medicine/tickets:
+ *   post:
+ *     summary: Create a new medicine ticket
+ *     description: |
+ *       Create a new medicine ticket with prescriptionID and roomID.
+ *       The orderNum is automatically calculated based on existing tickets for today in the same room.
+ *       Status defaults to "pending".
+ *     tags:
+ *       - Medicine Tickets
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               prescriptionID:
+ *                 type: string
+ *                 format: uuid
+ *                 description: The prescription ID
+ *               roomID:
+ *                 type: string
+ *                 format: uuid
+ *                 description: The room ID
+ *             required:
+ *               - prescriptionID
+ *               - roomID
+ *     responses:
+ *       201:
+ *         description: Medicine ticket created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     ticketID:
+ *                       type: string
+ *                       format: uuid
+ *                     orderNum:
+ *                       type: integer
+ *                     status:
+ *                       type: string
+ *                       enum: [pending, done]
+ *                     prescriptionID:
+ *                       type: string
+ *                       format: uuid
+ *                     roomID:
+ *                       type: string
+ *                       format: uuid
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         description: Invalid request body
+ *       500:
+ *         description: Server error
+ */
+medicineTicketsRouter.post("/", verifyAccessToken, authorizeRoles("pharmacist", "staff"), createMedicineTicket);
 
 /**
  * @swagger
