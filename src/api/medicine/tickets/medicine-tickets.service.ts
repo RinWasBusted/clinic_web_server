@@ -1,19 +1,37 @@
 import prisma from "../../../utils/prisma.js";
 import type { Prisma } from "../../../generated/prisma/index.js";
 
+export class MedicineTicketServiceError extends Error {
+  statusCode: number;
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
 
 export const getMedicineTicketsService = async (
-  date?: string,
-  roomId?: string
+  date?: string
 ) => {
-  // If date is not provided, use today's date
-  const filterDate = date || new Date().toISOString().split("T")[0];
+  const baseDate = date ? new Date(`${date}T00:00:00`) : new Date();
+  const startOfDay = new Date(
+    baseDate.getFullYear(),
+    baseDate.getMonth(),
+    baseDate.getDate(),
+    0,
+    0,
+    0,
+    0
+  );
+  const endOfDay = new Date(
+    baseDate.getFullYear(),
+    baseDate.getMonth(),
+    baseDate.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
 
-  // Parse the date to create start and end of day
-  const startOfDay = new Date(`${filterDate}T00:00:00Z`);
-  const endOfDay = new Date(`${filterDate}T23:59:59Z`);
-
-  // Build where clause
   const whereClause: Prisma.MedicineTicketFindManyArgs["where"] = {
     createdAt: {
       gte: startOfDay,
@@ -21,72 +39,168 @@ export const getMedicineTicketsService = async (
     },
   };
 
-  // Add roomId filter if provided
-  if (roomId) {
-    whereClause.roomID = roomId;
-  }
-
-  // Get tickets sorted by orderNum ascending
   const tickets = await prisma.medicineTicket.findMany({
     where: whereClause,
     select: {
-      ticketID: true,
+      prescription: {
+        select: {
+          prescriptionDisplayID: true,
+          patient: {
+            select: {
+              account: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      },
       orderNum: true,
       status: true,
-      prescriptionID: true,
+      room: {
+        select: {
+          roomName: true,
+        },
+      },
+      createdAt: true,
     },
     orderBy: {
       orderNum: "asc",
     },
   });
 
-  return tickets;
+  return tickets.map((ticket) => ({
+    prescriptionDisplayID: ticket.prescription.prescriptionDisplayID,
+    patientName: ticket.prescription.patient?.account
+      ? `${ticket.prescription.patient.account.lastName} ${ticket.prescription.patient.account.firstName}`.trim()
+      : "",
+    orderNum: ticket.orderNum,
+    status: ticket.status,
+    roomName: ticket.room.roomName,
+    createdAt: ticket.createdAt,
+  }));
 };
 
 export const createMedicineTicketService = async (
-  prescriptionID: string,
-  roomID: string
+  prescriptionDisplayID: string,
+  accountID: string
 ) => {
-  // Get today's date range
-  const today = new Date();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+  const normalizedPrescriptionDisplayID = prescriptionDisplayID.trim();
 
-  // Count existing tickets for today in the same room
-  const existingTicketsCount = await prisma.medicineTicket.count({
-    where: {
-      roomID: roomID,
-      createdAt: {
-        gte: startOfDay,
-        lte: endOfDay,
+  return prisma.$transaction(async (tx) => {
+    const pharmacistAccount = await tx.account.findUnique({
+      where: {
+        accountID,
       },
-    },
+      select: {
+        roleName: true,
+        pharmacist: {
+          select: {
+            roomID: true,
+          },
+        },
+      },
+    });
+
+    console.log("Pharmacist account:", pharmacistAccount);
+
+    if (!pharmacistAccount || pharmacistAccount.roleName !== "pharmacist") {
+      throw new MedicineTicketServiceError("Forbidden", 403);
+    }
+
+    if (!pharmacistAccount.pharmacist?.roomID) {
+      throw new MedicineTicketServiceError("Pharmacist account is not assigned to any room", 400);
+    }
+
+    const prescription = await tx.prescription.findFirst({
+      where: {
+        prescriptionDisplayID: normalizedPrescriptionDisplayID,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        prescriptionID: true,
+      },
+    });
+
+    if (!prescription) {
+      throw new MedicineTicketServiceError("Prescription not found", 404);
+    }
+
+    const existingTicket = await tx.medicineTicket.findFirst({
+      where: {
+        prescriptionID: prescription.prescriptionID,
+      },
+      select: {
+        ticketID: true,
+      },
+    });
+
+    if (existingTicket) {
+      throw new MedicineTicketServiceError("Medicine ticket for this prescription already exists", 409);
+    }
+
+    const today = new Date();
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      0,
+      0,
+      0,
+      0
+    );
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+
+    const lastTicketInDay = await tx.medicineTicket.findFirst({
+      where: {
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      orderBy: {
+        orderNum: "desc",
+      },
+      select: {
+        orderNum: true,
+      },
+    });
+
+    const orderNum = (lastTicketInDay?.orderNum ?? 0) + 1;
+
+    return tx.medicineTicket.create({
+      data: {
+        prescriptionID: prescription.prescriptionID,
+        orderNum,
+        roomID: pharmacistAccount.pharmacist.roomID,
+        status: "pending",
+      },
+      select: {
+        ticketID: true,
+        orderNum: true,
+        status: true,
+        createdAt: true,
+        prescription: {
+          select: {
+            prescriptionDisplayID: true,
+          },
+        },
+      },
+    });
   });
-
-  // Calculate next order number (start from 1 if no tickets exist)
-  const orderNum = existingTicketsCount + 1;
-
-  // Create the medicine ticket
-  const newTicket = await prisma.medicineTicket.create({
-    data: {
-      prescriptionID: prescriptionID,
-      roomID: roomID,
-      orderNum: orderNum,
-      status: "pending",
-    },
-    select: {
-      ticketID: true,
-      orderNum: true,
-      status: true,
-      prescriptionID: true,
-      roomID: true,
-      createdAt: true,
-    },
-  });
-
-  return newTicket;
 };
-
 
 export const updateMedicineTicketStatusService = async (
   ticketId: string,

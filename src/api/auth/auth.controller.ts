@@ -32,7 +32,6 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-    console.log("Refresh token generated:", req.cookies.refreshToken);
     await addRefreshTokenToCookieToWhitelist({ refreshToken, userId: account.accountID });
     return res.status(200).json({
       message: "Login successful",

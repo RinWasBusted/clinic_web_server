@@ -15,8 +15,10 @@ const medicineTicketsRouter = Router();
  *   post:
  *     summary: Create a new medicine ticket
  *     description: |
- *       Create a new medicine ticket with prescriptionID and roomID.
- *       The orderNum is automatically calculated based on existing tickets for today in the same room.
+ *       Create a new medicine ticket with prescriptionDisplayID.
+ *       The system resolves prescriptionID from prescriptionDisplayID.
+ *       The orderNum is automatically calculated based on existing tickets for today.
+ *       roomID is resolved from the current pharmacist account.
  *       Status defaults to "pending".
  *     tags:
  *       - Medicine Tickets
@@ -27,17 +29,11 @@ const medicineTicketsRouter = Router();
  *           schema:
  *             type: object
  *             properties:
- *               prescriptionID:
+ *               prescriptionDisplayID:
  *                 type: string
- *                 format: uuid
- *                 description: The prescription ID
- *               roomID:
- *                 type: string
- *                 format: uuid
- *                 description: The room ID
+ *                 description: The prescription display code
  *             required:
- *               - prescriptionID
- *               - roomID
+ *               - prescriptionDisplayID
  *     responses:
  *       201:
  *         description: Medicine ticket created successfully
@@ -59,12 +55,11 @@ const medicineTicketsRouter = Router();
  *                     status:
  *                       type: string
  *                       enum: [pending, done]
- *                     prescriptionID:
- *                       type: string
- *                       format: uuid
- *                     roomID:
- *                       type: string
- *                       format: uuid
+ *                     prescription:
+ *                       type: object
+ *                       properties:
+ *                         prescriptionDisplayID:
+ *                           type: string
  *                     createdAt:
  *                       type: string
  *                       format: date-time
@@ -73,15 +68,16 @@ const medicineTicketsRouter = Router();
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.post("/", verifyAccessToken, authorizeRoles("pharmacist", "staff"), createMedicineTicket);
+medicineTicketsRouter.post("/", verifyAccessToken, authorizeRoles("pharmacist"), createMedicineTicket);
 
 /**
  * @swagger
  * /medicine/tickets:
  *   get:
- *     summary: Get medicine tickets by date and room
+ *     summary: Get medicine tickets by date
  *     description: |
- *       Retrieve a list of medicine tickets (waiting queue) filtered by date and room.
+ *       Retrieve a list of medicine tickets (waiting queue).
+ *       Filter date must be sent via query params (not request body payload).
  *       Used for displaying on waiting room TV screens and pharmacist computer screens.
  *     tags:
  *       - Medicine Tickets
@@ -93,12 +89,6 @@ medicineTicketsRouter.post("/", verifyAccessToken, authorizeRoles("pharmacist", 
  *           format: date
  *         description: Date in YYYY-MM-DD format (defaults to today if not provided)
  *         example: "2026-02-24"
- *       - in: query
- *         name: roomId
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Room ID to filter by specific pharmacy counter
  *     responses:
  *       200:
  *         description: Medicine tickets retrieved successfully
@@ -114,23 +104,26 @@ medicineTicketsRouter.post("/", verifyAccessToken, authorizeRoles("pharmacist", 
  *                   items:
  *                     type: object
  *                     properties:
- *                       ticketID:
+ *                       prescriptionDisplayID:
  *                         type: string
- *                         format: uuid
+ *                       patientName:
+ *                         type: string
  *                       orderNum:
  *                         type: integer
  *                       status:
  *                         type: string
  *                         enum: [pending, done]
- *                       prescriptionID:
+ *                       roomName:
  *                         type: string
- *                         format: uuid
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
  *       400:
  *         description: Invalid date format
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.get("/", verifyAccessToken, authorizeRoles("pharmacist", "staff"), getMedicineTickets);
+medicineTicketsRouter.get("/", verifyAccessToken, authorizeRoles("pharmacist"), getMedicineTickets);
 
 /**
  * @swagger
@@ -194,6 +187,6 @@ medicineTicketsRouter.get("/", verifyAccessToken, authorizeRoles("pharmacist", "
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.patch("/:id/status", verifyAccessToken, authorizeRoles("pharmacist", "staff"), updateMedicineTicketStatus);
+medicineTicketsRouter.patch("/:id/status", verifyAccessToken, authorizeRoles("pharmacist"), updateMedicineTicketStatus);
 
 export default medicineTicketsRouter;

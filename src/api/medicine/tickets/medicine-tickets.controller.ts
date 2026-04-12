@@ -3,8 +3,8 @@ import {
   getMedicineTicketsService,
   updateMedicineTicketStatusService,
   createMedicineTicketService,
+  MedicineTicketServiceError,
 } from "./medicine-tickets.service.js";
-
 
 export const getMedicineTickets = async (
   req: Request,
@@ -12,22 +12,41 @@ export const getMedicineTickets = async (
   next: NextFunction
 ) => {
   try {
-    const { date, roomId } = req.query;
+    const { date } = req.query;
+
+    if (date && typeof date !== "string") {
+      return res.status(400).json({
+        message: "Invalid date format. Please use YYYY-MM-DD",
+      });
+    }
 
     // Validate date format if provided
-    if (date && typeof date === "string") {
+    if (typeof date === "string") {
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(date)) {
         return res.status(400).json({
           message: "Invalid date format. Please use YYYY-MM-DD",
         });
       }
+
+      let [year, month, day] = date.split("-").map(Number);
+      if(!year) year = new Date().getFullYear();
+      if(!month) month = new Date().getMonth() + 1;
+      if(!day) day = new Date().getDate(); 
+      const parsedDate = new Date(year, month - 1, day);
+
+      if (
+        parsedDate.getFullYear() !== year ||
+        parsedDate.getMonth() !== month - 1 ||
+        parsedDate.getDate() !== day
+      ) {
+        return res.status(400).json({
+          message: "Invalid date value. Please use a valid YYYY-MM-DD date",
+        });
+      }
     }
 
-    const tickets = await getMedicineTicketsService(
-      date as string | undefined,
-      roomId as string | undefined
-    );
+    const tickets = await getMedicineTicketsService(date as string | undefined);
 
     return res.status(200).json({
       message: "Medicine tickets retrieved successfully",
@@ -77,35 +96,40 @@ export const updateMedicineTicketStatus = async (
   }
 };
 
-
 export const createMedicineTicket = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { prescriptionID, roomID } = req.body;
+    const { prescriptionDisplayID } = req.body;
+    const accountID = req.user?.id;
+
+    if (!accountID) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
 
     // Validate required fields
-    if (!prescriptionID) {
+    if (!prescriptionDisplayID || typeof prescriptionDisplayID !== "string" || !prescriptionDisplayID.trim()) {
       return res.status(400).json({
-        message: "prescriptionID is required",
+        message: "prescriptionDisplayID is required",
       });
     }
 
-    if (!roomID) {
-      return res.status(400).json({
-        message: "roomID is required",
-      });
-    }
-
-    const newTicket = await createMedicineTicketService(prescriptionID, roomID);
+    const newTicket = await createMedicineTicketService(prescriptionDisplayID, accountID);
 
     return res.status(201).json({
       message: "Medicine ticket created successfully",
       data: newTicket,
     });
   } catch (error) {
+    if (error instanceof MedicineTicketServiceError) {
+      return res.status(error.statusCode).json({
+        message: error.message,
+      });
+    }
     next(error);
   }
 };
