@@ -82,7 +82,7 @@ export const getMedicineItems = async (
   try {
     const search = (req.query.search as string) || "";
     const page = (req.query.page as string) ? parseInt(req.query.page as string) : 1;
-    const pageSize = 10;
+    const pageSize = 1000;
 
     if (page < 1) {
       return res.status(400).json({ message: "Page must be at least 1" });

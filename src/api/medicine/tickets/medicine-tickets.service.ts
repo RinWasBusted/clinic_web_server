@@ -42,9 +42,11 @@ export const getMedicineTicketsService = async (
   const tickets = await prisma.medicineTicket.findMany({
     where: whereClause,
     select: {
+      ticketID: true,
       prescription: {
         select: {
           prescriptionDisplayID: true,
+          prescriptionID: true,
           patient: {
             select: {
               account: {
@@ -72,7 +74,9 @@ export const getMedicineTicketsService = async (
   });
 
   return tickets.map((ticket) => ({
+    ticketID: ticket.ticketID,
     prescriptionDisplayID: ticket.prescription.prescriptionDisplayID,
+    prescriptionID: ticket.prescription.prescriptionID,
     patientName: ticket.prescription.patient?.account
       ? `${ticket.prescription.patient.account.lastName} ${ticket.prescription.patient.account.firstName}`.trim()
       : "",
@@ -103,8 +107,6 @@ export const createMedicineTicketService = async (
         },
       },
     });
-
-    console.log("Pharmacist account:", pharmacistAccount);
 
     if (!pharmacistAccount || pharmacistAccount.roleName !== "pharmacist") {
       throw new MedicineTicketServiceError("Forbidden", 403);
@@ -228,4 +230,173 @@ export const updateMedicineTicketStatusService = async (
   });
 
   return updatedTicket;
+};
+
+export const dispenseMedicineTicketService = async (
+  ticketId: string,
+  accountID: string
+) => {
+  return prisma.$transaction(
+    async (tx) => {
+      const pharmacistAccount = await tx.account.findUnique({
+        where: {
+          accountID,
+        },
+        select: {
+          roleName: true,
+          pharmacist: {
+            select: {
+              pharmacistID: true,
+            },
+          },
+        },
+      });
+
+      if (!pharmacistAccount || pharmacistAccount.roleName !== "pharmacist") {
+        throw new MedicineTicketServiceError("Forbidden", 403);
+      }
+
+      if (!pharmacistAccount.pharmacist?.pharmacistID) {
+        throw new MedicineTicketServiceError("Pharmacist account is invalid", 400);
+      }
+
+      const ticket = await tx.medicineTicket.findUnique({
+        where: {
+          ticketID: ticketId,
+        },
+        select: {
+          ticketID: true,
+          status: true,
+          prescriptionID: true,
+          prescription: {
+            select: {
+              prescriptionID: true,
+              prescriptionDisplayID: true,
+              status: true,
+              details: {
+                select: {
+                  medicineID: true,
+                  quantity: true,
+                  note: true,
+                  medicine: {
+                    select: {
+                      medicineID: true,
+                      medicineName: true,
+                      quantity: true,
+                      price: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!ticket) {
+        throw new MedicineTicketServiceError("Medicine ticket not found", 404);
+      }
+
+      if (ticket.status === "done") {
+        throw new MedicineTicketServiceError("Medicine ticket has already been completed", 409);
+      }
+
+      if (ticket.prescription.status === "done") {
+        throw new MedicineTicketServiceError("Prescription has already been completed", 409);
+      }
+
+      if (ticket.prescription.details.length === 0) {
+        throw new MedicineTicketServiceError("Prescription does not contain any medicine", 400);
+      }
+
+      const insufficientMedicines = ticket.prescription.details.filter(
+        (detail) => detail.medicine.quantity < detail.quantity
+      );
+
+      if (insufficientMedicines.length > 0) {
+        const shortageMessage = insufficientMedicines
+          .map(
+            (detail) =>
+              `${detail.medicine.medicineName} (cần ${detail.quantity}, còn ${detail.medicine.quantity})`
+          )
+          .join(", ");
+
+        throw new MedicineTicketServiceError(`Insufficient stock: ${shortageMessage}`, 400);
+      }
+
+      const prescriptionCode =
+        ticket.prescription.prescriptionDisplayID ?? ticket.prescription.prescriptionID;
+      const exportNote = `Xuat thuoc cho don thuoc co ma ${prescriptionCode}`;
+      const exportValue = ticket.prescription.details.reduce(
+        (total, detail) => total + Number(detail.medicine.price) * detail.quantity,
+        0
+      );
+
+      const imexLog = await tx.imexMedicineLog.create({
+        data: {
+          imexType: "export",
+          pharmacistID: pharmacistAccount.pharmacist.pharmacistID,
+          value: exportValue,
+          note: exportNote,
+        },
+        select: {
+          imexID: true,
+        },
+      });
+
+      await tx.imexMedicineDetails.createMany({
+        data: ticket.prescription.details.map((detail) => ({
+          imexID: imexLog.imexID,
+          medicineID: detail.medicineID,
+          quantity: -detail.quantity,
+          note: exportNote,
+        })),
+      });
+
+      for (const detail of ticket.prescription.details) {
+        await tx.medicine.update({
+          where: {
+            medicineID: detail.medicineID,
+          },
+          data: {
+            quantity: {
+              decrement: detail.quantity,
+            },
+          },
+        });
+      }
+
+      await tx.medicineTicket.update({
+        where: {
+          ticketID: ticket.ticketID,
+        },
+        data: {
+          status: "done",
+        },
+      });
+
+      await tx.prescription.update({
+        where: {
+          prescriptionID: ticket.prescriptionID,
+        },
+        data: {
+          status: "done",
+          pharmacistID: pharmacistAccount.pharmacist.pharmacistID,
+        },
+      });
+
+      return {
+        ticketID: ticket.ticketID,
+        status: "done" as const,
+        prescriptionID: ticket.prescriptionID,
+        prescriptionDisplayID: ticket.prescription.prescriptionDisplayID,
+        imexID: imexLog.imexID,
+      };
+    },
+    {
+      isolationLevel: "Serializable",
+      maxWait: 5000,
+      timeout: 10000,
+    }
+  );
 };

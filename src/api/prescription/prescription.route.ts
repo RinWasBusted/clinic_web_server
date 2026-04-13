@@ -148,12 +148,34 @@ PrescriptionRouter.use(verifyAccessToken);
  *                       items:
  *                         type: object
  *                         properties:
- *                           medicineID:
- *                             type: integer
+ *                           medicine:
+ *                             type: object
+ *                             properties:
+ *                               medicineID:
+ *                                 type: integer
+ *                                 description: ID of the medicine
+ *                               medicineName:
+ *                                 type: string
+ *                                 description: Name of the medicine
+ *                               medicineImage:
+ *                                 type: string
+ *                                 nullable: true
+ *                                 description: Image URL of the medicine
+ *                               unit:
+ *                                 type: string
+ *                                 description: Unit of measurement (bottle, capsule, patches, etc.)
+ *                               price:
+ *                                 type: number
+ *                                 description: Price per unit (VND)
+ *                               quantity:
+ *                                 type: integer
+ *                                 description: Current stock quantity available
  *                           quantity:
  *                             type: integer
+ *                             description: Total quantity prescribed
  *                           usage:
  *                             type: string
+ *                             description: Dosage instructions
  *       400:
  *         description: Validation error (invalid body fields)
  *       401:
@@ -450,6 +472,9 @@ PrescriptionRouter.delete("/:id", deletePrescriptionHandler);
  *                     prescriptionID:
  *                       type: string
  *                       format: uuid
+ *                     prescriptionDisplayID:
+ *                       type: string
+ *                       description: Display code for the prescription
  *                     createdAt:
  *                       type: string
  *                       format: date-time
@@ -468,22 +493,51 @@ PrescriptionRouter.delete("/:id", deletePrescriptionHandler);
  *                       items:
  *                         type: object
  *                         properties:
- *                           medicineID:
- *                             type: integer
+ *                           medicine:
+ *                             type: object
+ *                             properties:
+ *                               medicineID:
+ *                                 type: integer
+ *                                 description: ID of the medicine
+ *                               medicineName:
+ *                                 type: string
+ *                                 description: Name of the medicine
+ *                               medicineImage:
+ *                                 type: string
+ *                                 nullable: true
+ *                                 description: Image URL of the medicine
+ *                               unit:
+ *                                 type: string
+ *                                 description: Unit of measurement (bottle, capsule, patches, etc.)
+ *                               price:
+ *                                 type: number
+ *                                 description: Price per unit (VND)
+ *                               quantity:
+ *                                 type: integer
+ *                                 description: Current stock quantity available
  *                           quantity:
  *                             type: integer
+ *                             description: Total quantity prescribed
  *                           usage:
  *                             type: string
+ *                             description: Dosage instructions
  *             example:
  *               prescription:
  *                 prescriptionID: "e6f7a8b9-c0d1-2345-efab-456789012345"
+ *                 prescriptionDisplayID: "RX-2026-001234"
  *                 createdAt: "2026-03-10T08:00:00.000Z"
  *                 createdAtLocal: "10/03/2026 15:00"
  *                 note: "Tái khám sau 7 ngày"
  *                 needReExamine: true
  *                 totalTreatmentDays: 7
  *                 details:
- *                   - medicineID: 1
+ *                   - medicine:
+ *                       medicineID: 1
+ *                       medicineName: "Paracetamol"
+ *                       medicineImage: "https://example.com/paracetamol.jpg"
+ *                       unit: "viên"
+ *                       price: 5000
+ *                       quantity: 150
  *                     quantity: 21
  *                     usage: "uống, sáng 2 viên, chiều 1 viên"
  *       401:

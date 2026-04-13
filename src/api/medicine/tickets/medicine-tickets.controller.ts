@@ -3,6 +3,7 @@ import {
   getMedicineTicketsService,
   updateMedicineTicketStatusService,
   createMedicineTicketService,
+  dispenseMedicineTicketService,
   MedicineTicketServiceError,
 } from "./medicine-tickets.service.js";
 
@@ -123,6 +124,43 @@ export const createMedicineTicket = async (
     return res.status(201).json({
       message: "Medicine ticket created successfully",
       data: newTicket,
+    });
+  } catch (error) {
+    if (error instanceof MedicineTicketServiceError) {
+      return res.status(error.statusCode).json({
+        message: error.message,
+      });
+    }
+    next(error);
+  }
+};
+
+export const dispenseMedicineTicket = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.query;
+    const accountID = req.user?.id;
+
+    if (!accountID) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    if (!id || typeof id !== "string") {
+      return res.status(400).json({
+        message: "Ticket ID is required",
+      });
+    }
+
+    const result = await dispenseMedicineTicketService(id, accountID);
+
+    return res.status(200).json({
+      message: "Medicine dispensed successfully",
+      data: result,
     });
   } catch (error) {
     if (error instanceof MedicineTicketServiceError) {
