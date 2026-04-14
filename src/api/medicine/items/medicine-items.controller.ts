@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import {
   createMedicineService,
+  createManyMedicineService,
   getMedicineByIdService,
   getMedicineItemsService,
   updateMedicineService,
   deleteMedicineService,
 } from "./medicine-items.service.js";
 import cloudinary from "../../../utils/cloudinary.js";
-import { Prisma } from "../../../utils/prisma.js";
 
 export const createMedicine = async (
   req: Request,
@@ -55,67 +55,24 @@ export const createManyMedicine = async ( req: Request, res: Response, next: Nex
   try {
     const medicines = req.body;
     
-    if(!medicines){
-      return res.status(200).json({message: "Create successful 0 medicine"});
-    }
     if(!Array.isArray(medicines)){
       return res.status(400).json({message: "Medicines must be an array"});
     }
+    const result = await createManyMedicineService(
+      medicines.map((medicine) => ({
+        ...medicine,
+        price: parseFloat(medicine.price),
+      }))
+    );
 
-    const tasks = medicines.map((m, i) => (async () => {
-      const { medicineName, unit, price, description } = m;
-      if (!medicineName || !unit || !price) {
-        throw new Error(`Missing required fields for medicine at index ${i}: medicineName, unit, price`);
-      }
-      const medicine = await createMedicineService({
-        medicineName,
-        unit,
-        price: parseFloat(price),
-        description,
-      });
-      return medicine;
-    }));
-    const settled = await Promise.allSettled(tasks);
-
-    const success: Array<{index: number; medicineName: string}> = [];
-    const failed: Array<{index: number; medicineName: string; reason: string}> = [];
-
-    settled.forEach((r, i) => {
-      const m = medicines[i];
-      const medicineName = m.medicineName || `index ${i}`;
-      if(r.status === "fulfilled"){
-        success.push({index: i, medicineName});
-        return;
-      }
-
-      const err = r.reason;
-
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === "P2002") {
-          failed.push({ index: i, medicineName, reason: "DUPLICATE_UNIQUE" });
-          return;
-        }
-        failed.push({ index: i, medicineName, reason: `PRISMA_${err.code}` });
-        return;
-      }
-
-      failed.push({ index: i, medicineName, reason: err instanceof Error ? err.message : "UNKNOWN_ERROR" });
-
-    })
     return res.status(201).json({
       message: "Medicines created successfully",
-      data: { 
-        requestCount: medicines.length,
-        successCount: success.length,
-        failedCount: failed.length,
-        success,
-        failed
-      },
+      data: result,
     });
   } catch (error) {
     return next(error);
   }
-}
+};
 
 export const getMedicineItems = async (
   req: Request,
@@ -125,7 +82,7 @@ export const getMedicineItems = async (
   try {
     const search = (req.query.search as string) || "";
     const page = (req.query.page as string) ? parseInt(req.query.page as string) : 1;
-    const pageSize = 10;
+    const pageSize = 1000;
 
     if (page < 1) {
       return res.status(400).json({ message: "Page must be at least 1" });

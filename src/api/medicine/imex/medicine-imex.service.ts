@@ -18,9 +18,12 @@ interface CreateImexInput {
 export const getImexLogsService = async (
   type?: ImexType,
   fromDate?: Date,
-  toDate?: Date
+  toDate?: Date,
+  page = 1,
+  pageSize = 10
 ) => {
   const where: Record<string, ImexType | { gte?: Date; lte?: Date }> = {};
+  const skip = (page - 1) * pageSize;
 
   if (type) {
     where.imexType = type;
@@ -36,30 +39,43 @@ export const getImexLogsService = async (
     }
   }
 
-  return prisma.imexMedicineLog.findMany({
-    where,
-    select: {
-      imexID: true,
-      imexType: true,
-      pharmacist: {
-        select: {
-          account: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
+  const [data, totalItems] = await Promise.all([
+    prisma.imexMedicineLog.findMany({
+      where,
+      select: {
+        imexID: true,
+        imexType: true,
+        pharmacist: {
+          select: {
+            account: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
             },
           },
         },
+        value: true,
+        createdAt: true,
+        note: true,
       },
-      value: true,
-      createdAt: true,
-      note: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: pageSize,
+    }),
+    prisma.imexMedicineLog.count({ where }),
+  ]);
+
+  return {
+    data,
+    currentPage: page,
+    pageSize,
+    totalItems,
+    totalPages: Math.ceil(totalItems / pageSize),
+  };
 };
 
 export const createImexLogService = async (data: CreateImexInput) => {
@@ -371,13 +387,23 @@ export const deleteImexLogService = async (imexID: string) => {
 };
 
 
-export const getImexByIdService = (imexID: string) => {
-  return prisma.imexMedicineLog.findUnique({
+export const getImexByIdService = async (imexID: string) => {
+  const imexLog = await prisma.imexMedicineLog.findUnique({
     where: { imexID },
     select: {
       imexID: true,
       imexType: true,
-      pharmacistID: true,
+      pharmacist: {
+        select: {
+          pharmacistID: true,
+          account: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      },
       value: true,
       createdAt: true,
       note: true,
@@ -397,4 +423,21 @@ export const getImexByIdService = (imexID: string) => {
       },
     },
   });
+
+  if (!imexLog) {
+    return null;
+  }
+
+  return {
+    imexID: imexLog.imexID,
+    imexType: imexLog.imexType,
+    pharmacist: {
+      id: imexLog.pharmacist.pharmacistID,
+      name: `${imexLog.pharmacist.account.lastName} ${imexLog.pharmacist.account.firstName}`,
+    },
+    value: imexLog.value,
+    createdAt: imexLog.createdAt,
+    note: imexLog.note,
+    details: imexLog.details,
+  };
 };

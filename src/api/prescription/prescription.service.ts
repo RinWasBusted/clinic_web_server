@@ -42,23 +42,27 @@ class PrescriptionService {
 
   // Specify the fields to select for prescription details when fetching prescription data. This is used to avoid fetching unnecessary data and to prevent circular references when fetching related data.
   static readonly prescriptionDetailLite = {
-    medicineID: true,
     quantity: true,
     usage: true,
-  };
-
-  static readonly prescriptionDetailFull = {
-    ...this.prescriptionDetailLite,
     medicine: {
       select: {
-        unit: true,
+        medicineID: true,
         medicineName: true,
+        medicineImage: true,
+        unit: true,
+        price: true,
+        quantity: true,
       },
     },
   };
 
+  static readonly prescriptionDetailFull = {
+    ...this.prescriptionDetailLite,
+  };
+
   static readonly prescriptionView = {
     prescriptionID: true,
+    prescriptionDisplayID: true,
     createdAt: true,
     createdAtLocal: true, // Local time string for createdAt
     note: true,

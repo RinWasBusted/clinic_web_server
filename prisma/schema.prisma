@@ -245,6 +245,7 @@ model Patient {
   examineLogs      ExamineLog[]
   testLogs         TestLog[]
   paymentHistories PaymentHistory[]
+  prescriptions    Prescription[]   @relation("PrescriptionPatient")
 
   @@map("Patient")
 }
@@ -279,6 +280,10 @@ model Pharmacist {
   pharmacistID  String            @id @db.Uuid
   startDate     DateTime          @default(now()) @db.Date
   account       Account           @relation(fields: [pharmacistID], references: [accountID], onDelete: Cascade)
+  roomID        String?           @db.Uuid
+  
+  
+  room          Room?             @relation(fields: [roomID], references: [roomID], onDelete: SetNull)
   prescriptions Prescription[]    @relation("PrescriptionPharmacist")
   imexLogs      ImexMedicineLog[]
 
@@ -323,6 +328,7 @@ model Room {
   enterTickets    EnterTicket[]
   medicineTickets MedicineTicket[]
   payments        PaymentHistory[]
+  pharmacists      Pharmacist[]
 
   @@map("Room")
 }
@@ -509,10 +515,12 @@ model Medicine {
 }
 
 model Prescription {
-  prescriptionID String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  prescriptionID            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  prescriptionDisplayID     String?   
   examineID      String             @unique @db.Uuid
   doctorID       String             @db.Uuid
   pharmacistID   String?            @db.Uuid
+  patientID      String?             @db.Uuid
   createdAt      DateTime           @default(now()) @db.Timestamp(6)
   payAmount      Decimal?           @default(0) @db.Decimal(12, 2)
   note           String?            @db.VarChar(255)
@@ -526,6 +534,7 @@ model Prescription {
   examine    ExamineLog  @relation(fields: [examineID], references: [examineID], onDelete: Cascade)
   doctor     Doctor      @relation("PrescriptionDoctor", fields: [doctorID], references: [doctorID], onDelete: Restrict)
   pharmacist Pharmacist? @relation("PrescriptionPharmacist", fields: [pharmacistID], references: [pharmacistID], onDelete: SetNull)
+  patient    Patient?    @relation("PrescriptionPatient", fields: [patientID], references: [patientID], onDelete: Cascade)
 
   details PrescriptionDetails[]
   tickets MedicineTicket[]
