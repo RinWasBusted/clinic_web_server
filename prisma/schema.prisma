@@ -645,3 +645,11 @@ model PaymentMonthReport {
   @@id([year, month, date])
   @@map("PaymentMonthReport")
 }
+model Notification {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String    @db.VarChar(255)
+  description String?   @db.VarChar(255)
+  link        String?   @db.VarChar(255)
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+}

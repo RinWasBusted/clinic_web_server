@@ -11,7 +11,7 @@ import ExamineRouter from "./examine/examine.route.js";
 import { paginateMiddleware } from "../middlewares/paginate.js";
 import PrescriptionRouter from "./prescription/prescription.route.js";
 import TestRouter from "./test/test.route.js";
-
+import notificationRoutes from "./notification/notification.route.js";
 const router = Router();
 
 // Setup custom output for specific routes
@@ -31,7 +31,7 @@ router.use("/medicine", medicineRoutes);
 
 router.use("/examine", ExamineRouter);
 router.use("/prescription", PrescriptionRouter);
-
+router.use("/notification", notificationRoutes);
 // For testing purposes, you can add a route to check if the API is working
 router.use("/test", TestRouter);
 export default router;
