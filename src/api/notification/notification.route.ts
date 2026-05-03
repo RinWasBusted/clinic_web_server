@@ -4,6 +4,7 @@ import {
   getAllNotificationsHandler,
   getNotificationByIdHandler,
   createNotificationHandler,
+  updateNotificationHandler,
   markNotificationReadHandler,
   markAllNotificationsReadHandler,
   deleteNotificationHandler,
@@ -213,5 +214,64 @@ router.patch("/:id/read", markNotificationReadHandler);
  *         description: Không tìm thấy thông báo
  */
 router.delete("/:id", deleteNotificationHandler);
+
+/**
+ * @swagger
+ * /notification/{id}:
+ *   put:
+ *     summary: Cập nhật thông tin một thông báo
+ *     tags: [Notification]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID của thông báo cần cập nhật
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 maxLength: 255
+ *                 example: "Thông báo cập nhật"
+ *               description:
+ *                 type: string
+ *                 maxLength: 255
+ *                 example: "Nội dung mới"
+ *               link:
+ *                 type: string
+ *                 maxLength: 255
+ *                 example: "/admin/info"
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Cập nhật thông báo thành công."
+ *               notification:
+ *                 id: "uuid"
+ *                 title: "Thông báo cập nhật"
+ *                 description: "Nội dung mới"
+ *                 link: "/admin/info"
+ *                 isRead: false
+ *                 createdAt: "2026-05-03T10:00:00.000Z"
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Không tìm thấy thông báo
+ */
+router.put("/:id", updateNotificationHandler);
+
 
 export default router;
