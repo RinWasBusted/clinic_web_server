@@ -9,7 +9,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
   try {
     const account = await prisma.account.findFirst({
       where: { email },
-      select: { accountID: true, roleName: true, password: true, firstName: true, lastName: true },
+      select: { accountID: true, roleName: true, roleID: true, password: true, firstName: true, lastName: true },
     });
     if (!account?.password) {
       return res.status(400).json({
@@ -19,7 +19,16 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
     if (!account || !bcrypt.compareSync(password, account.password)) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    const { accessToken, refreshToken } = generateTokens({ id: account.accountID, email, role: account.roleName });
+
+    // Create tokens (old code, idc this part)
+    const { accessToken, refreshToken } = generateTokens({
+      id: account.accountID,
+      email,
+      role: account.roleName,
+      roleName: account.roleName,
+      roleID: account.roleID,
+    });
+
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
