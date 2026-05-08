@@ -9,7 +9,8 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
     try {
         const { appointmentType, scheduleDate, roomID, firstName,
             lastName, phoneNumber, email, facultyID } = req.body;
-        const approvedBy = req.user?.id
+        const approvedBy = req.user?.id;
+        console.log(approvedBy);
         if (!approvedBy) {
             return res.status(404).json({
                 message: "Staff not found"

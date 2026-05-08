@@ -36,7 +36,12 @@ export const register = async (req: Request, res: Response) => {
       birthDate,
       phoneNumber,
       password: hashed,
-      DisplayID: code
+      DisplayID: code,
+      ...(roleRecord.roleName === 'staff' ? { staff: { create: {} } } : {}),
+      ...(roleRecord.roleName === 'doctor' ? { doctor: { create: {} } } : {}),
+      ...(roleRecord.roleName === 'pharmacist' ? { pharmacist: { create: {} } } : {}),
+      ...(roleRecord.roleName === 'manager' ? { manager: { create: {} } } : {}),
+      ...(roleRecord.roleName === 'patient' ? { patient: { create: {} } } : {})
     }
   })
   return res.status(201).json({
@@ -86,7 +91,12 @@ export const registerMany = async (req: Request<Empty, unknown, RegisterManyBody
             birthDate: a.birthDate,
             phoneNumber: a.phoneNumber,
             password: hashed,
-            DisplayID: code
+            DisplayID: code,
+            ...(roleName === 'staff' ? { staff: { create: {} } } : {}),
+            ...(roleName === 'doctor' ? { doctor: { create: {} } } : {}),
+            ...(roleName === 'pharmacist' ? { pharmacist: { create: {} } } : {}),
+            ...(roleName === 'manager' ? { manager: { create: {} } } : {}),
+            ...(roleName === 'patient' ? { patient: { create: {} } } : {})
           },
         });
 
