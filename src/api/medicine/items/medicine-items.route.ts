@@ -110,7 +110,7 @@ const medicineItemsRouter = Router();
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.post("/", verifyAccessToken, createMedicine);
+medicineItemsRouter.post("/", verifyAccessToken, upload.single("image"), createMedicine);
 
 /**
  * @swagger
@@ -537,7 +537,7 @@ medicineItemsRouter.get("/:id", verifyAccessToken, getMedicineById);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.patch("/:id", verifyAccessToken, updateMedicine);
+medicineItemsRouter.patch("/:id", verifyAccessToken, upload.single("image"), updateMedicine);
 
 /**
  * @swagger

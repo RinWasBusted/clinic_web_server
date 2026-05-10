@@ -9,7 +9,7 @@ interface AddImexItemsInput {
 
 interface CreateImexInput {
   imexType: ImexType;
-  pharmacistID: string;
+  accountID: string;  // formerly pharmacistID
   value?: number;
   note?: string;
   items: AddImexItemsInput[];
@@ -45,24 +45,19 @@ export const getImexLogsService = async (
       select: {
         imexID: true,
         imexType: true,
-        pharmacist: {
+        account: {
           select: {
-            account: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
-            },
+            accountID: true,
+            firstName: true,
+            lastName: true,
+            email: true,
           },
         },
         value: true,
         createdAt: true,
         note: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
       skip,
       take: pageSize,
     }),
@@ -79,9 +74,8 @@ export const getImexLogsService = async (
 };
 
 export const createImexLogService = async (data: CreateImexInput) => {
-  const { imexType, pharmacistID, value, note, items } = data;
+  const { imexType, accountID, value, note, items } = data;
 
-  // 1. Tính toán in-memory các thay đổi quantity
   const medicineQuantityMap = new Map<number, number>();
   items.forEach((item) => {
     const quantityChange = imexType === "export" ? -item.quantity : item.quantity;
@@ -91,20 +85,19 @@ export const createImexLogService = async (data: CreateImexInput) => {
     );
   });
 
-  // 2. Tạo imex log, items, và update medicine quantities TRONG transaction
   const imexLog = await prisma.$transaction(
     async (tx) => {
       const log = await tx.imexMedicineLog.create({
         data: {
           imexType,
-          pharmacistID,
+          accountID,
           value: value || 0,
           note,
         },
         select: {
           imexID: true,
           imexType: true,
-          pharmacistID: true,
+          accountID: true,
           value: true,
           createdAt: true,
           note: true,
@@ -131,19 +124,19 @@ export const createImexLogService = async (data: CreateImexInput) => {
 
       return log;
     },
-    { isolationLevel: "ReadCommitted",
+    {
+      isolationLevel: "ReadCommitted",
       maxWait: 5000,
       timeout: 10000,
     }
   );
 
-  // 3. Fetch complete imex log with details
   return prisma.imexMedicineLog.findUnique({
     where: { imexID: imexLog.imexID },
     select: {
       imexID: true,
       imexType: true,
-      pharmacistID: true,
+      accountID: true,
       value: true,
       createdAt: true,
       note: true,
@@ -153,11 +146,7 @@ export const createImexLogService = async (data: CreateImexInput) => {
           quantity: true,
           note: true,
           medicine: {
-            select: {
-              medicineName: true,
-              unit: true,
-              price: true,
-            },
+            select: { medicineName: true, unit: true, price: true },
           },
         },
       },
@@ -315,7 +304,7 @@ export const updateImexLogService = async (
         select: {
           imexID: true,
           imexType: true,
-          pharmacistID: true,
+          accountID: true,
           value: true,
           createdAt: true,
           note: true,
@@ -336,8 +325,9 @@ export const updateImexLogService = async (
         },
       });
     },
-    { isolationLevel: "ReadCommitted",
-      maxWait: 5000, 
+    {
+      isolationLevel: "ReadCommitted",
+      maxWait: 5000,
       timeout: 10000,
     }
   );
@@ -377,7 +367,8 @@ export const deleteImexLogService = async (imexID: string) => {
         });
       }
     },
-    { isolationLevel: "ReadCommitted",
+    {
+      isolationLevel: "ReadCommitted",
       maxWait: 5000,
       timeout: 10000,
     }
@@ -393,15 +384,11 @@ export const getImexByIdService = async (imexID: string) => {
     select: {
       imexID: true,
       imexType: true,
-      pharmacist: {
+      account: {
         select: {
-          pharmacistID: true,
-          account: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
+          accountID: true,
+          firstName: true,
+          lastName: true,
         },
       },
       value: true,
@@ -431,9 +418,9 @@ export const getImexByIdService = async (imexID: string) => {
   return {
     imexID: imexLog.imexID,
     imexType: imexLog.imexType,
-    pharmacist: {
-      id: imexLog.pharmacist.pharmacistID,
-      name: `${imexLog.pharmacist.account.lastName} ${imexLog.pharmacist.account.firstName}`,
+    account: {
+      id: imexLog.account.accountID,
+      name: `${imexLog.account.lastName} ${imexLog.account.firstName}`,
     },
     value: imexLog.value,
     createdAt: imexLog.createdAt,

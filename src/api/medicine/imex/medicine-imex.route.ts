@@ -8,7 +8,7 @@ import {
   getImexById,
 } from "./medicine-imex.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
-import { authorizeRoles } from "../../../middlewares/role.js";
+
 import { validateBody, validateParams, validateQuery } from "../../../middlewares/validate.js";
 import {
   createImexLogBodySchema,
@@ -155,7 +155,6 @@ const router = Router();
 router.get(
   "/",
   verifyAccessToken,
-  authorizeRoles("pharmacist"),
   validateQuery(getImexLogsQuerySchema),
   getImexLogs
 );
@@ -271,7 +270,6 @@ router.get(
 router.get(
   "/:id",
   verifyAccessToken,
-  authorizeRoles("pharmacist"),
   validateParams(imexLogParamsSchema),
   getImexById
 );
@@ -411,7 +409,6 @@ router.get(
 router.post(
   "/",
   verifyAccessToken,
-  authorizeRoles("pharmacist"),
   validateBody(createImexLogBodySchema),
   createImexLog
 );
@@ -474,7 +471,6 @@ router.post(
 router.post(
   "/many",
   verifyAccessToken,
-  authorizeRoles("pharmacist"),
   validateBody(createManyImexLogBodySchema),
   createManyImexLog
 );
@@ -622,7 +618,6 @@ router.post(
 router.patch(
   "/:id",
   verifyAccessToken,
-  authorizeRoles("pharmacist"),
   validateParams(imexLogParamsSchema),
   validateBody(updateImexLogBodySchema),
   updateImexLog
@@ -672,7 +667,6 @@ router.patch(
 router.delete(
   "/:id",
   verifyAccessToken,
-  authorizeRoles("pharmacist"),
   validateParams(imexLogParamsSchema),
   deleteImexLog
 );

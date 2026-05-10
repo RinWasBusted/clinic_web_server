@@ -1,9 +1,10 @@
 import { AppointmentStatus } from "../../../generated/prisma/index.js";
 import prisma from "../../../utils/prisma.js";
+
 function isAppointment(v: unknown): v is AppointmentStatus {
     return typeof v === "string" && (Object.values(AppointmentStatus) as string[]).includes(v);
 }
-export {isAppointment}
+export { isAppointment };
 
 export class NotFoundError extends Error {
   statusCode = 404;
@@ -14,20 +15,13 @@ export class NotFoundError extends Error {
 
 type VerifyRefsInput = {
   patientID?: string | null;
-  facultyID?: string | null;
   roomID?: string | null;
 };
 
-export const verifyRefsForUpdate = async ({ patientID, facultyID, roomID }: VerifyRefsInput) => {
-  // chỉ check nếu field được gửi lên (khác undefined và khác null)
+export const verifyRefsForUpdate = async ({ patientID, roomID }: VerifyRefsInput) => {
   if (patientID != null) {
     const patient = await prisma.patient.findUnique({ where: { patientID } });
     if (!patient) throw new NotFoundError("Patient not found");
-  }
-
-  if (facultyID != null) {
-    const faculty = await prisma.faculty.findUnique({ where: { facultyID } });
-    if (!faculty) throw new NotFoundError("Faculty not found");
   }
 
   if (roomID != null) {

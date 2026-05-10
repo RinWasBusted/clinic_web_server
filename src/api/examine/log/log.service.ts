@@ -120,10 +120,10 @@ class ExamineLogService {
         ...raw?.examine,
         prescription: raw
           ? {
-              details: raw.details,
-              totalTreatmentDays: raw.totalTreatmentDays,
-              needReExamine: raw.needReExamine,
-            }
+            details: raw.details,
+            totalTreatmentDays: raw.totalTreatmentDays,
+            needReExamine: raw.needReExamine,
+          }
           : null,
       };
     }

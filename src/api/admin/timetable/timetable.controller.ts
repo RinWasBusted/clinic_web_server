@@ -1,22 +1,28 @@
 import { NextFunction, Request, Response } from "express";
 import prisma from "../../../utils/prisma.js";
 
+const accountInclude = {
+    account: {
+        select: {
+            accountID: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true
+        }
+    },
+    room: {
+        include: { faculty: true }
+    }
+} as const;
+
 export const CreateTimetable = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { doctorID, roomID, dayOfWeek, note } = req.body;
+        const { accountID, roomID, dayOfWeek, note } = req.body;
         const newTimetable = await prisma.timetable.create({
-            data: {
-                doctorID,
-                roomID,
-                dayOfWeek,
-                note
-            },
-            include: {
-                doctor: true,
-                room: true
-            }
+            data: { accountID, roomID, dayOfWeek, note },
+            include: accountInclude
         });
-
         return res.status(201).json({ timetable: newTimetable });
     } catch (error) {
         next(error);
@@ -25,20 +31,7 @@ export const CreateTimetable = async (req: Request, res: Response, next: NextFun
 
 export const GetAllTimetables = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const timetables = await prisma.timetable.findMany({
-            include: {
-                doctor: {
-                    include: {
-                        account: true
-                    }
-                },
-                room: {
-                    include: {
-                        faculty: true
-                    }
-                }
-            }
-        });
+        const timetables = await prisma.timetable.findMany({ include: accountInclude });
         return res.status(200).json({ timetables });
     } catch (error) {
         next(error);
@@ -49,31 +42,13 @@ export const GetTimetableById = async (req: Request, res: Response, next: NextFu
     try {
         const { id } = req.params;
         const timeID = Array.isArray(id) ? id[0] : id;
-
-        if (!timeID) {
-            return res.status(400).json({ message: "Timetable ID is required" });
-        }
+        if (!timeID) return res.status(400).json({ message: "Timetable ID is required" });
 
         const timetable = await prisma.timetable.findUnique({
             where: { timeID },
-            include: {
-                doctor: {
-                    include: {
-                        account: true
-                    }
-                },
-                room: {
-                    include: {
-                        faculty: true
-                    }
-                }
-            }
+            include: accountInclude
         });
-
-        if (!timetable) {
-            return res.status(404).json({ message: "Timetable not found" });
-        }
-
+        if (!timetable) return res.status(404).json({ message: "Timetable not found" });
         return res.status(200).json({ timetable });
     } catch (error) {
         next(error);
@@ -82,43 +57,24 @@ export const GetTimetableById = async (req: Request, res: Response, next: NextFu
 
 export const GetTimetableByDoctor = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { doctorID } = req.params;
-        if (Array.isArray(doctorID)) {
-            return res.status(400).json({ message: "id must be a string not array" });
-        }
-        if (!doctorID) {
-            return res.status(400).json({ message: "Doctor ID is required" });
-        }
+        const { accountID } = req.params;
+        if (Array.isArray(accountID)) return res.status(400).json({ message: "id must be a string not array" });
+        if (!accountID) return res.status(400).json({ message: "Account ID is required" });
 
         const timetables = await prisma.timetable.findMany({
-            where: {
-                doctorID: "8e129159-4a1f-4f30-b57b-13c53a0219cf"
-            },
+            where: { accountID },
             include: {
-                doctor: {
-                    include: {
-                        account: {
-                            select: {
-                                firstName: true,
-                                lastName: true,
-                                email: true
-                            }
-                        }
-                    }
+                account: {
+                    select: { firstName: true, lastName: true, email: true }
                 },
                 room: {
                     select: {
                         roomName: true,
-                        faculty: {
-                            select: {
-                                facultyName: true
-                            }
-                        }
+                        faculty: { select: { facultyName: true } }
                     }
                 }
             }
-        })
-
+        });
         return res.status(200).json({ timetables });
     } catch (error) {
         next(error);
@@ -130,51 +86,28 @@ export const UpdateTimetableById = async (req: Request, res: Response, next: Nex
         const timeID = req.params.id;
         const data = req.body;
 
-        if (!timeID) {
-            return res.status(404).json({ message: "Timetable not found" });
-        }
+        if (!timeID) return res.status(404).json({ message: "Timetable not found" });
+        if (Array.isArray(timeID)) return res.status(400).json({ message: "id must be a string, not an array" });
 
-        if (Array.isArray(timeID)) {
-            return res.status(400).json({ message: "id must be a string, not an array" });
-        }
-
-        // If updating doctorID or roomID, verify they exist
-        if (data.doctorID) {
-            const doctor = await prisma.doctor.findUnique({ where: { doctorID: data.doctorID } });
-            if (!doctor) {
-                return res.status(404).json({ message: "Doctor not found" });
-            }
+        // If updating accountID, verify account exists
+        if (data.accountID) {
+            const account = await prisma.account.findUnique({ where: { accountID: data.accountID } });
+            if (!account) return res.status(404).json({ message: "Account not found" });
         }
 
         if (data.roomID) {
             const room = await prisma.room.findUnique({ where: { roomID: data.roomID } });
-            if (!room) {
-                return res.status(404).json({ message: "Room not found" });
-            }
+            if (!room) return res.status(404).json({ message: "Room not found" });
         }
 
         const result = await prisma.timetable.update({
             where: { timeID },
             data,
-            include: {
-                doctor: {
-                    include: {
-                        account: true
-                    }
-                },
-                room: {
-                    include: {
-                        faculty: true
-                    }
-                }
-            }
+            include: accountInclude
         });
 
         if (result) {
-            return res.status(200).json({
-                message: "Update successful",
-                timetable: result
-            });
+            return res.status(200).json({ message: "Update successful", timetable: result });
         }
     } catch (error) {
         next(error);
@@ -184,24 +117,11 @@ export const UpdateTimetableById = async (req: Request, res: Response, next: Nex
 export const DeleteTimetableById = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const timeID = req.params.id;
+        if (!timeID) return res.status(404).json({ message: "Timetable not found" });
+        if (Array.isArray(timeID)) return res.status(400).json({ message: "id must be a string, not an array" });
 
-        if (!timeID) {
-            return res.status(404).json({ message: "Timetable not found" });
-        }
-
-        if (Array.isArray(timeID)) {
-            return res.status(400).json({ message: "id must be a string, not an array" });
-        }
-
-        const result = await prisma.timetable.delete({
-            where: { timeID }
-        });
-
-        if (result) {
-            return res.status(200).json({
-                message: "Delete Successful"
-            });
-        }
+        const result = await prisma.timetable.delete({ where: { timeID } });
+        if (result) return res.status(200).json({ message: "Delete Successful" });
     } catch (error) {
         next(error);
     }
@@ -210,17 +130,8 @@ export const DeleteTimetableById = async (req: Request, res: Response, next: Nex
 export const DeleteManyTimetables = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { timeIds } = req.body;
-
-        const result = await prisma.timetable.deleteMany({
-            where: { timeID: { in: timeIds } }
-        });
-
-        if (result) {
-            return res.status(200).json({
-                message: "Delete successful",
-                deletedCount: result.count
-            });
-        }
+        const result = await prisma.timetable.deleteMany({ where: { timeID: { in: timeIds } } });
+        if (result) return res.status(200).json({ message: "Delete successful", deletedCount: result.count });
     } catch (error) {
         next(error);
     }

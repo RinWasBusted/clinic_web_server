@@ -35,7 +35,6 @@ const router = Router();
  *               - firstName
  *               - lastName
  *               - phoneNumber
- *               - facultyID
  *               - scheduleDate
  *             properties:
  *               firstName:
@@ -63,10 +62,6 @@ const router = Router();
  *                 type: string
  *                 format: uuid
  *                 example: "550e8400-e29b-41d4-a716-446655440000"
- *               facultyID:
- *                 type: string
- *                 format: uuid
- *                 example: "550e8400-e29b-41d4-a716-446655440002"
  *     responses:
  *       201:
  *         description: Appointment created successfully
@@ -90,7 +85,7 @@ const router = Router();
  *       400:
  *         description: Bad request - Missing required fields
  *       404:
- *         description: Faculty or Room not found
+ *         description: Room not found
  */
 router.post("/", verifyAccessToken, CreateAppointment);
 
@@ -110,11 +105,11 @@ router.post("/", verifyAccessToken, CreateAppointment);
  *           enum: [pending, approved, cancelled]
  *         description: Filter by appointment status
  *       - in: query
- *         name: facultyID
+ *         name: roomID
  *         schema:
  *           type: string
  *           format: uuid
- *         description: Filter by faculty
+ *         description: Filter by room
  *       - in: query
  *         name: patientID
  *         schema:
@@ -207,9 +202,6 @@ router.get("/:id", verifyAccessToken, GetAppointmentById);
  *               patientID:
  *                 type: string
  *                 format: uuid
- *               facultyID:
- *                 type: string
- *                 format: uuid
  *               roomID:
  *                 type: string
  *                 format: uuid
@@ -234,7 +226,7 @@ router.get("/:id", verifyAccessToken, GetAppointmentById);
  *       400:
  *         description: Bad request
  *       404:
- *         description: Not Found - Appointment, Patient, Faculty, Room or Staff not found
+ *         description: Not Found - Appointment, Patient, Room or Staff not found
  */
 router.patch("/:id", verifyAccessToken, UpdateAppointmentById);
 
