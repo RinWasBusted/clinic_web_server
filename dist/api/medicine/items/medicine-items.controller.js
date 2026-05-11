@@ -3,6 +3,7 @@ import cloudinary from "../../../utils/cloudinary.js";
 export const createMedicine = async (req, res, next) => {
     try {
         const { medicineName, unit, price, description } = req.body;
+        console.log(req.body);
         // Validate required fields
         if (!medicineName || !unit || !price) {
             return res.status(400).json({

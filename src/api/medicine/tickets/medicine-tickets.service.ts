@@ -94,26 +94,19 @@ export const createMedicineTicketService = async (
   const normalizedPrescriptionDisplayID = prescriptionDisplayID.trim();
 
   return prisma.$transaction(async (tx) => {
-    const pharmacistAccount = await tx.account.findUnique({
-      where: {
-        accountID,
-      },
+    const accountData = await tx.account.findUnique({
+      where: { accountID },
       select: {
-        roleName: true,
-        pharmacist: {
-          select: {
-            roomID: true,
-          },
+        workspaces: {
+          select: { roomID: true },
+          take: 1,
         },
       },
     });
 
-    if (!pharmacistAccount || pharmacistAccount.roleName !== "pharmacist") {
-      throw new MedicineTicketServiceError("Forbidden", 403);
-    }
-
-    if (!pharmacistAccount.pharmacist?.roomID) {
-      throw new MedicineTicketServiceError("Pharmacist account is not assigned to any room", 400);
+    const assignedRoomID = accountData?.workspaces?.[0]?.roomID;
+    if (!assignedRoomID) {
+      throw new MedicineTicketServiceError("Account is not assigned to any room", 400);
     }
 
     const prescription = await tx.prescription.findFirst({
@@ -186,7 +179,7 @@ export const createMedicineTicketService = async (
       data: {
         prescriptionID: prescription.prescriptionID,
         orderNum,
-        roomID: pharmacistAccount.pharmacist.roomID,
+        roomID: assignedRoomID,
         status: "pending",
       },
       select: {
@@ -238,32 +231,17 @@ export const dispenseMedicineTicketService = async (
 ) => {
   return prisma.$transaction(
     async (tx) => {
-      const pharmacistAccount = await tx.account.findUnique({
-        where: {
-          accountID,
-        },
-        select: {
-          roleName: true,
-          pharmacist: {
-            select: {
-              pharmacistID: true,
-            },
-          },
-        },
+      // Verify account exists and get its ID
+      const actingAccount = await tx.account.findUnique({
+        where: { accountID },
+        select: { accountID: true },
       });
-
-      if (!pharmacistAccount || pharmacistAccount.roleName !== "pharmacist") {
-        throw new MedicineTicketServiceError("Forbidden", 403);
-      }
-
-      if (!pharmacistAccount.pharmacist?.pharmacistID) {
-        throw new MedicineTicketServiceError("Pharmacist account is invalid", 400);
+      if (!actingAccount) {
+        throw new MedicineTicketServiceError("Account not found", 404);
       }
 
       const ticket = await tx.medicineTicket.findUnique({
-        where: {
-          ticketID: ticketId,
-        },
+        where: { ticketID: ticketId },
         select: {
           ticketID: true,
           status: true,
@@ -335,13 +313,11 @@ export const dispenseMedicineTicketService = async (
       const imexLog = await tx.imexMedicineLog.create({
         data: {
           imexType: "export",
-          pharmacistID: pharmacistAccount.pharmacist.pharmacistID,
+          accountID,
           value: exportValue,
           note: exportNote,
         },
-        select: {
-          imexID: true,
-        },
+        select: { imexID: true },
       });
 
       await tx.imexMedicineDetails.createMany({
@@ -355,33 +331,21 @@ export const dispenseMedicineTicketService = async (
 
       for (const detail of ticket.prescription.details) {
         await tx.medicine.update({
-          where: {
-            medicineID: detail.medicineID,
-          },
-          data: {
-            quantity: {
-              decrement: detail.quantity,
-            },
-          },
+          where: { medicineID: detail.medicineID },
+          data: { quantity: { decrement: detail.quantity } },
         });
       }
 
       await tx.medicineTicket.update({
-        where: {
-          ticketID: ticket.ticketID,
-        },
-        data: {
-          status: "done",
-        },
+        where: { ticketID: ticket.ticketID },
+        data: { status: "done" },
       });
 
       await tx.prescription.update({
-        where: {
-          prescriptionID: ticket.prescriptionID,
-        },
+        where: { prescriptionID: ticket.prescriptionID },
         data: {
           status: "done",
-          pharmacistID: pharmacistAccount.pharmacist.pharmacistID,
+          pharmacistID: accountID,
         },
       });
 

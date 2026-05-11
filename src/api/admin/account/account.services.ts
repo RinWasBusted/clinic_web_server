@@ -1,16 +1,19 @@
 import { prisma } from "../../../utils/prisma.js";
 
-const checkRole = (currentrole: string, accountToDeleterole: string) => {
-  if (currentrole !== "manager" && currentrole !== "staff") {
-    return { status: 403, message: "Forbidden: Only manager or staff can use " };
+/**
+ * Map a role's profileType to a Prisma nested-create payload.
+ * profileType is stored on the Role record (e.g. "staff", "doctor", etc.)
+ * Returns an empty object for unknown / custom roles (no sub-table).
+ */
+export function buildProfileCreate(profileType: string | null | undefined) {
+  switch (profileType) {
+    case "staff": return { staff: { create: {} } };
+    case "doctor": return { doctor: { create: {} } };
+    case "pharmacist": return { pharmacist: { create: {} } };
+    case "manager": return { manager: { create: {} } };
+    case "patient": return { patient: { create: {} } };
+    default: return {};
   }
-  if (currentrole !== "manager" && (accountToDeleterole === "staff" || accountToDeleterole === "manager")) {
-    return { status: 403, message: "Forbidden: Only manager can use " };
-  }
-  if (currentrole === accountToDeleterole) {
-    return { status: 400, message: "Bad Request: not use for same role" };
-  }
-  return null;
 }
 
 const updateAvatar = async (accountId: string, url: string) => {
@@ -21,4 +24,4 @@ const updateAvatar = async (accountId: string, url: string) => {
   return { status: 200, message: "Avatar updated successfully" };
 }
 
-export { checkRole, updateAvatar }
+export { updateAvatar }

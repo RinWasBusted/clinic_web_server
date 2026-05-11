@@ -2,7 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import prisma from "../../../utils/prisma.js";
 export const CreateFaculty = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { facultyName, doctors, rooms } = req.body;
+        const { facultyName, rooms, facultyDescription } = req.body;
+        console.log(facultyDescription);
         if (!facultyName) {
             return res.status(400).json({ message: "Faculty name is required" });
         }
@@ -14,7 +15,7 @@ export const CreateFaculty = async (req: Request, res: Response, next: NextFunct
             data:
             {
                 facultyName,
-                doctors,
+                facultyDescription,
                 rooms
             }
         });
@@ -25,7 +26,11 @@ export const CreateFaculty = async (req: Request, res: Response, next: NextFunct
 };
 export const GetAllFaculties = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const faculties = await prisma.faculty.findMany();
+        const faculties = await prisma.faculty.findMany({
+            include: {
+                rooms: true
+            }
+        });
         return res.status(200).json({ faculties });
     } catch (error) {
         next(error);
@@ -50,7 +55,7 @@ export const GetFacultyById = async (req: Request, res: Response, next: NextFunc
 }
 export const UpdateFacultyById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const facultyID = req.faculty?.facultyID;
+        const facultyID = req.params.id as string;
         const data = req.body;
         const result = await prisma.faculty.update({
             where: { facultyID },
@@ -73,7 +78,7 @@ export const UpdateFacultyById = async (req: Request, res: Response, next: NextF
 }
 export const DeleteFacultyById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const facultyID = req.faculty?.facultyID;
+        const facultyID = req.params.id as string;
         const result = await prisma.faculty.update({
             where: { facultyID },
             data: { status: "INACTIVE" }
@@ -97,25 +102,25 @@ export const DeleteManyFaculty = async (req: Request, res: Response, next: NextF
         const { FacultyIds, } = req.body;
         const results = [];
         if (!Array.isArray(FacultyIds) || FacultyIds.length === 0) {
-    return res.status(400).json({
-        message: "FacultyIds must be a non-empty array"
-    });
-}
+            return res.status(400).json({
+                message: "FacultyIds must be a non-empty array"
+            });
+        }
         for (const id of FacultyIds) {
             console.log(id);
             const rooms = await prisma.room.findMany({
-            where: {
-                FacultyID: id
-            }
-        });
-        if (rooms.length > 0) {
-            results.push({
-                id,
-                status: "failed",
-                message: "Cannot delete faculty with associated rooms. Please remove or reassign the rooms first."
+                where: {
+                    FacultyID: id
+                }
             });
-            continue;
-        }
+            if (rooms.length > 0) {
+                results.push({
+                    id,
+                    status: "failed",
+                    message: "Cannot delete faculty with associated rooms. Please remove or reassign the rooms first."
+                });
+                continue;
+            }
             const faculty = await prisma.faculty.findUnique({ where: { facultyID: id } });
             if (!faculty) {
                 results.push({ id, status: "not found" });

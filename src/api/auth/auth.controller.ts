@@ -9,7 +9,15 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
   try {
     const account = await prisma.account.findFirst({
       where: { email },
-      select: { accountID: true, roleName: true, roleID: true, password: true, firstName: true, lastName: true },
+      select: {
+        accountID: true,
+        roleName: true,
+        roleID: true,
+        password: true,
+        firstName: true,
+        lastName: true,
+        role: { select: { roleName: true } }
+      },
     });
     if (!account?.password) {
       return res.status(400).json({
@@ -20,12 +28,14 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Create tokens (old code, idc this part)
+    // Prefer dynamic role from Role relation; fallback to legacy roleName field
+    const resolvedRoleName = account.role?.roleName ?? account.roleName ?? "";
+
     const { accessToken, refreshToken } = generateTokens({
       id: account.accountID,
       email,
-      role: account.roleName,
-      roleName: account.roleName,
+      role: resolvedRoleName,
+      roleName: resolvedRoleName,
       roleID: account.roleID,
     });
 
@@ -46,7 +56,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
     await addRefreshTokenToCookieToWhitelist({ refreshToken, userId: account.accountID });
     return res.status(200).json({
       message: "Login successful",
-      user: { id: account.accountID, role: account.roleName, firstName: account.firstName, lastName: account.lastName },
+      user: { id: account.accountID, role: resolvedRoleName, firstName: account.firstName, lastName: account.lastName },
     });
   } catch (error) {
     next(error);
@@ -66,15 +76,17 @@ export const refreshTokens = async (req: Request, res: Response, next: NextFunct
     // lấy thông tin user để tạo access token
     const account = await prisma.account.findUnique({
       where: { accountID: userId },
-      select: { email: true, roleName: true, roleID: true, role: true },
+      select: { email: true, roleName: true, roleID: true, role: { select: { roleName: true } } },
     });
     if (!account) return res.status(401).json({ message: "Unauthorized" });
+
+    const resolvedRoleName = account.role?.roleName ?? account.roleName ?? "";
 
     const { accessToken, refreshToken: newRefreshToken } = generateTokens({
       id: userId,
       email: account.email,
-      role: account.role?.roleName || account.roleName,
-      roleName: account.role?.roleName || account.roleName,
+      role: resolvedRoleName,
+      roleName: resolvedRoleName,
       roleID: account.roleID,
     });
 
@@ -108,15 +120,8 @@ export const GetProfile = async (req: Request, res: Response) => {
   }
   const account = await prisma.account.findUnique({
     where: { accountID: userId },
-    omit: {
-      password: true,
-    },
-    include: {
-      doctor: true,
-      pharmacist: true,
-      staff: true,
-      manager: true,
-    },
+    omit: { password: true },
+    include: { role: true, workspaces: true, patient: true },
   });
   if (!account) {
     return res.status(404).json({ message: "User not found" });

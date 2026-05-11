@@ -8,7 +8,7 @@ import random6Digits from "../../../utils/generateCode.js";
 export const CreateAppointment = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { appointmentType, scheduleDate, roomID, firstName,
-            lastName, phoneNumber, email, facultyID } = req.body;
+            lastName, phoneNumber, email } = req.body;
         const approvedBy = req.user?.id;
         console.log(approvedBy);
         if (!approvedBy) {
@@ -25,10 +25,6 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                 }
             }
         });
-        const faculty = await prisma.faculty.findUnique({ where: { facultyID } });
-        if (!faculty) {
-            return res.status(404).json({ message: "Faculty not found" });
-        }
         const codePatient = random6Digits("BN")
         const codeAppointment = random6Digits("BV")
         if (!account) {
@@ -41,7 +37,10 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     email: email,
                     //role: "patient",
                     birthDate: scheduleDate,
-                    DisplayID: codePatient
+                    DisplayID: codePatient,
+                    patient: {
+                        create: {}
+                    }
                 }
             });
             const newAppointment = await prisma.appointment.create({
@@ -49,25 +48,18 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     appointmentType: appointmentType || "examine",
                     scheduleDate: new Date(scheduleDate),
                     roomID,
-                    patientID: newAccount.DisplayID ?? "",
-                    facultyID,
+                    patientID: newAccount.accountID,
                     appointmentDisplayID: codeAppointment,
-                    status: "pending",
-                    depositStatus: "unpaid",
+                    status: "approved",
+                    depositStatus: "paid",
                     approvedBy: approvedBy
 
                 },
                 include: {
-                    patient: {
-                        include: {
-                            account: true
-                        }
-                    },
-                    faculty: true,
-                    room: true,
-                    approvedByStaff: true
+                    patient: { include: { account: true } },
+                    room: { include: { faculty: true } },
+                    approvedByAccount: true
                 }
-
             });
             return res.status(201).json({ appointment: newAppointment });
         }
@@ -78,24 +70,16 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     scheduleDate: new Date(scheduleDate),
                     roomID,
                     patientID: account.patientID,
-                    facultyID,
                     appointmentDisplayID: codeAppointment,
-                    status: "pending",
+                    status: "approved",
                     depositStatus: "unpaid",
                     approvedBy: approvedBy
-
                 },
                 include: {
-                    patient: {
-                        include: {
-                            account: true
-                        }
-                    },
-                    faculty: true,
-                    room: true,
-                    approvedByStaff: true
+                    patient: { include: { account: true } },
+                    room: { include: { faculty: true } },
+                    approvedByAccount: true
                 }
-
             });
             return res.status(201).json({ appointment: newAppointment });
         }
@@ -106,45 +90,37 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
 
 export const GetAllAppointments = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { status, facultyID, patientID, scheduleDate } = req.query;
+        const { status, patientID, scheduleDate, roomID, facultyID } = req.query;
 
         const where: Prisma.AppointmentWhereInput = {};
         if (status !== undefined && !isAppointment(status)) {
             return res.status(400).json({
-                message: "Invalid role value",
+                message: "Invalid status value",
                 allowed: Object.values(AppointmentStatus),
             });
         }
 
-        if (isAppointment(status)) {
-            where.status = status;
-        }
-        if (facultyID && typeof facultyID === "string") where.facultyID = facultyID;
+        if (isAppointment(status)) where.status = status;
         if (patientID && typeof patientID === "string") where.patientID = patientID;
+        if (roomID && typeof roomID === "string") where.roomID = roomID;
+        // filter theo faculty thông qua room (vì appointment không còn facultyID trực tiếp)
+        if (facultyID && typeof facultyID === "string") {
+            where.room = { FacultyID: facultyID };
+        }
 
         if (scheduleDate && typeof scheduleDate === "string") {
             const d = new Date(scheduleDate);
             const start = new Date(d); start.setHours(0, 0, 0, 0);
             const end = new Date(d); end.setHours(23, 59, 59, 999);
-
             where.scheduleDate = { gte: start, lte: end };
         }
 
         const appointments = await prisma.appointment.findMany({
             where,
             include: {
-                patient: {
-                    include: {
-                        account: true
-                    }
-                },
-                faculty: true,
-                room: true,
-                approvedByStaff: {
-                    include: {
-                        account: true
-                    }
-                }
+                patient: { include: { account: true } },
+                room: { include: { faculty: true } },
+                approvedByAccount: true
             },
             orderBy: { scheduleDate: "desc" }
         });
@@ -167,18 +143,9 @@ export const GetAppointmentById = async (req: Request, res: Response, next: Next
         const appointment = await prisma.appointment.findUnique({
             where: { appointmentID },
             include: {
-                patient: {
-                    include: {
-                        account: true
-                    }
-                },
-                faculty: true,
-                room: true,
-                approvedByStaff: {
-                    include: {
-                        account: true
-                    }
-                },
+                patient: { include: { account: true } },
+                room: { include: { faculty: true } },
+                approvedByAccount: true,
                 enterTickets: true,
                 examineLogs: true
             }
@@ -197,7 +164,7 @@ export const GetAppointmentById = async (req: Request, res: Response, next: Next
 export const UpdateAppointmentById = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const appointmentID = req.params.id;
-        const { status, depositStatus, roomID, scheduleDate, patientID, facultyID } = req.body;
+        const { status, depositStatus, roomID, scheduleDate, patientID } = req.body;
         const approvedBy = req.user?.id;
         if (!appointmentID) {
             return res.status(404).json({ message: "Appointment not found" });
@@ -206,17 +173,13 @@ export const UpdateAppointmentById = async (req: Request, res: Response, next: N
         if (Array.isArray(appointmentID)) {
             return res.status(400).json({ message: "id must be a string, not an array" });
         }
-        await verifyRefsForUpdate({
-            patientID,
-            facultyID,
-            roomID,
-        })
+        await verifyRefsForUpdate({ patientID, roomID });
+
         const updateData: Prisma.AppointmentUncheckedUpdateInput = {};
         if (status) updateData.status = status;
         if (depositStatus) updateData.depositStatus = depositStatus;
         if (roomID) updateData.roomID = roomID;
         if (patientID) updateData.patientID = patientID;
-        if (facultyID) updateData.facultyID = facultyID;
         if (approvedBy) updateData.approvedBy = approvedBy;
         if (scheduleDate) updateData.scheduleDate = new Date(scheduleDate);
 
@@ -224,18 +187,9 @@ export const UpdateAppointmentById = async (req: Request, res: Response, next: N
             where: { appointmentID },
             data: updateData,
             include: {
-                patient: {
-                    include: {
-                        account: true
-                    }
-                },
-                faculty: true,
-                room: true,
-                approvedByStaff: {
-                    include: {
-                        account: true
-                    }
-                }
+                patient: { include: { account: true } },
+                room: { include: { faculty: true } },
+                approvedByAccount: true
             }
         });
 
@@ -273,16 +227,11 @@ export const ApproveAppointment = async (req: Request, res: Response, next: Next
 
         const appointment = await prisma.appointment.update({
             where: { appointmentID },
-            data: {
-                status: "approved",
-                approvedBy,
-                roomID
-            },
+            data: { status: "approved", approvedBy, roomID },
             include: {
-                patient: true,
-                faculty: true,
-                room: true,
-                approvedByStaff: true
+                patient: { include: { account: true } },
+                room: { include: { faculty: true } },
+                approvedByAccount: true
             }
         });
 
@@ -308,9 +257,8 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
             data: { status: "cancelled" },
             include: {
                 patient: { include: { account: true } },
-                faculty: true,
-                room: true,
-                doctor: { include: { account: true } }
+                room: { include: { faculty: true } },
+                doctor: true
             }
         });
 
@@ -336,7 +284,7 @@ export const CancelAppointment = async (req: Request, res: Response, next: NextF
                         <p style="margin: 8px 0;"><strong>Mã lịch khám:</strong> ${appointment.appointmentDisplayID}</p>
                         <p style="margin: 8px 0;"><strong>Ngày khám:</strong> ${scheduleDate}</p>
                         <p style="margin: 8px 0;"><strong>Loại khám:</strong> ${appointment.appointmentType}</p>
-                        ${appointment.faculty ? `<p style="margin: 8px 0;"><strong>Bác sĩ:</strong> ${appointment.doctor?.account.lastName || ""}</p>` : ''}
+                        ${appointment.doctor ? `<p style="margin: 8px 0;"><strong>Bác sĩ:</strong> ${appointment.doctor.lastName || ""}</p>` : ''}
                         ${appointment.room ? `<p style="margin: 8px 0;"><strong>Phòng:</strong> ${appointment.room.roomName}</p>` : ''}
                     </div>
                     <p style="color: #333; line-height: 1.6;">Nếu você cần đặt lịch khám mới, vui lòng liên hệ với bộ phận tiếp tân hoặc đặt lịch trực tuyến.</p>

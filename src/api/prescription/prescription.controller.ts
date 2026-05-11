@@ -4,9 +4,9 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 
 export async function createPrescriptionHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    // refine the data in the service layer, not here
-    const prescriptionData = await prescriptionService.refinePrescriptionData(req.body);
-    const newPrescription = await prescriptionService.submit(prescriptionData);
+    const data = { ...req.body, doctorID: req.user?.id as string };
+    const prescriptionData = await prescriptionService.refinePrescriptionData(data as any);
+    const newPrescription = await prescriptionService.submit(prescriptionData as any);
     return res.json({ message: "Create prescription successfully", prescription: newPrescription });
   } catch (error) {
     next(error);

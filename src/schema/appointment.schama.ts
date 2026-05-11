@@ -1,10 +1,10 @@
 import { z } from "zod";
 export const getAllAppointmentsQuerySchema = z
   .object({
-    status: z.enum(["pending", "approved", "canceled"]).optional(),
-    facultyID: z.string().min(1).optional(),
-    RoomID: z.string().min(1).optional(),
-    patientID: z.string().min(1).optional(),
+    status: z.enum(["pending", "approved", "cancelled"]).optional(),
+    roomID: z.string().uuid().optional(),
+    facultyID: z.string().uuid().optional(),
+    patientID: z.string().uuid().optional(),
     scheduleDate: z
       .string()
       .optional()
@@ -26,8 +26,7 @@ export const createAppointmentBodySchema = z
       .refine((v) => !Number.isNaN(new Date(v).getTime()), {
         message: "scheduleDate must be a valid date string (YYYY-MM-DD or ISO)",
       }),
-    roomID: z.string().min(1).optional().nullable(),
-    facultyID: z.string().min(1, "facultyID is required"),
+    roomID: z.string().uuid().optional().nullable(),
   })
   .strict();
 // Update: tất cả field optional (PATCH)

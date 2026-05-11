@@ -42,16 +42,16 @@ export const getImexLogs = async (
   }
 };
 
-const createImexLogForCurrentPharmacist = async (
+const createImexLogForCurrentAccount = async (
   req: Request,
   res: Response,
   next: NextFunction,
   successMessage: string
 ) => {
   try {
-    const pharmacistID = req.user?.id;
+    const accountID = req.user?.id;
 
-    if (!pharmacistID) {
+    if (!accountID) {
       return res.status(401).json({
         message: "Unauthorized",
       });
@@ -61,7 +61,7 @@ const createImexLogForCurrentPharmacist = async (
 
     const imexLog = await createImexLogService({
       imexType,
-      pharmacistID,
+      accountID,
       value,
       note,
       items,
@@ -80,13 +80,13 @@ export const createImexLog = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => createImexLogForCurrentPharmacist(req, res, next, "Imex log created successfully");
+) => createImexLogForCurrentAccount(req, res, next, "Imex log created successfully");
 
 export const createManyImexLog = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => createImexLogForCurrentPharmacist(req, res, next, "Imex log created successfully");
+) => createImexLogForCurrentAccount(req, res, next, "Imex log created successfully");
 
 export const getImexById = async (
   req: Request,
