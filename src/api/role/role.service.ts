@@ -3,19 +3,12 @@ import { CreateRoleInput, UpdateRoleInput } from "../../schema/role.schema.js";
 
 export const roleService = {
   async getAllRoles() {
-    const roles = await prisma.role.findMany({
-      include: {
-        permissions: {
-          include: {
-            permission: true
-          }
-        }
-      }
-    });
-    return roles.map(role => ({
-      ...role,
-      permissions: role.permissions.map(rp => rp.permission)
-    }));
+    const roles = await prisma.role.findMany({});
+    return roles;
+    // return roles.map((role) => ({
+    //   ...role,
+    //   permissions: role.permissions.map((rp) => rp.permission),
+    // }));
   },
 
   async getRoleById(roleID: string) {
@@ -23,16 +16,16 @@ export const roleService = {
       where: { roleID },
       include: {
         permissions: {
-          include: {
-            permission: true
-          }
-        }
-      }
+          select: {
+            permissionID: true,
+          },
+        },
+      },
     });
     if (!role) return null;
     return {
       ...role,
-      permissions: role.permissions.map(rp => rp.permission)
+      permissions: role.permissions.map(({ permissionID }) => permissionID),
     };
   },
 
@@ -44,15 +37,15 @@ export const roleService = {
         data: {
           roleName,
           roleDescription,
-        }
+        },
       });
 
       if (permissionIDs && permissionIDs.length > 0) {
         await tx.rolePermission.createMany({
-          data: permissionIDs.map(permissionID => ({
+          data: permissionIDs.map((permissionID) => ({
             roleID: role.roleID,
-            permissionID
-          }))
+            permissionID,
+          })),
         });
       }
 
@@ -72,7 +65,7 @@ export const roleService = {
       if (Object.keys(updateData).length > 0) {
         role = await tx.role.update({
           where: { roleID },
-          data: updateData
+          data: updateData,
         });
       } else {
         role = await tx.role.findUnique({ where: { roleID } });
@@ -82,15 +75,15 @@ export const roleService = {
       if (permissionIDs !== undefined) {
         // Delete all old permissions and recreate
         await tx.rolePermission.deleteMany({
-          where: { roleID }
+          where: { roleID },
         });
 
         if (permissionIDs.length > 0) {
           await tx.rolePermission.createMany({
-            data: permissionIDs.map(permissionID => ({
+            data: permissionIDs.map((permissionID) => ({
               roleID,
-              permissionID
-            }))
+              permissionID,
+            })),
           });
         }
       }
@@ -104,11 +97,11 @@ export const roleService = {
       // RolePermission has no action on role deletion, we should manually delete it or let Cascade do it if setup.
       // Assuming no Cascade on RolePermission in schema, we need to delete children first.
       await tx.rolePermission.deleteMany({
-        where: { roleID }
+        where: { roleID },
       });
       return tx.role.delete({
-        where: { roleID }
+        where: { roleID },
       });
     });
-  }
+  },
 };
