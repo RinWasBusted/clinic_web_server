@@ -72,7 +72,7 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     patientID: account.patientID,
                     appointmentDisplayID: codeAppointment,
                     status: "approved",
-                    depositStatus: "unpaid",
+                    depositStatus: "paid",
                     approvedBy: approvedBy
                 },
                 include: {
@@ -122,8 +122,9 @@ export const GetAllAppointments = async (req: Request, res: Response, next: Next
                 room: { include: { faculty: true } },
                 approvedByAccount: true
             },
-            orderBy: { scheduleDate: "desc" }
+            orderBy: { createdAt: "desc" }
         });
+        console.log(appointments);
 
         return res.status(200).json({ appointments });
     } catch (error) {
