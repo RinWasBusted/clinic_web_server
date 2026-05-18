@@ -1,9 +1,8 @@
-import { createMedicineService, getMedicineByIdService, getMedicineItemsService, updateMedicineService, deleteMedicineService, } from "./medicine-items.service.js";
+import { createMedicineService, createManyMedicineService, getMedicineByIdService, getMedicineItemsService, updateMedicineService, deleteMedicineService, } from "./medicine-items.service.js";
 import cloudinary from "../../../utils/cloudinary.js";
 export const createMedicine = async (req, res, next) => {
     try {
         const { medicineName, unit, price, description } = req.body;
-        console.log(req.body);
         // Validate required fields
         if (!medicineName || !unit || !price) {
             return res.status(400).json({
@@ -33,26 +32,30 @@ export const createMedicine = async (req, res, next) => {
         next(error);
     }
 };
-// export const getMedicines = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     const medicines = await getMedicinesService();
-//     return res.status(200).json({
-//       message: "Medicines retrieved successfully",
-//       data: medicines,
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+export const createManyMedicine = async (req, res, next) => {
+    try {
+        const medicines = req.body;
+        if (!Array.isArray(medicines)) {
+            return res.status(400).json({ message: "Medicines must be an array" });
+        }
+        const result = await createManyMedicineService(medicines.map((medicine) => ({
+            ...medicine,
+            price: parseFloat(medicine.price),
+        })));
+        return res.status(201).json({
+            message: "Medicines created successfully",
+            data: result,
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
+};
 export const getMedicineItems = async (req, res, next) => {
     try {
         const search = req.query.search || "";
         const page = req.query.page ? parseInt(req.query.page) : 1;
-        const pageSize = 10;
+        const pageSize = 1000;
         if (page < 1) {
             return res.status(400).json({ message: "Page must be at least 1" });
         }

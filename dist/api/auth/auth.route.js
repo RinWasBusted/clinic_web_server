@@ -1,7 +1,9 @@
 import { Router } from "express";
-import { loginUser, register, updatePassword } from "./auth.controller.js";
-import { verifyAccessToken } from "./verifyToken.js";
+import { GetProfile, loginUser, refreshTokens, updatePassword, UpdateProfile } from "./auth.controller.js";
+import { verifyAccessToken, verifyRefreshToken } from "../../middlewares/verifyToken.js";
 import { logout } from "./auth.controller.js";
+import { validateBody, } from "../../middlewares/validate.js";
+import { UpdateAccountSchema } from "../../schema/auth.schema.js";
 const router = Router();
 /**
  * @swagger
@@ -52,62 +54,33 @@ const router = Router();
 router.post("/login", loginUser);
 /**
  * @swagger
- * /auth/register:
+ * /auth/refresh:
  *   post:
- *     summary: Register a new user (Admin only)
- *     description: Allows admin to register a new user account
+ *     summary: Refresh access token
+ *     description: Refresh the access token using the refresh token via HTTP-only cookies. No request body needed.
  *     tags:
  *       - Authentication
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               firstName:
- *                 type: string
- *                 example: "John"
- *               lastName:
- *                 type: string
- *                 example: "Doe"
- *               role:
- *                 type: string
- *                 example: "user"
- *               email:
- *                 type: string
- *                 example: "john.doe@example.com"
- *               birthDate:
- *                 type: string
- *                 format: date
- *                 example: "1990-01-01"
- *               phoneNumber:
- *                 type: string
- *                 example: "+1234567890"
- *             required:
- *               - firstName
- *               - lastName
- *               - role
- *               - email
- *               - birthDate
- *               - phoneNumber
  *     responses:
- *       201:
- *         description: User registered successfully
+ *       200:
+ *         description: Access token refreshed successfully. New tokens are set in HTTP-only cookies.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Token refreshed"
  *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden - Only admin can register
+ *         description: Unauthorized - Invalid or expired refresh token
  *       500:
  *         description: Internal server error
  */
-router.post("/register", verifyAccessToken, register);
+router.post("/refresh", verifyRefreshToken, refreshTokens);
 /**
  * @swagger
  * /auth/update-password:
- *   post:
+ *   patch:
  *     summary: Update user password
  *     description: Allows authenticated user to update their password
  *     tags:
@@ -141,12 +114,112 @@ router.post("/register", verifyAccessToken, register);
  *                 message:
  *                   type: string
  *                   example: "Password updated successfully"
+ *       400:
+ *         description: Bad request - Missing required fields
  *       401:
  *         description: Unauthorized or current password is incorrect
  *       500:
  *         description: Internal server error
  */
 router.patch("/update-password", verifyAccessToken, updatePassword);
+/**
+ * @swagger
+ * /auth/profile:
+ *   get:
+ *     summary: Get user profile
+ *     description: Retrieve the authenticated user's profile information
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     accountID:
+ *                       type: integer
+ *                       example: 1
+ *                     email:
+ *                       type: string
+ *                       example: "user@example.com"
+ *                     firstName:
+ *                       type: string
+ *                       example: "John"
+ *                     lastName:
+ *                       type: string
+ *                       example: "Doe"
+ *                     role:
+ *                       type: string
+ *                       example: "user"
+ *                     birthDate:
+ *                       type: string
+ *                       format: date
+ *                       example: "1990-01-01"
+ *                     phoneNumber:
+ *                       type: string
+ *                       example: "+1234567890"
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/profile", verifyAccessToken, GetProfile);
+/**
+ * @swagger
+ * /auth/update-profile:
+ *   patch:
+ *     summary: Update user profile
+ *     description: Update the authenticated user's profile information
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "John"
+ *               lastName:
+ *                 type: string
+ *                 example: "Doe"
+ *               birthDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "1990-01-01"
+ *               phoneNumber:
+ *                 type: string
+ *                 example: "+1234567890"
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Profile updated successfully"
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.patch("/update-profile", verifyAccessToken, validateBody(UpdateAccountSchema), UpdateProfile);
 /**
  * @swagger
  * /auth/logout:

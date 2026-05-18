@@ -1,4 +1,4 @@
-import prisma from "../../../utils/prisma.js";
+import prisma, { Prisma } from "../../../utils/prisma.js";
 export const createMedicineService = (data) => {
     return prisma.medicine.create({
         data: {
@@ -20,6 +20,55 @@ export const createMedicineService = (data) => {
             createdAt: false,
         },
     });
+};
+export const createManyMedicineService = async (medicines) => {
+    const tasks = medicines.map((medicine, index) => (async () => {
+        const { medicineName, unit, price, description, quantity, medicineImage } = medicine;
+        if (!medicineName || !unit || price === undefined || Number.isNaN(price)) {
+            throw new Error(`Missing required fields for medicine at index ${index}: medicineName, unit, price`);
+        }
+        await createMedicineService({
+            medicineName,
+            unit,
+            price,
+            description,
+            quantity,
+            medicineImage,
+        });
+        return medicine;
+    })());
+    const settled = await Promise.allSettled(tasks);
+    const success = [];
+    const failed = [];
+    settled.forEach((result, index) => {
+        const medicine = medicines[index];
+        const medicineName = medicine?.medicineName || `index ${index}`;
+        if (result.status === "fulfilled") {
+            success.push({ index, medicineName });
+            return;
+        }
+        const err = result.reason;
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+            if (err.code === "P2002") {
+                failed.push({ index, medicineName, reason: "DUPLICATE_UNIQUE" });
+                return;
+            }
+            failed.push({ index, medicineName, reason: `PRISMA_${err.code}` });
+            return;
+        }
+        failed.push({
+            index,
+            medicineName,
+            reason: err instanceof Error ? err.message : "UNKNOWN_ERROR",
+        });
+    });
+    return {
+        requestCount: medicines.length,
+        successCount: success.length,
+        failedCount: failed.length,
+        success,
+        failed,
+    };
 };
 export const getMedicinesService = () => {
     return prisma.medicine.findMany({
@@ -52,14 +101,28 @@ export const getMedicineByIdService = (medicineID) => {
 };
 export const getMedicineItemsService = async (search, page, pageSize) => {
     const skip = (page - 1) * pageSize;
+    const trimmedSearch = search.trim();
+    const whereClause = trimmedSearch.length === 0
+        ? undefined
+        : {
+            OR: [
+                {
+                    medicineName: {
+                        startsWith: trimmedSearch,
+                        mode: "insensitive",
+                    },
+                },
+                {
+                    medicineName: {
+                        contains: ` ${trimmedSearch}`,
+                        mode: "insensitive",
+                    },
+                },
+            ],
+        };
     const [data, totalItems] = await Promise.all([
         prisma.medicine.findMany({
-            where: {
-                medicineName: {
-                    contains: search,
-                    mode: "insensitive",
-                },
-            },
+            where: whereClause,
             select: {
                 medicineID: true,
                 medicineName: true,
@@ -77,12 +140,7 @@ export const getMedicineItemsService = async (search, page, pageSize) => {
             },
         }),
         prisma.medicine.count({
-            where: {
-                medicineName: {
-                    contains: search,
-                    mode: "insensitive",
-                },
-            },
+            where: whereClause,
         }),
     ]);
     const totalPages = Math.ceil(totalItems / pageSize);

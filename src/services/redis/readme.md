@@ -12,21 +12,18 @@ In the contributor's environment, the server is installed in Ubuntu v22.04 with 
 
 ## Server config
 
-| Parameter | Value     |
-| --------- | --------- |
-| Host      | localhost |
-| Port      | 6379      |
+| Parameter | Value                                        |
+| --------- | -------------------------------------------- |
+| URL       | `redis://localhost:6379` |
 
 # Configuration
 
-The Redis connection settings are configured in the `redis.config.ts` file. Make sure to update the host, port, and password (if applicable) to match your Redis server configuration.
+The Redis connection settings are configured in the `redis.config.ts` file and now use `REDIS_URL`.
 
 ```typescript
 {
-  host: "localhost", // Redis server host
-  port: 6379, // Redis server port
-  password: "", // Redis server password (if required)
-};
+  url: process.env.REDIS_URL ?? "redis://localhost:6379",
+}
 ```
 
 After installing the server, start the command to run the Redis server:

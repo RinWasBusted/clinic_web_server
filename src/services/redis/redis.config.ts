@@ -1,16 +1,15 @@
 import { createClient } from "redis";
+import 'dotenv/config';
 
 const redisClientConfig = {
-  host: "localhost", // Redis server host
-  port: 6379, // Redis server port
-  password: "", // Redis server password (if required)
+  url: process.env.REDIS_URL ?? '',
 };
 const MAX_RETRIES = 5; // Maximum number of reconnection attempts before giving up
 const RETRY_DURATION = 5000; // Base duration (in ms) for reconnection attempts, will be multiplied by the retry count for exponential backoff
 
 const RedisClient = createClient({
+  url: redisClientConfig.url,
   socket: {
-    ...redisClientConfig,
     reconnectStrategy: (retries) => {
       if (retries >= MAX_RETRIES) {
         console.error(`Exceeded maximum reconnection attempts (${MAX_RETRIES}). Giving up.`);
@@ -24,7 +23,7 @@ const RedisClient = createClient({
   },
 });
 
-RedisClient.on("error", () => {});
+RedisClient.on("error", (err) => console.error("Redis error:", err.message));
 RedisClient.on("reconnecting", () => console.log("Reconnecting to Redis server..."));
 RedisClient.on("ready", () => console.log("The redis server is connected!"));
 

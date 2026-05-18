@@ -1,12 +1,13 @@
-declare const generateAccesToken: (user: {
+interface JwtPayload {
     id: string;
     email: string;
-}) => string;
+    role: string;
+    roleName?: string | null;
+    roleID?: string | null;
+}
+declare const generateAccesToken: (user: JwtPayload) => string;
 declare const generateRefreshToken: () => string;
-declare const generateTokens: (user: {
-    id: string;
-    email: string;
-}) => {
+declare const generateTokens: (user: JwtPayload) => {
     accessToken: string;
     refreshToken: string;
 };
