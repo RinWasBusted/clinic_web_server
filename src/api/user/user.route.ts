@@ -4,61 +4,89 @@ const router = Router();
 
 /**
  * @swagger
+ * tags:
+ *   - name: User
+ *     description: User lookup helpers
+ *
+ * components:
+ *   schemas:
+ *     UserAccountLite:
+ *       type: object
+ *       properties:
+ *         accountID:
+ *           type: string
+ *           format: uuid
+ *           description: Account unique identifier
+ *           example: "550e8400-e29b-41d4-a716-446655440000"
+ *         fullName:
+ *           type: string
+ *           description: Display name (Vietnamese format: LastName FirstName)
+ *           example: "Nguyen Van A"
+ *       required:
+ *         - accountID
+ *         - fullName
+ */
+
+/**
+ * @swagger
  * /user/role:
  *   get:
- *     summary: Get accounts by role
- *     description: Retrieve all user accounts filtered by a specific role. Query parameter role is required.
+ *     summary: Get accounts by role ID
+ *     description: |
+ *       Retrieve all user accounts assigned to a specific role.
+ *       The `role` query parameter must be a role ID (UUID).
  *     tags:
  *       - User
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: role
  *         required: true
  *         schema:
  *           type: string
- *           enum: [root, staff, doctor, manager, patient]
- *         description: The role to filter accounts by (e.g., ?role=doctor)
- *         example: doctor
+ *           format: uuid
+ *         description: Role ID to filter accounts by (e.g., ?role=550e8400-e29b-41d4-a716-446655440000)
+ *         example: "550e8400-e29b-41d4-a716-446655440000"
  *     responses:
  *       200:
  *         description: Accounts retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   accountID:
- *                     type: string
- *                     format: uuid
- *                     example: "550e8400-e29b-41d4-a716-446655440000"
- *                   email:
- *                     type: string
- *                     example: "user@example.com"
- *                   firstName:
- *                     type: string
- *                     example: "John"
- *                   lastName:
- *                     type: string
- *                     example: "Doe"
- *                   role:
- *                     type: string
- *                     enum: [root, staff, doctor, manager, patient]
- *                     example: "doctor"
- *                   birthDate:
- *                     type: string
- *                     format: date
- *                     example: "1990-01-01"
- *                   phoneNumber:
- *                     type: string
- *                     example: "+1234567890"
+ *               type: object
+ *               properties:
+ *                 accounts:
+ *                   type: array
+ *                   items:
+ *                     $ref: "#/components/schemas/UserAccountLite"
+ *             examples:
+ *               success:
+ *                 summary: Accounts returned
+ *                 value:
+ *                   accounts:
+ *                     - accountID: "550e8400-e29b-41d4-a716-446655440000"
+ *                       fullName: "Nguyen Van A"
+ *                     - accountID: "123e4567-e89b-12d3-a456-426614174000"
+ *                       fullName: "Tran Thi B"
  *       400:
- *         description: Bad request - role query parameter is required
- *       401:
- *         description: Unauthorized
+ *         description: Invalid role parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid role parameter"
+ *       404:
+ *         description: Role not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Role not found"
  *       500:
  *         description: Internal server error
  */
