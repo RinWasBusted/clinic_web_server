@@ -89,11 +89,6 @@ enum PrescriptionStatus {
   done
 }
 
-enum MedicineUnit {
-  bottle
-  capsule
-  patches
-}
 
 enum MedicineTicketStatus {
   pending
@@ -454,16 +449,33 @@ model TestDetails {
 // =======================
 // Medicine / Prescription
 // =======================
-model Medicine {
-  medicineID    Int          @id @default(autoincrement())
-  medicineName  String       @unique @db.VarChar(255)
-  medicineImage String?      @db.VarChar(255)
-  unit          MedicineUnit
-  quantity      Int          @default(0)
-  price         Decimal      @default(0) @db.Decimal(12, 2)
-  description   String?      @db.Text
-  createdAt     DateTime     @default(now()) @db.Timestamp(6)
+model MedicineUnit {
+  unitID   Int        @id @default(autoincrement())
+  unitName String     @unique @db.VarChar(50)
 
+  medicines Medicine[]
+
+  @@map("MedicineUnit")
+}
+
+model MedicineUsage {
+  id    Int    @id @default(autoincrement())
+  usage String @unique @db.VarChar(255)
+
+  @@map("MedicineUsage")
+}
+
+model Medicine {
+  medicineID    Int     @id @default(autoincrement())
+  medicineName  String  @unique @db.VarChar(255)
+  medicineImage String? @db.VarChar(255)
+  unitID        Int
+  quantity      Int     @default(0)
+  price         Decimal @default(0) @db.Decimal(12, 2)
+  description   String? @db.Text
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+
+  unit         MedicineUnit         @relation(fields: [unitID], references: [unitID])
   details      PrescriptionDetails[]
   monthReports MedicineMonthReport[]
   imexDetails  ImexMedicineDetails[]
@@ -615,7 +627,7 @@ model Notification {
 // =======================
 model SystemConfig {
   key         String  @id @db.VarChar(50) // VD: "MAX_PATIENTS_PER_DAY"
-  value       String  @db.VarChar(255) // VD: "40"
+  value       String  @db.Text
   description String?
 
   @@map("SystemConfig")
