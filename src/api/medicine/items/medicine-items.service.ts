@@ -1,9 +1,8 @@
 import prisma, { Prisma } from "../../../utils/prisma.js";
-import type { MedicineUnit } from "../../../generated/prisma/index.js";
 
 interface CreateMedicineInput {
   medicineName: string;
-  unit: MedicineUnit;
+  unitID: number;
   price: number;
   quantity?: number;
   description?: string;
@@ -33,7 +32,7 @@ export const createMedicineService = (data: CreateMedicineInput) => {
   return prisma.medicine.create({
     data: {
       medicineName: data.medicineName,
-      unit: data.unit,
+      unitID: data.unitID,
       price: data.price,
       quantity: data.quantity || 0,
       description: data.description,
@@ -42,7 +41,7 @@ export const createMedicineService = (data: CreateMedicineInput) => {
     select: {
       medicineID: true,
       medicineName: true,
-      unit: true,
+      unit: { select: { unitID: true, unitName: true } },
       price: true,
       quantity: true,
       description: true,
@@ -56,17 +55,16 @@ export const createManyMedicineService = async (
   medicines: CreateMedicineInput[]
 ): Promise<BulkCreateMedicineResult> => {
   const tasks = medicines.map((medicine, index) => (async () => {
-    const { medicineName, unit, price, description, quantity, medicineImage } = medicine;
-
-    if (!medicineName || !unit || price === undefined || Number.isNaN(price)) {
+    const { medicineName, unitID, price, description, quantity, medicineImage } = medicine;
+    if (!medicineName || !unitID || price === undefined || Number.isNaN(price)) {
       throw new Error(
-        `Missing required fields for medicine at index ${index}: medicineName, unit, price`
+        `Missing required fields for medicine at index ${index}: medicineName, unitID, price`
       );
     }
 
     await createMedicineService({
       medicineName,
-      unit,
+      unitID,
       price,
       description,
       quantity,
@@ -123,7 +121,7 @@ export const getMedicinesService = () => {
     select: {
       medicineID: true,
       medicineName: true,
-      unit: true,
+      unit: { select: { unitID: true, unitName: true } },
       price: true,
       quantity: true,
       description: true,
@@ -139,7 +137,7 @@ export const getMedicineByIdService = (medicineID: number) => {
     select: {
       medicineID: true,
       medicineName: true,
-      unit: true,
+      unit: { select: { unitID: true, unitName: true } },
       price: true,
       quantity: true,
       description: true,
@@ -182,7 +180,7 @@ export const getMedicineItemsService = async (
       select: {
         medicineID: true,
         medicineName: true,
-        unit: true,
+        unit: { select: { unitID: true, unitName: true } },
         price: true,
         quantity: true,
         description: true,
@@ -219,7 +217,7 @@ export const updateMedicineService = (
     where: { medicineID },
     data: {
       medicineName: data.medicineName,
-      unit: data.unit,
+      unitID: data.unitID,
       price: data.price,
       description: data.description,
       medicineImage: data.medicineImage,
@@ -227,7 +225,7 @@ export const updateMedicineService = (
     select: {
       medicineID: true,
       medicineName: true,
-      unit: true,
+      unit: { select: { unitID: true, unitName: true } },
       price: true,
       quantity: true,
       description: true,

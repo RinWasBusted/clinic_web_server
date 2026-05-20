@@ -61,7 +61,11 @@ export const getExamineLogDetails = async (examineId: string) => {
                 include: {
                     details: {
                         include: {
-                            medicine: true
+                        medicine: {
+                            include: {
+                                unit: true
+                            }
+                        }
                         }
                     }
                 }
@@ -128,7 +132,11 @@ export const getMedicineUsageReport = async (month: number, year: number) => {
             year: year
         },
         include: {
-            medicine: true
+            medicine: {
+                include: {
+                    unit: true
+                }
+            }
         },
         orderBy: {
             useCount: 'desc'

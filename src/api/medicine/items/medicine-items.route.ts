@@ -33,11 +33,10 @@ const medicineItemsRouter = Router();
  *                 type: string
  *                 description: Unique name of the medicine
  *                 example: "Aspirin"
- *               unit:
- *                 type: string
- *                 enum: [bottle, capsule, patches]
- *                 description: Unit/form of the medicine
- *                 example: "bottle"
+ *               unitID:
+ *                 type: integer
+ *                 description: ID của đơn vị thuốc (lấy từ GET /medicine/units)
+ *                 example: 1
  *               price:
  *                 type: number
  *                 format: decimal
@@ -53,7 +52,7 @@ const medicineItemsRouter = Router();
  *                 description: Optional medicine image file (jpg, png, etc)
  *             required:
  *               - medicineName
- *               - unit
+ *               - unitID
  *               - price
  *     responses:
  *       201:
@@ -76,9 +75,14 @@ const medicineItemsRouter = Router();
  *                       type: string
  *                       example: "Aspirin"
  *                     unit:
- *                       type: string
- *                       enum: [bottle, capsule, patches]
- *                       example: "bottle"
+ *                       type: object
+ *                       properties:
+ *                         unitID:
+ *                           type: integer
+ *                           example: 1
+ *                         unitName:
+ *                           type: string
+ *                           example: "viên"
  *                     price:
  *                       type: number
  *                       format: decimal
@@ -133,18 +137,17 @@ medicineItemsRouter.post("/", verifyAccessToken, upload.single("image"), createM
  *               type: object
  *               required:
  *                 - medicineName
- *                 - unit
+ *                 - unitID
  *                 - price
  *               properties:
  *                 medicineName:
  *                   type: string
  *                   description: Unique name of the medicine
  *                   example: "Aspirin"
- *                 unit:
- *                   type: string
- *                   enum: [bottle, capsule, patches]
- *                   description: Unit/form of the medicine
- *                   example: "bottle"
+ *                 unitID:
+ *                   type: integer
+ *                   description: ID của đơn vị thuốc (lấy từ GET /medicine/units)
+ *                   example: 1
  *                 price:
  *                   type: number
  *                   format: decimal
@@ -156,11 +159,11 @@ medicineItemsRouter.post("/", verifyAccessToken, upload.single("image"), createM
  *                   example: "Pain relief medicine"
  *           example:
  *             - medicineName: "Aspirin"
- *               unit: "bottle"
+ *               unitID: 1
  *               price: 50000
  *               description: "Pain relief"
  *             - medicineName: "Ibuprofen"
- *               unit: "capsule"
+ *               unitID: 2
  *               price: 35000
  *               description: "Anti-inflammatory"
  *     responses:
@@ -283,9 +286,14 @@ medicineItemsRouter.post("/many", verifyAccessToken, createManyMedicine);
  *                         type: string
  *                         example: "Aspirin"
  *                       unit:
- *                         type: string
- *                         enum: [bottle, capsule, patches]
- *                         example: "bottle"
+ *                         type: object
+ *                         properties:
+ *                           unitID:
+ *                             type: integer
+ *                             example: 1
+ *                           unitName:
+ *                             type: string
+ *                             example: "viên"
  *                       price:
  *                         type: number
  *                         format: decimal
@@ -375,9 +383,14 @@ medicineItemsRouter.get("/", verifyAccessToken, getMedicineItems);
  *                       type: string
  *                       example: "Aspirin"
  *                     unit:
- *                       type: string
- *                       enum: [bottle, capsule, patches]
- *                       example: "bottle"
+ *                       type: object
+ *                       properties:
+ *                         unitID:
+ *                           type: integer
+ *                           example: 1
+ *                         unitName:
+ *                           type: string
+ *                           example: "viên"
  *                     price:
  *                       type: number
  *                       format: decimal
@@ -452,11 +465,10 @@ medicineItemsRouter.get("/:id", verifyAccessToken, getMedicineById);
  *                 type: string
  *                 description: New medicine name (optional if not updating)
  *                 example: "Aspirin Premium"
- *               unit:
- *                 type: string
- *                 enum: [bottle, capsule, patches]
- *                 description: New unit/form (optional if not updating)
- *                 example: "bottle"
+ *               unitID:
+ *                 type: integer
+ *                 description: ID đơn vị thuốc mới (tuỳ chọn, lấy từ GET /medicine/units)
+ *                 example: 2
  *               price:
  *                 type: number
  *                 format: decimal
@@ -491,9 +503,14 @@ medicineItemsRouter.get("/:id", verifyAccessToken, getMedicineById);
  *                       type: string
  *                       example: "Aspirin Premium"
  *                     unit:
- *                       type: string
- *                       enum: [bottle, capsule, patches]
- *                       example: "bottle"
+ *                       type: object
+ *                       properties:
+ *                         unitID:
+ *                           type: integer
+ *                           example: 2
+ *                         unitName:
+ *                           type: string
+ *                           example: "chai"
  *                     price:
  *                       type: number
  *                       format: decimal

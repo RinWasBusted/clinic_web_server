@@ -59,7 +59,7 @@ export const getExaminationTicket = async (req: Request, res: Response, next: Ne
             return {
                 stt: index + 1,
                 medicineName: d.medicine.medicineName,
-                unit: d.medicine.unit === "bottle" ? "Chai" : d.medicine.unit === "capsule" ? "Viên" : "Khác",
+                unit: (d.medicine as any).unit?.unitName || "Khác",
                 quantity: d.quantity,
                 usage: d.usage
             };
@@ -213,7 +213,7 @@ export const getMedicineUsage = async (req: Request, res: Response, next: NextFu
             return {
                 stt: index + 1,
                 medicineName: r.medicine.medicineName,
-                unit: r.medicine.unit === "bottle" ? "Chai" : r.medicine.unit === "capsule" ? "Viên" : "Khác",
+                unit: (r.medicine as any).unit?.unitName || "Khác",
                 // Ghi chú: quantity hiện đang dùng count số lần dùng
                 // Nếu cần quantity tổng, cần điều chỉnh MedicineMonthReport hoặc aggregate query
                 quantity: r.useCount, // Tạm thời map vào useCount
