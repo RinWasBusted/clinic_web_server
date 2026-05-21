@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import prisma from "../../../utils/prisma.js";
+import { DayOfWeek } from "../../../generated/prisma/index.js";
 
 const accountInclude = {
     account: {
@@ -63,6 +64,35 @@ export const GetTimetableByDoctor = async (req: Request, res: Response, next: Ne
 
         const timetables = await prisma.timetable.findMany({
             where: { accountID },
+            include: {
+                account: {
+                    select: { firstName: true, lastName: true, email: true }
+                },
+                room: {
+                    select: {
+                        roomName: true,
+                        faculty: { select: { facultyName: true } }
+                    }
+                }
+            }
+        });
+        return res.status(200).json({ timetables });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const GetTimetableByDoctorAndDay = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { accountID, dayOfWeek } = req.params;
+        if (Array.isArray(accountID) || Array.isArray(dayOfWeek)) {
+            return res.status(400).json({ message: "Parameters must be strings, not arrays" });
+        }
+        if (!accountID) return res.status(400).json({ message: "Account ID is required" });
+        if (!dayOfWeek) return res.status(400).json({ message: "Day of week is required" });
+
+        const timetables = await prisma.timetable.findMany({
+            where: { accountID, dayOfWeek: dayOfWeek as DayOfWeek },
             include: {
                 account: {
                     select: { firstName: true, lastName: true, email: true }

@@ -4,6 +4,7 @@ import {
   GetAllTimetables,
   GetTimetableById,
   GetTimetableByDoctor,
+  GetTimetableByDoctorAndDay,
   UpdateTimetableById,
   DeleteTimetableById,
   DeleteManyTimetables,
@@ -305,6 +306,52 @@ router.get("/", verifyAccessToken, GetAllTimetables);
  *         description: Internal server error
  */
 router.get("/doctor/:accountID", verifyAccessToken, GetTimetableByDoctor);
+
+/**
+ * @swagger
+ * /admin/timetables/doctor/{accountID}/day/{dayOfWeek}:
+ *   get:
+ *     summary: Get all timetable entries for a specific doctor (account) on a specific day
+ *     tags: [Timetable]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountID
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Account ID of the doctor
+ *         example: "550e8400-e29b-41d4-a716-446655440000"
+ *       - in: path
+ *         name: dayOfWeek
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [mon, tue, wed, thu, fri, sat, sun]
+ *         description: Day of the week
+ *         example: "mon"
+ *     responses:
+ *       200:
+ *         description: List of timetable entries for the specified doctor and day
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 timetables:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/TimetableObject'
+ *       400:
+ *         description: Bad request - Missing parameters
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/doctor/:accountID/day/:dayOfWeek", verifyAccessToken, GetTimetableByDoctorAndDay);
 
 /**
  * @swagger
