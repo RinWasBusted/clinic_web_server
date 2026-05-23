@@ -3,6 +3,7 @@ import {
   CreateRoom,
   GetAllRooms,
   GetRoomById,
+  GetRoomsByFacultyId,
   UpdateRoomById,
   DeleteRoomById,
   DeleteManyRooms,
@@ -103,6 +104,52 @@ router.post("/", verifyAccessToken, CreateRoom);
  *                         type: object
  */
 router.get("/", verifyAccessToken, GetAllRooms);
+
+/**
+ * @swagger
+ * /admin/rooms/faculty/{facultyId}:
+ *   get:
+ *     summary: Get rooms by Faculty ID
+ *     tags: [Room]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: facultyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Faculty ID
+ *     responses:
+ *       200:
+ *         description: List of rooms belonging to the faculty
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 rooms:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       roomID:
+ *                         type: string
+ *                         format: uuid
+ *                       roomType:
+ *                         type: string
+ *                       roomName:
+ *                         type: string
+ *                       FacultyID:
+ *                         type: string
+ *                         format: uuid
+ *                       faculty:
+ *                         type: object
+ *       400:
+ *         description: Bad request - Faculty ID is required
+ */
+router.get("/faculty/:facultyId", verifyAccessToken, GetRoomsByFacultyId);
 
 /**
  * @swagger

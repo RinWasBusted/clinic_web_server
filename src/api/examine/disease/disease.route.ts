@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { findDiseaseByWords, searchDiseaseByName } from "./disease.controller.js";
+import { findDiseaseByWords, searchDiseaseByName, createDisease, updateDisease, deleteDisease, getAllDiseases, getDiseaseById } from "./disease.controller.js";
 
 const diseaseRouter = Router();
 
@@ -137,5 +137,153 @@ diseaseRouter.get("/find", findDiseaseByWords);
  *                   data: []
  */
 diseaseRouter.get("/search", searchDiseaseByName);
+
+/**
+ * @swagger
+ * /examine/disease:
+ *   post:
+ *     summary: Create a new disease
+ *     description: Creates a new disease entry.
+ *     tags:
+ *       - Disease
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - diseaseID
+ *               - diseaseName
+ *             properties:
+ *               diseaseID:
+ *                 type: string
+ *                 description: ICD-style disease code
+ *               diseaseName:
+ *                 type: string
+ *                 description: Disease name
+ *               note:
+ *                 type: string
+ *                 description: Optional notes
+ *     responses:
+ *       201:
+ *         description: Disease created successfully
+ *       400:
+ *         description: Bad request
+ */
+diseaseRouter.post("/", createDisease);
+
+/**
+ * @swagger
+ * /examine/disease/{id}:
+ *   put:
+ *     summary: Update an existing disease
+ *     description: Updates the name or notes of an existing disease.
+ *     tags:
+ *       - Disease
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The disease ID to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               diseaseName:
+ *                 type: string
+ *                 description: Updated disease name
+ *               note:
+ *                 type: string
+ *                 description: Updated notes
+ *     responses:
+ *       200:
+ *         description: Disease updated successfully
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Disease not found
+ */
+diseaseRouter.put("/:id", updateDisease);
+
+/**
+ * @swagger
+ * /examine/disease/{id}:
+ *   delete:
+ *     summary: Delete a disease
+ *     description: Removes a disease from the system.
+ *     tags:
+ *       - Disease
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The disease ID to delete
+ *     responses:
+ *       200:
+ *         description: Disease deleted successfully
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Disease not found
+ */
+diseaseRouter.delete("/:id", deleteDisease);
+
+/**
+ * @swagger
+ * /examine/disease:
+ *   get:
+ *     summary: Get all diseases
+ *     description: Returns a paginated list of all active diseases.
+ *     tags:
+ *       - Disease
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: A paginated list of diseases
+ */
+diseaseRouter.get("/", getAllDiseases);
+
+/**
+ * @swagger
+ * /examine/disease/{id}:
+ *   get:
+ *     summary: Get disease by ID
+ *     description: Returns a single active disease by its ID.
+ *     tags:
+ *       - Disease
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The disease ID to fetch
+ *     responses:
+ *       200:
+ *         description: Disease details
+ *       404:
+ *         description: Disease not found
+ */
+diseaseRouter.get("/:id", getDiseaseById);
 
 export default diseaseRouter;

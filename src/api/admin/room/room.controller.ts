@@ -65,6 +65,27 @@ export const GetRoomById = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+export const GetRoomsByFacultyId = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { facultyId } = req.params;
+
+    if (!facultyId) {
+      return res.status(400).json({ message: "Faculty ID is required" });
+    }
+
+    const rooms = await prisma.room.findMany({
+      where: { FacultyID: facultyId as string },
+      include: {
+        faculty: true
+      }
+    });
+
+    return res.status(200).json({ rooms });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const UpdateRoomById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const roomID = req.params.id as string;
