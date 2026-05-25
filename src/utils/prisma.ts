@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import AccountExtension from "./model/extension/account.js";
 import AllExtension from "./model/extension/all.js";
+import PrescriptionExtension from "./model/extension/prescription.js";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -48,7 +49,8 @@ const prisma = prismaClient
     },
   })
   .$extends(AccountExtension)
-  .$extends(AllExtension);
+  .$extends(AllExtension)
+  .$extends(PrescriptionExtension);
 
 export { prisma, Prisma, prismaClient as prismaRaw };
 export default prisma;

@@ -89,7 +89,6 @@ enum PrescriptionStatus {
   done
 }
 
-
 enum MedicineTicketStatus {
   pending
   done
@@ -333,6 +332,7 @@ model Appointment {
   approvedByAccount Account?      @relation("AppointmentApprovedBy", fields: [approvedBy], references: [accountID], onDelete: SetNull)
   doctor            Account?      @relation("AppointmentDoctor", fields: [doctorID], references: [accountID], onDelete: SetNull)
   enterTickets      EnterTicket[]
+
   @@map("Appointment")
 }
 
@@ -348,10 +348,11 @@ model EnterTicket {
   checkIn       DateTime     @default(now()) @db.Timestamp(6)
   status        TicketStatus @default(pending)
   note          String?      @db.VarChar(255)
-  appointment Appointment @relation(fields: [appointmentID], references: [appointmentID], onDelete: Cascade)
-  patient     Patient     @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
-  room        Room        @relation(fields: [roomID], references: [roomID], onDelete: Restrict)
-  examineLogs       ExamineLog[]
+  appointment   Appointment  @relation(fields: [appointmentID], references: [appointmentID], onDelete: Cascade)
+  patient       Patient      @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
+  room          Room         @relation(fields: [roomID], references: [roomID], onDelete: Restrict)
+  examineLogs   ExamineLog[]
+
   @@map("EnterTicket")
 }
 
@@ -379,18 +380,20 @@ model ExamineLog {
   examineDisplayID String? @unique @db.VarChar(12)
 
   // Health metrics
-  height Int?
-  weight Int?
-  blood  BloodType?
+  height        Int?
+  weight        Int?
+  bloodPressure String? @db.VarChar(20)
 
-  treatmentPlan String? @db.VarChar(255)
-  note          String? @db.VarChar(255)
-  patient     Patient     @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
-  doctor      Account     @relation("AccountExamineLogs", fields: [examinedBy], references: [accountID], onDelete: Restrict)
-  enterTicket EnterTicket @relation(fields: [enterTicketID], references: [ticketID], onDelete: Restrict)
-  details      ExamineLogDetails[]
-  tests        TestLog[]
-  prescription Prescription?
+  // blood  BloodType?
+
+  treatmentPlan String?             @db.VarChar(255)
+  note          String?             @db.VarChar(255)
+  patient       Patient             @relation(fields: [patientID], references: [patientID], onDelete: Cascade)
+  doctor        Account             @relation("AccountExamineLogs", fields: [examinedBy], references: [accountID], onDelete: Restrict)
+  enterTicket   EnterTicket         @relation(fields: [enterTicketID], references: [ticketID], onDelete: Restrict)
+  details       ExamineLogDetails[]
+  tests         TestLog[]
+  prescription  Prescription?
 
   @@map("ExamineLog")
 }
@@ -451,8 +454,8 @@ model TestDetails {
 // Medicine / Prescription
 // =======================
 model MedicineUnit {
-  unitID   Int        @id @default(autoincrement())
-  unitName String     @unique @db.VarChar(50)
+  unitID   Int    @id @default(autoincrement())
+  unitName String @unique @db.VarChar(50)
 
   medicines Medicine[]
 
@@ -467,16 +470,16 @@ model MedicineUsage {
 }
 
 model Medicine {
-  medicineID    Int     @id @default(autoincrement())
-  medicineName  String  @unique @db.VarChar(255)
-  medicineImage String? @db.VarChar(255)
+  medicineID    Int      @id @default(autoincrement())
+  medicineName  String   @unique @db.VarChar(255)
+  medicineImage String?  @db.VarChar(255)
   unitID        Int
-  quantity      Int     @default(0)
-  price         Decimal @default(0) @db.Decimal(12, 2)
-  description   String? @db.Text
+  quantity      Int      @default(0)
+  price         Decimal  @default(0) @db.Decimal(12, 2)
+  description   String?  @db.Text
   createdAt     DateTime @default(now()) @db.Timestamp(6)
 
-  unit         MedicineUnit         @relation(fields: [unitID], references: [unitID])
+  unit         MedicineUnit          @relation(fields: [unitID], references: [unitID])
   details      PrescriptionDetails[]
   monthReports MedicineMonthReport[]
   imexDetails  ImexMedicineDetails[]

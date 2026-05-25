@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyAccessToken } from "../../middlewares/verifyToken.js";
+import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 
 import {
   createPrescriptionHandler,
@@ -8,8 +8,8 @@ import {
   updateDoseHandler,
   updateLogHandler,
 } from "./prescription.controller.js";
-import { validateBody } from "../../middlewares/validate.js";
-import prescriptionSchema from "../../schema/prescription.schema.js";
+import { validateBody } from "../../../middlewares/validate.js";
+import prescriptionSchema from "../../../schema/prescription.schema.js";
 import { validateUpdateHandler } from "./prescription.middleware.js";
 
 /**
@@ -57,7 +57,7 @@ PrescriptionRouter.use(verifyAccessToken);
 
 /**
  * @swagger
- * /prescription/new:
+ * /examine/prescription/new:
  *   post:
  *     summary: Create a new draft prescription
  *     description: |
@@ -195,7 +195,7 @@ PrescriptionRouter.post("/new", validateBody(prescriptionSchema.new), createPres
 
 /**
  * @swagger
- * /prescription/{id}:
+ * /examine/prescription/{id}:
  *   put:
  *     summary: Update prescription header info
  *     description: |
@@ -203,7 +203,7 @@ PrescriptionRouter.post("/new", validateBody(prescriptionSchema.new), createPres
  *       When `totalTreatmentDays` changes, all medicine quantities are proportionally recalculated.
  *       Only the doctor who created the prescription can update it, and only on the same calendar day it was created.
  *       The prescription must still be in `draft` status.
- *       Cannot update and delete medicine items simultaneously (use `/details` endpoint for that).
+ *       Cannot update and delete medicine items simultaneously (use `/examine/prescription/{id}/details` endpoint for that).
  *     tags:
  *       - Prescription
  *     security:
@@ -296,13 +296,13 @@ PrescriptionRouter.put("/:id", validateBody(prescriptionSchema.update), validate
 
 /**
  * @swagger
- * /prescription/{id}/details:
+ * /examine/prescription/{id}/details:
  *   put:
  *     summary: Update prescription medicine details (upsert / delete)
  *     description: |
  *       Upserts (create or update) medicine items in a draft prescription and/or removes specific medicines.
  *       If all medicines are removed, the prescription itself is automatically deleted.
- *       The same update constraints from `PUT /prescription/{id}` apply:
+ *       The same update constraints from `PUT /examine/prescription/{id}` apply:
  *       only the creating doctor, on the same day, while still in `draft` status.
  *       You cannot include the same `medicineID` in both `details` (upsert) and `deleteList` in one request.
  *     tags:
@@ -396,7 +396,7 @@ PrescriptionRouter.put(
 
 /**
  * @swagger
- * /prescription/{id}:
+ * /examine/prescription/{id}:
  *   delete:
  *     summary: Delete a draft prescription
  *     description: |
@@ -439,7 +439,7 @@ PrescriptionRouter.delete("/:id", deletePrescriptionHandler);
 
 /**
  * @swagger
- * /prescription/{id}:
+ * /examine/prescription/{id}:
  *   get:
  *     summary: Get a prescription by ID
  *     description: |

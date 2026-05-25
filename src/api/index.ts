@@ -12,7 +12,6 @@ import AppointmentRoutes from "./admin/appointment/appoint.route.js";
 import medicineRoutes from "./medicine/medicine.route.js";
 import ExamineRouter from "./examine/examine.route.js";
 import { paginateMiddleware } from "../middlewares/paginate.js";
-import PrescriptionRouter from "./prescription/prescription.route.js";
 import TestRouter from "./test/test.route.js";
 import notificationRoutes from "./notification/notification.route.js";
 import systemConfigRoutes from "./admin/systemConfig/systemConfig.route.js";
@@ -37,9 +36,11 @@ router.use("/admin/appointments", AppointmentRoutes);
 router.use("/medicine", medicineRoutes);
 
 router.use("/examine", ExamineRouter);
-router.use("/prescription", PrescriptionRouter);
 router.use("/notification", notificationRoutes);
 router.use("/admin/config", systemConfigRoutes);
 // For testing purposes, you can add a route to check if the API is working
 router.use("/test", TestRouter);
+
+// Merging API flow for examine + [prescription || null]
+
 export default router;

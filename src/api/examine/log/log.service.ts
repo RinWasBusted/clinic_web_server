@@ -1,8 +1,9 @@
+import { PrismaClient } from "@prisma/client/extension";
 import { ExamineStatus } from "../../../generated/prisma/index.js";
-import _o from "../../../utils/data/object.js";
-import prisma from "../../../utils/prisma.js";
-import { ObjectType, RecordType } from "../../../utils/types/index.js";
 
+import prisma from "../../../utils/prisma.js";
+
+type Client = typeof prisma | PrismaClient;
 type ExamineLogPayload = {
   enterTicketID: string;
   patientID: string;
@@ -10,6 +11,11 @@ type ExamineLogPayload = {
   status: ExamineStatus;
   treatmentPlan: string;
   examinedBy: string;
+
+  height?: number;
+  weight?: number;
+  bloodPressure?: string;
+
   diagnose: string | string[];
   note?: string;
 };
@@ -19,7 +25,10 @@ type ExamineLogPayload = {
 function normalizeDiagnose(diagnose: string | string[] | undefined): string[] {
   if (!diagnose) return [];
   if (Array.isArray(diagnose)) return diagnose.map((d) => d.trim()).filter(Boolean);
-  return diagnose.split(",").map((d) => d.trim()).filter(Boolean);
+  return diagnose
+    .split(",")
+    .map((d) => d.trim())
+    .filter(Boolean);
 }
 
 class ExamineLogService {
@@ -27,6 +36,11 @@ class ExamineLogService {
     details: {
       select: {
         diseaseID: true,
+        disease: {
+          select: {
+            diseaseName: true,
+          },
+        },
       },
     },
   };
@@ -56,54 +70,68 @@ class ExamineLogService {
     return `${this.prefix}${yearString}${sequenceString}`;
   }
 
-  async submit(payload: ExamineLogPayload) {
-    const { enterTicketID, patientID, symptoms, status, examinedBy, note, treatmentPlan } = payload;
+  async submit(payload: ExamineLogPayload, tx: Client = prisma) {
+    const {
+      enterTicketID,
+      patientID,
+      symptoms,
+      status,
+      examinedBy,
+      note,
+      treatmentPlan,
+      height,
+      weight,
+      bloodPressure,
+    } = payload;
     const diagnoseList = normalizeDiagnose(payload.diagnose);
-    const newExamineLog = await prisma.$transaction(async (tx) => {
-      // Only get the examine log with ID and sequence. Used for further transactions
-      const examineLite = await tx.examineLog.create({
-        data: {
-          enterTicketID,
-          patientID,
-          symptoms,
-          status,
-          examinedBy,
-          note,
-          treatmentPlan,
-        },
-        select: {
-          examineID: true,
-          sequence: true,
-        },
-      });
 
-      // Add diagnose ID and display ID
-      const examineID = examineLite.examineID;
-      const diagnoseDetails = diagnoseList.map((diseaseID: string) => ({ examineID, diseaseID }));
-      await tx.examineLogDetails.createMany({
-        data: diagnoseDetails,
-      });
-
-      // Update examine log with display ID
-      const examineDisplayID = this.generateDisplayID(examineLite.sequence);
-
-      const updatedExamineLog = await tx.examineLog.update({
-        where: { examineID },
-        data: { examineDisplayID },
-        include: { ...this.diseaseProjection },
-        omit: {
-          sequence: true,
-        },
-      });
-
-      return updatedExamineLog;
+    // Only get the examine log with ID and sequence. Used for further transactions
+    const examineLite = await tx.examineLog.create({
+      data: {
+        enterTicketID,
+        patientID,
+        symptoms,
+        status,
+        examinedBy,
+        note,
+        treatmentPlan,
+        height,
+        weight,
+        bloodPressure,
+      },
+      select: {
+        examineID: true,
+        sequence: true,
+      },
     });
+
+    // Add diagnose ID and display ID
+    const examineID = examineLite.examineID;
+    const diagnoseDetails = diagnoseList.map((diseaseID: string) => ({ examineID, diseaseID }));
+    await tx.examineLogDetails.createMany({
+      data: diagnoseDetails,
+    });
+
+    // Update examine log with display ID
+    const examineDisplayID = this.generateDisplayID(examineLite.sequence);
+
+    const newExamineLog = await tx.examineLog.update({
+      where: { examineID },
+      data: { examineDisplayID },
+      include: { ...this.diseaseProjection },
+      omit: {
+        sequence: true,
+      },
+    });
+
     return newExamineLog;
   }
-
-  async getExamineLogByID(examineID: string, isFull: boolean = false) {
+  private resolveClient(tx?: Client): Client {
+    return tx ?? prisma;
+  }
+  async getExamineLogByID(examineID: string, isFull: boolean = false, tx?: Client) {
     if (!isFull) {
-      return await prisma.examineLog.findUnique({
+      return await this.resolveClient(tx).examineLog.findUnique({
         where: { examineID },
         include: {
           ...this.diseaseProjection,
@@ -112,7 +140,7 @@ class ExamineLogService {
       });
     } else {
       // Get full with prescription
-      const raw = await prisma.prescription.findUnique({
+      const raw = await this.resolveClient(tx).prescription.findUnique({
         where: { examineID },
         include: {
           ...this.prescriptionProjection,
@@ -129,10 +157,10 @@ class ExamineLogService {
         ...raw?.examine,
         prescription: raw
           ? {
-            details: raw.details,
-            totalTreatmentDays: raw.totalTreatmentDays,
-            needReExamine: raw.needReExamine,
-          }
+              details: raw.details,
+              totalTreatmentDays: raw.totalTreatmentDays,
+              needReExamine: raw.needReExamine,
+            }
           : null,
       };
     }
@@ -180,7 +208,7 @@ class ExamineLogService {
     return updatedExamineLog;
   }
 
-  beautifyExamineLog(examineLog: ObjectType): ObjectType | null {
+  /* beautifyExamineLog(examineLog: ObjectType): ObjectType | null {
     const rawDetails = examineLog.details;
     if (rawDetails && Array.isArray(rawDetails)) {
       const details = rawDetails.map((detail: unknown) => {
@@ -216,7 +244,7 @@ class ExamineLogService {
 
     if (!examineLog) return null;
     return this.beautifyExamineLog(examineLog);
-  }
+  } */
 }
 
 export default new ExamineLogService();
