@@ -1,1 +1,0 @@
-{"version":3,"file":"permission.service.js","sourceRoot":"","sources":["../../../src/api/permission/permission.service.ts"],"names":[],"mappings":"AAAA,OAAO,MAAM,MAAM,uBAAuB,CAAC;AAE3C,MAAM,CAAC,MAAM,iBAAiB,GAAG;IAC/B,KAAK,CAAC,iBAAiB;QACrB,OAAO,MAAM,CAAC,UAAU,CAAC,QAAQ,EAAE,CAAC;IACtC,CAAC;CACF,CAAC"}
