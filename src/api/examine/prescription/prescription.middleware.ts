@@ -1,7 +1,7 @@
 import prescriptionService from "./prescription.service.js";
 import type { Request, Response, NextFunction } from "express";
-import { PrescriptionStatus } from "../../generated/prisma/index.js";
-import { getLocalDateTimeInUTC } from "../../utils/datetime.js";
+import { PrescriptionStatus } from "../../../generated/prisma/index.js";
+import { getLocalDateTimeInUTC } from "../../../utils/datetime.js";
 
 // Todo: validate the update process to check: updatedAt same day as created, status
 export async function validateUpdateHandler(req: Request, res: Response, next: NextFunction) {

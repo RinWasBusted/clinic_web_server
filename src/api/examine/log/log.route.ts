@@ -8,7 +8,6 @@ import {
   getExamineLogByTicketIDHandler,
   getExamineLogHandler,
   getExamineLogWithPrescriptionHandler,
-  getPrintableExamineLogHandler,
   updateExamineLogHandler,
 } from "./log.controller.js";
 
@@ -421,61 +420,6 @@ examineLogRouter.post("/new", createExamineLogHandler);
  *         description: Internal server error
  */
 examineLogRouter.put("/:id", updateExamineLogHandler);
-
-/**
- * @swagger
- * /examine/{id}/print:
- *   get:
- *     summary: Get printable examine log by ID
- *     description: |
- *       Returns a formatted version of the examine log suitable for printing.
- *       Includes diagnosis names for rendering printable content.
- *     tags:
- *       - Examine
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: UUID of the examine log to print
- *         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *     responses:
- *       200:
- *         description: Printable examine log retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 examineLog:
- *                   oneOf:
- *                     - $ref: '#/components/schemas/ExamineLogBase'
- *                     - type: 'null'
- *             example:
- *               examineLog:
- *                 examineID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *                 examineDisplayID: "KH2600000001"
- *                 appointmentID: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
- *                 patientID: "c3d4e5f6-a7b8-9012-cdef-123456789012"
- *                 examinedBy: "d4e5f6a7-b8c9-0123-defa-234567890123"
- *                 symptoms: "Đau đầu, sốt nhẹ"
- *                 status: "done"
- *                 treatmentPlan: "Nghỉ ngơi, uống thuốc theo toa"
- *                 note: null
- *                 createdAt: "2026-03-24T02:15:30.000Z"
- *                 details:
- *                   - diseaseID: "J00"
- *                     diseaseName: "Cảm lạnh thông thường"
- *       401:
- *         description: Unauthorized — missing or invalid access token
- *       500:
- *         description: Internal server error
- */
-examineLogRouter.get("/:id/print", getPrintableExamineLogHandler);
 
 /**
  * @swagger

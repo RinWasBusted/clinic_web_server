@@ -15,7 +15,7 @@ const medicine = z.object(
 );
 
 const log = z.object({
-  examineID: z.string().uuid("Mã khám không hợp lệ"),
+  examineID: z.uuid("Mã khám không hợp lệ").optional(),
   note: z.string().max(255).optional(),
   needReExamine: z.boolean().optional(),
   totalTreatmentDays: z.number().int().positive("Số ngày điều trị phải hợp lệ"),

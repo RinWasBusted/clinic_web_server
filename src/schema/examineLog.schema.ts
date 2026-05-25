@@ -1,13 +1,20 @@
-import z from "zod";
+import * as z from "zod";
 import enumValueOf from "../types/enum.js";
 
 const examineLogBaseSchema = z.object(
   {
-    appointmentID: z.string().uuid("Mã hẹn không hợp lệ"),
-    patientID: z.string().uuid("Mã bệnh nhân không hợp lệ"),
+    enterTicketID: z.uuid("Vé không hợp lệ"),
+    patientID: z.uuid("Mã bệnh nhân không hợp lệ"),
     symptoms: z.string("Vui lòng nhập triệu chứng").max(255),
     status: z.enum(enumValueOf.examineLog, "Trạng thái đơn khám bị sai"),
     diagnose: z.array(z.string("Kiểm tra lại mã bệnh theo đúng định dạng ICD-10").max(255)).optional(),
+
+    // health check
+    height: z?.int()?.min(1).optional(),
+    weight: z.int().min(1).optional(),
+    bloodPressure: z.string().max(20).optional(),
+
+    // additional info
     note: z.string().max(255).optional(),
     treatmentPlan: z.string().max(255),
   },

@@ -1,10 +1,10 @@
 import z from "zod";
-import prisma from "../../utils/prisma.js";
-import { NotFoundError } from "../admin/appointment/appointment.service.js";
-import examineLogService from "./../examine/log/log.service.js";
+import prisma from "../../../utils/prisma.js";
+import { NotFoundError } from "../../admin/appointment/appointment.service.js";
+import examineLogService from "../log/log.service.js";
 import { PrismaClient } from "@prisma/client/extension";
-import { ObjectNoArrayType } from "../../utils/types/index.js";
-import { PrescriptionStatus } from "../../generated/prisma/index.js";
+import { ObjectNoArrayType } from "../../../utils/types/index.js";
+import { PrescriptionStatus } from "../../../generated/prisma/index.js";
 // Regex pattern for solely dose format, which is the format that only contains the number of tablets to be taken per day.
 // For example: "uống 2 viên sáng, 3 viên chiều" or "uống 5 viên mỗi ngày"
 const solelyDoseFormat =
@@ -19,6 +19,7 @@ interface PrescriptionItem {
 
 interface PrescriptionType {
   examineID: string;
+  examineDisplayID: string;
   doctorID: string;
   note?: string | null;
   needReExamine?: boolean;
@@ -48,10 +49,10 @@ class PrescriptionService {
       select: {
         medicineID: true,
         medicineName: true,
-        medicineImage: true,
+        // medicineImage: true,
         unit: true,
         price: true,
-        quantity: true,
+        // quantity: true,
       },
     },
   };
@@ -134,10 +135,10 @@ class PrescriptionService {
     });
   }
 
-  async refinePrescriptionData(data: PrescriptionType) {
+  async refinePrescriptionData(data: PrescriptionType, tx?: Client) {
     const { examineID, details, totalTreatmentDays } = data;
 
-    const examineLog = await examineLogService.getExamineLogByID(examineID);
+    const examineLog = await examineLogService.getExamineLogByID(examineID, tx);
     if (!examineLog) {
       throw new NotFoundError("Không tìm thấy thông tin khám bệnh để kê đơn thuốc");
     }
@@ -182,25 +183,25 @@ class PrescriptionService {
     });
   }
 
-  async submit(refinedData: PrescriptionType) {
+  async submit(refinedData: PrescriptionType, tx?: Client) {
     // Implementation for submitting prescription data
-    console.time("Prisma Transaction");
-    const prescription = await prisma.$transaction(async (tx) => {
-      const { details: prescriptionDetails, ...rest } = refinedData;
 
-      const newPrescription = await tx.prescription.create({
-        data: {
-          ...rest,
-          details: {
-            create: [...prescriptionDetails],
-          },
+    const { details: prescriptionDetails, examineDisplayID, ...rest } = refinedData;
+
+    // Calculate payAmount
+
+    const newPrescription = await this.resolveClient(tx).prescription.create({
+      data: {
+        ...rest,
+        prescriptionDisplayID: examineDisplayID,
+        details: {
+          create: [...prescriptionDetails],
         },
-        select: PrescriptionService.prescriptionInternalView,
-      });
-      return newPrescription;
+      },
+      select: PrescriptionService.prescriptionInternalView,
     });
-    console.timeEnd("Prisma Transaction");
-    return prescription;
+
+    return newPrescription;
   }
 
   isValidUpdate(payload: PrescriptionType) {
