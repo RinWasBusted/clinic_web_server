@@ -29,11 +29,18 @@ export const CreateRoom = async (req: Request, res: Response, next: NextFunction
 
 export const GetAllRooms = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { facultyID } = req.query;
+
     const rooms = await prisma.room.findMany({
+      where: { 
+        status: "ACTIVE",
+        FacultyID: facultyID ? String(facultyID) : null
+      },
       include: {
         faculty: true
       }
     });
+
     return res.status(200).json({ rooms });
   } catch (error) {
     next(error);
@@ -74,7 +81,7 @@ export const GetRoomsByFacultyId = async (req: Request, res: Response, next: Nex
     }
 
     const rooms = await prisma.room.findMany({
-      where: { FacultyID: facultyId as string },
+      where: { FacultyID: facultyId as string, status: "ACTIVE" },
       include: {
         faculty: true
       }
