@@ -1,8 +1,100 @@
 import "dotenv/config";
 import prisma from "../src/utils/prisma.js";
 import bcrypt from "bcryptjs";
+import { createReadStream } from "node:fs";
+import { resolve } from "node:path";
+import { createInterface } from "node:readline";
 
-async function main() {
+async function seedDiseases() {
+  const filePath = resolve("data/icd10cm-codes-April-1-2026.txt");
+  const batchSize = 5000;
+  const batch: Array<{ diseaseCode: string; diseaseName: string }> = [];
+  let processed = 0;
+
+  const flushBatch = async () => {
+    if (!batch.length) return;
+    const values = batch
+      .map(
+        (d) =>
+          `('${d.diseaseCode.replace(/'/g, "''")}', '${d.diseaseName.replace(
+            /'/g,
+            "''"
+          )}', 'ACTIVE')`
+      )
+      .join(",");
+
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "Disease" ("diseaseCode", "diseaseName", "status")
+      VALUES ${values}
+      ON CONFLICT ("diseaseCode") 
+      DO UPDATE SET 
+        "diseaseName" = EXCLUDED."diseaseName",
+        "status" = EXCLUDED."status";
+    `);
+    processed += batch.length;
+    console.log(`Bulk Upserted ${processed} diseases...`);
+    batch.length = 0;
+  };
+
+  const rl = createInterface({
+    input: createReadStream(filePath),
+    crlfDelay: Infinity,
+  });
+
+  for await (const line of rl) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const match = trimmed.match(/^(\S+)\s+(.+)$/);
+    if (!match) continue;
+    const [, diseaseCode, diseaseName] = match;
+    batch.push({ diseaseCode, diseaseName });
+    if (batch.length >= batchSize) {
+      await flushBatch();
+    }
+  }
+
+  await flushBatch();
+  console.log("Seeded diseases");
+}
+
+async function seedPermissions() {
+  const filePath = resolve("data/permissions.txt");
+  const rl = createInterface({
+    input: createReadStream(filePath),
+    crlfDelay: Infinity,
+  });
+
+  const permissions: Array<{
+    code: string;
+    permissionName: string;
+    description: string;
+  }> = [];
+
+  for await (const line of rl) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    // Split by multiple spaces (2 or more) to handle the aligned columns
+    const parts = trimmed.split(/\s{2,}/);
+    if (parts.length < 2) continue;
+    const [code, permissionName, description = ""] = parts;
+    permissions.push({ code, permissionName, description });
+  }
+
+  for (const p of permissions) {
+    await prisma.permission.upsert({
+      where: { code: p.code },
+      update: {
+        permissionName: p.permissionName,
+        description: p.description,
+      },
+      create: p,
+    });
+  }
+  console.log(`Seeded ${permissions.length} permissions`);
+}
+
+
+async function seedAdminAccount() {
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
   if (!email || !password) {
@@ -19,28 +111,6 @@ async function main() {
         roleName: "Admin",
         roleDescription: "System Administrator",
       }
-    });
-  }
-
-  // Seed default permissions
-  const defaultPermissions = [
-    { code: "account.read", permissionName: "View accounts", description: "Read user accounts" },
-    { code: "account.write", permissionName: "Manage accounts", description: "Create, update, delete user accounts" },
-    { code: "medicine.read", permissionName: "View medicine stock", description: "Read medicine inventory" },
-    { code: "medicine.write", permissionName: "Manage medicine", description: "Manage medicine inventory and tickets" },
-    { code: "appointment.read", permissionName: "View appointments", description: "Read appointments" },
-    { code: "appointment.write", permissionName: "Manage appointments", description: "Create, update appointments" },
-    { code: "report.read", permissionName: "View reports", description: "View system reports" },
-  ];
-
-  for (const p of defaultPermissions) {
-    await prisma.permission.upsert({
-      where: { code: p.code },
-      update: {
-        permissionName: p.permissionName,
-        description: p.description
-      },
-      create: p
     });
   }
 
@@ -67,6 +137,18 @@ async function main() {
   });
 
   console.log("Seeded admin:", admin);
+}
+
+async function main() {
+  // Seed permissions from file
+  await seedPermissions();
+
+  // Upsert admin account
+  await seedAdminAccount();
+
+  // 3. Seed diseases data
+  await seedDiseases();
+
 }
 
 main()

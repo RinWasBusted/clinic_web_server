@@ -1,0 +1,33 @@
+role.manage                    Quản lý quyền                            Quản trị viên thao tác chỉnh sửa chi tiết phân quyền
+account.delete                 Xóa tài khoản                            Xóa một tài khoản khỏi hệ thống
+appointment.delete             Xóa lịch hẹn                             Xóa lịch hẹn khỏi hệ thống
+timetable.add_new              Tạo lịch làm việc mới                    Phân công lịch làm việc cho bác sĩ
+timetable.update               Cập nhật lịch làm việc                   Chỉnh sửa lịch làm việc của bác sĩ
+ticket.view_detail             Xem chi tiết phiếu khám                  Bác sĩ xem chi tiết phiếu khám của bệnh nhân
+ticket.view_next               Xem phiếu khám kế tiếp                   Bác sĩ lấy thông tin bệnh nhân tiếp theo trong hàng đợi
+medicine.delete                Xóa thuốc                                Xóa một loại thuốc khỏi danh mục
+imex.update                    Cập nhật phiếu xuất/nhập kho             Chỉnh sửa thông tin phiếu xuất/nhập kho
+imex.delete                    Xóa phiếu xuất/nhập kho                  Xóa phiếu xuất/nhập kho khỏi hệ thống
+account.create                 Tạo tài khoản mới                        Quản trị viên tạo tài khoản cho cấp dưới
+medicine.add                   Thêm vào danh mục                        Nhập mới danh mục thuốc
+account.view                   Xem tài khoản bất kỳ                     Xem chi tiết hoặc xem hết tài khoản trong hệ thống
+appointment.create             Tạo lịch hẹn mới                         Tạo lịch hẹn khám bệnh cho bệnh nhân
+appointment.update             Cập nhật lịch hẹn                        Chỉnh sửa thông tin lịch hẹn, bao gồm việc cho phép duyệt hoặc từ chối một cuộc hẹn
+appointment.view               Xem lịch hẹn                             Xem thông tin lịch hẹn bất kỳ
+self.update_password           Đổi mật khẩu                             Người dùng tự đổi mật khẩu của mình
+self.update_profile            Cập nhật hồ sơ cá nhân                   Người dùng cập nhật thông tin hồ sơ của chính mình
+faculty.manage                 Quản lý thông tin khoa                   Quản lý các thông tin của một khoa, bao gồm tạo mới, sửa và xóa.
+imex.create                    Tạo phiếu xuất/nhập kho                  Tạo mới phiếu nhập hoặc xuất kho thuốc
+imex.view                      Xem nhật ký xuất/nhập kho                Xem toàn bộ chi tiết xuất nhập kho thuốc
+medicine.view                  Xem danh mục thuốc                       Xem toàn bộ danh mục thuốc có phân trang
+room.manage                    Quản lý phòng                            Quản lý việc tạo, sửa, xóa phòng
+timetable.delete               Xóa lịch làm việc                        Xóa lịch làm việc
+timetable.view_all             Xem tất cả lịch làm việc                 Xem toàn bộ lịch làm việc
+timetable.view                 Xem lịch làm việc                        Xem lịch làm việc của chính mình
+account.update                 Cập nhật tài khoản                       Thay đổi thông tin tài khoản bất kỳ
+ticket.create                  Tạo phiếu khám mới                       Tạo phiếu đặt hàng đợi khám cho bệnh nhân
+ticket.update                  Cập nhật phiếu khám                      Bác sĩ cập nhật kết quả hoặc trạng thái phiếu khám
+ticket.view_all                Xem danh sách khám                       Xem toàn bộ danh sách phiếu chờ khám
+medicine.update                Cập nhật danh mục                        Chỉnh sửa thông tin thuốc trong danh mục
+medicine_ticket.view_all       Xem danh sách phiếu cấp thuốc            Xem hàng đợi cấp phát thuốc tại quầy dược
+medicine_ticket.update_status  Cập nhật trạng thái phiếu thuốc          Dược sĩ xác nhận đã cấp phát thuốc cho bệnh nhân
