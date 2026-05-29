@@ -179,11 +179,19 @@ router.post("/register-many", verifyAccessToken, validateBody(registerManySchema
  * /admin/account:
  *   get:
  *     summary: Get all accounts
- *     description: Retrieve a list of all user accounts. Only authorized admin users can access this endpoint.
+ *     description: Retrieve a list of all user accounts. Optionally filter by faculty. Only authorized admin users can access this endpoint.
  *     tags:
  *       - Admin/Account
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: facultyID
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filter accounts by faculty ID. Returns only accounts assigned to this faculty via AccountWorkspace
+ *         example: "550e8400-e29b-41d4-a716-446655440000"
  *     responses:
  *       200:
  *         description: Accounts retrieved successfully

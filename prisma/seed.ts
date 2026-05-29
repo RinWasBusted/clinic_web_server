@@ -147,7 +147,7 @@ async function main() {
   await seedAdminAccount();
 
   // 3. Seed diseases data
-  await seedDiseases();
+  // await seedDiseases();
 
 }
 

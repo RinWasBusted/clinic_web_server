@@ -20,6 +20,19 @@ const accountInclude = {
 export const CreateTimetable = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { accountID, roomID, dayOfWeek, note } = req.body;
+
+        const existingTimetable = await prisma.timetable.findFirst({
+            where: {
+                accountID,
+                roomID,
+                dayOfWeek: dayOfWeek as DayOfWeek
+            }
+        });
+
+        if (existingTimetable) {
+            return res.status(400).json({ message: "Timetable already exists for this doctor, room and day" });
+        }
+
         const newTimetable = await prisma.timetable.create({
             data: { accountID, roomID, dayOfWeek, note },
             include: accountInclude
@@ -32,12 +45,54 @@ export const CreateTimetable = async (req: Request, res: Response, next: NextFun
 
 export const GetAllTimetables = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const timetables = await prisma.timetable.findMany({ include: accountInclude });
-        return res.status(200).json({ timetables });
+        const { facultyID } = req.query;
+
+        if (!facultyID || typeof facultyID !== "string") {
+            return res.status(400).json({ message: "Faculty ID is required" });
+        }
+
+        const timetables = await prisma.timetable.findMany({
+            where: {
+                room: {
+                    FacultyID: facultyID
+                }
+            },
+            include: {
+                account: {
+                    select: {
+                        accountID: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        role: true,
+                        avatarUrl: true,
+                        DisplayID: true
+                    }
+                },
+                room: {
+                    select: {
+                        roomID: true,
+                        roomName: true,
+                        roomType: true
+                    }
+                }
+            }
+        });
+
+        const groupedTimetables = timetables.reduce((acc: Record<DayOfWeek, typeof timetables>, curr) => {
+            if (!acc[curr.dayOfWeek]) {
+                acc[curr.dayOfWeek] = [];
+            }
+            acc[curr.dayOfWeek].push(curr);
+            return acc;
+        }, {} as Record<DayOfWeek, typeof timetables>);
+
+        return res.status(200).json({ timetables: groupedTimetables });
     } catch (error) {
         next(error);
     }
 };
+
 
 export const GetTimetableById = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -106,6 +161,60 @@ export const GetTimetableByDoctorAndDay = async (req: Request, res: Response, ne
             }
         });
         return res.status(200).json({ timetables });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const GetAvailableUserForTimetable = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { facultyID, dayOfWeek } = req.query;
+
+        if (!facultyID || typeof facultyID !== "string") {
+            return res.status(400).json({ message: "Faculty ID is required" });
+        }
+
+        // 1. Get all accounts that belong to this faculty (via AccountWorkspace)
+        const facultyAccounts = await prisma.accountWorkspace.findMany({
+            where: { facultyID },
+            select: {
+                account: {
+                    select: {
+                        accountID: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        role: true
+                    }
+                }
+            }
+        });
+
+        const allUsersInFaculty = facultyAccounts.map(fa => fa.account);
+
+        if (!dayOfWeek) {
+            return res.status(200).json({ users: allUsersInFaculty });
+        }
+
+        // 2. Get accounts that already have an assignment on the chosen day
+        const assignedTimetables = await prisma.timetable.findMany({
+            where: {
+                dayOfWeek: dayOfWeek as DayOfWeek,
+                room: {
+                    FacultyID: facultyID
+                }
+            },
+            select: {
+                accountID: true
+            }
+        });
+
+        const assignedAccountIDs = new Set(assignedTimetables.map(t => t.accountID));
+
+        // 3. Filter out assigned users
+        const availableUsers = allUsersInFaculty.filter(user => !assignedAccountIDs.has(user.accountID));
+
+        return res.status(200).json({ users: availableUsers });
     } catch (error) {
         next(error);
     }
