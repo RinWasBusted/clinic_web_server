@@ -19,7 +19,42 @@ const accountInclude = {
 
 export const CreateTimetable = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { accountID, roomID, dayOfWeek, note } = req.body;
+        let { accountID, roomID, facultyID, dayOfWeek, note } = req.body;
+
+        if (!roomID && facultyID) {
+            // Find rooms in this faculty
+            const facultyRooms = await prisma.room.findMany({
+                where: { FacultyID: facultyID, status: "ACTIVE" }
+            });
+            
+            if (facultyRooms.length === 0) {
+                return res.status(400).json({ message: "No active rooms available in this faculty" });
+            }
+
+            // Find rooms already assigned on this day in this faculty
+            const assignedTimetables = await prisma.timetable.findMany({
+                where: {
+                    dayOfWeek: dayOfWeek as DayOfWeek,
+                    room: { FacultyID: facultyID }
+                },
+                select: { roomID: true }
+            });
+            
+            const assignedRoomIds = new Set(assignedTimetables.map(t => t.roomID));
+            
+            // Find an unassigned room
+            const availableRoom = facultyRooms.find(r => !assignedRoomIds.has(r.roomID));
+            
+            if (!availableRoom) {
+                return res.status(400).json({ message: "No available room left for this day in this faculty" });
+            }
+            
+            roomID = availableRoom.roomID;
+        }
+
+        if (!roomID) {
+            return res.status(400).json({ message: "roomID or facultyID must be provided" });
+        }
 
         const existingTimetable = await prisma.timetable.findFirst({
             where: {
@@ -224,9 +259,17 @@ export const UpdateTimetableById = async (req: Request, res: Response, next: Nex
     try {
         const timeID = req.params.id;
         const data = req.body;
+        const queryFacultyID = typeof req.query.facultyID === "string" ? req.query.facultyID : undefined;
 
         if (!timeID) return res.status(404).json({ message: "Timetable not found" });
         if (Array.isArray(timeID)) return res.status(400).json({ message: "id must be a string, not an array" });
+
+        const currentTimetable = await prisma.timetable.findUnique({
+            where: { timeID },
+            include: { room: { select: { FacultyID: true } } }
+        });
+
+        if (!currentTimetable) return res.status(404).json({ message: "Timetable not found" });
 
         // If updating accountID, verify account exists
         if (data.accountID) {
@@ -237,6 +280,64 @@ export const UpdateTimetableById = async (req: Request, res: Response, next: Nex
         if (data.roomID) {
             const room = await prisma.room.findUnique({ where: { roomID: data.roomID } });
             if (!room) return res.status(404).json({ message: "Room not found" });
+        }
+
+        if (data.dayOfWeek) {
+            const facultyID = queryFacultyID ?? currentTimetable.room.FacultyID;
+            const facultyRooms = await prisma.room.findMany({
+                where: { FacultyID: facultyID, status: "ACTIVE" }
+            });
+
+            if (facultyRooms.length === 0) {
+                return res.status(400).json({ message: "No active rooms available in this faculty" });
+            }
+
+            const assignedTimetables = await prisma.timetable.findMany({
+                where: {
+                    dayOfWeek: data.dayOfWeek as DayOfWeek,
+                    room: { FacultyID: facultyID },
+                    NOT: { timeID }
+                },
+                select: { roomID: true }
+            });
+
+            const assignedRoomIds = new Set(assignedTimetables.map(t => t.roomID));
+
+            if (data.roomID) {
+                if (assignedRoomIds.has(data.roomID)) {
+                    return res.status(400).json({ message: "Room is already assigned for this day" });
+                }
+            } else {
+                const preferredRoom = currentTimetable.roomID;
+                const availableRoom = !queryFacultyID && !assignedRoomIds.has(preferredRoom)
+                    ? facultyRooms.find(r => r.roomID === preferredRoom)
+                    : facultyRooms.find(r => !assignedRoomIds.has(r.roomID));
+
+                if (!availableRoom) {
+                    return res.status(400).json({ message: "No available room left for this day in this faculty" });
+                }
+
+                data.roomID = availableRoom.roomID;
+            }
+        }
+
+        const effectiveDayOfWeek = (data.dayOfWeek as DayOfWeek) ?? currentTimetable.dayOfWeek;
+        const effectiveRoomID = data.roomID ?? currentTimetable.roomID;
+        const effectiveAccountID = data.accountID ?? currentTimetable.accountID;
+
+        if (data.dayOfWeek || data.roomID || data.accountID) {
+            const duplicateAssignment = await prisma.timetable.findFirst({
+                where: {
+                    timeID: { not: timeID },
+                    accountID: effectiveAccountID,
+                    roomID: effectiveRoomID,
+                    dayOfWeek: effectiveDayOfWeek
+                }
+            });
+
+            if (duplicateAssignment) {
+                return res.status(400).json({ message: "Account is already assigned to this room on this day" });
+            }
         }
 
         const result = await prisma.timetable.update({
