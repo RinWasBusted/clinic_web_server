@@ -72,3 +72,14 @@ export async function deletePrescriptionHandler(req: Request, res: Response, nex
     next(error);
   }
 }
+
+export async function updateStatusHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    // validateUpdateHandler đã kiểm tra tính hợp lệ của việc cập nhật.
+    await prescriptionService.finish(id as string);
+    return res.json({ message: "Đã cập nhật toa thuốc" });
+  } catch (error) {
+    next(error);
+  }
+}

@@ -8,6 +8,7 @@ import {
   UpdateTimetableById,
   DeleteTimetableById,
   DeleteManyTimetables,
+  GetAvailableUserForTimetable
 } from "./timetable.controller.js";
 
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
@@ -169,22 +170,35 @@ router.post("/", verifyAccessToken, CreateTimetable);
  * @swagger
  * /admin/timetables:
  *   get:
- *     summary: Get all timetable entries
+ *     summary: Get all timetable entries of a faculty, grouped by day of week
  *     tags: [Timetable]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: facultyID
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Faculty ID to filter timetables
+ *         example: "550e8400-e29b-41d4-a716-446655440000"
  *     responses:
  *       200:
- *         description: List of all timetable entries
+ *         description: Grouped timetable entries
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 timetables:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/TimetableObject'
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: array
+ *                     items:
+ *                       $ref: '#/components/schemas/TimetableObject'
+ *       400:
+ *         description: Bad request - Faculty ID is required
  *       401:
  *         description: Unauthorized - Invalid or missing token
  *       500:
@@ -194,40 +208,69 @@ router.get("/", verifyAccessToken, GetAllTimetables);
 
 /**
  * @swagger
- * /admin/timetables/{id}:
+ * /admin/timetables/available-users:
  *   get:
- *     summary: Get a timetable entry by ID
+ *     summary: Get available users from a faculty that haven't had timetable assignment on a chosen day
  *     tags: [Timetable]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: id
+ *       - in: query
+ *         name: facultyID
  *         required: true
  *         schema:
  *           type: string
  *           format: uuid
- *         description: Timetable ID (timeID)
- *         example: "770e8400-e29b-41d4-a716-446655440099"
+ *         description: Faculty ID to filter users from
+ *         example: "550e8400-e29b-41d4-a716-446655440000"
+ *       - in: query
+ *         name: dayOfWeek
+ *         schema:
+ *           type: string
+ *           enum: [mon, tue, wed, thu, fri, sat, sun]
+ *         description: Day of week to filter by. If not provided, returns all users from that faculty
+ *         example: "mon"
  *     responses:
  *       200:
- *         description: Timetable entry found
+ *         description: List of available users for the specified faculty and day (or all users if day not specified)
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 timetable:
- *                   $ref: '#/components/schemas/TimetableObject'
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       accountID:
+ *                         type: string
+ *                         format: uuid
+ *                       firstName:
+ *                         type: string
+ *                       lastName:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                         format: email
+ *                       role:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           roleID:
+ *                             type: string
+ *                             format: uuid
+ *                           roleName:
+ *                             type: string
  *       400:
- *         description: Bad request - Timetable ID is required
+ *         description: Bad request - Faculty ID is required
  *       401:
  *         description: Unauthorized - Invalid or missing token
- *       404:
- *         description: Not found - Timetable not found
  *       500:
  *         description: Internal server error
  */
+router.get("/available-users", verifyAccessToken, GetAvailableUserForTimetable);
+
 /**
  * @swagger
  * /admin/timetables/doctor/{accountID}:
@@ -309,6 +352,44 @@ router.get("/doctor/:accountID", verifyAccessToken, GetTimetableByDoctor);
 
 /**
  * @swagger
+ * /admin/timetables/{id}:
+ *   get:
+ *     summary: Get a timetable entry by ID
+ *     tags: [Timetable]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Timetable ID (timeID)
+ *         example: "770e8400-e29b-41d4-a716-446655440099"
+ *     responses:
+ *       200:
+ *         description: Timetable entry found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 timetable:
+ *                   $ref: '#/components/schemas/TimetableObject'
+ *       400:
+ *         description: Bad request - Timetable ID is required
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Not found - Timetable not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/:id", verifyAccessToken, GetTimetableById);
+
+/**
+ * @swagger
  * /admin/timetables/doctor/{accountID}/day/{dayOfWeek}:
  *   get:
  *     summary: Get all timetable entries for a specific doctor (account) on a specific day
@@ -352,44 +433,6 @@ router.get("/doctor/:accountID", verifyAccessToken, GetTimetableByDoctor);
  *         description: Internal server error
  */
 router.get("/doctor/:accountID/day/:dayOfWeek", verifyAccessToken, GetTimetableByDoctorAndDay);
-
-/**
- * @swagger
- * /admin/timetables/{id}:
- *   get:
- *     summary: Get a timetable entry by ID
- *     tags: [Timetable]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Timetable ID (timeID)
- *         example: "770e8400-e29b-41d4-a716-446655440099"
- *     responses:
- *       200:
- *         description: Timetable entry found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 timetable:
- *                   $ref: '#/components/schemas/TimetableObject'
- *       400:
- *         description: Bad request - Timetable ID is required
- *       401:
- *         description: Unauthorized - Invalid or missing token
- *       404:
- *         description: Not found - Timetable not found
- *       500:
- *         description: Internal server error
- */
-router.get("/:id", verifyAccessToken, GetTimetableById);
 
 /**
  * @swagger

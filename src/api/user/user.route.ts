@@ -20,7 +20,7 @@ const router = Router();
  *           example: "550e8400-e29b-41d4-a716-446655440000"
  *         fullName:
  *           type: string
- *           description: Display name (Vietnamese format: LastName FirstName)
+ *           description: "Display name (Vietnamese format: LastName FirstName)"
  *           example: "Nguyen Van A"
  *       required:
  *         - accountID

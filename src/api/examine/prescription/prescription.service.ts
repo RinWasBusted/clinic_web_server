@@ -19,6 +19,7 @@ interface PrescriptionItem {
 
 interface PrescriptionType {
   examineID: string;
+  patientID?: string;
   examineDisplayID: string;
   doctorID: string;
   note?: string | null;
@@ -206,8 +207,8 @@ class PrescriptionService {
 
   isValidUpdate(payload: PrescriptionType) {
     // Không được vừa update vừa xóa.
-    if (!Array.isArray(payload.deleteList) || !Array.isArray(payload.details)) return true;
-    if (payload.deleteList?.length == 0) return true;
+    if (!Array.isArray(payload?.deleteList) || !Array.isArray(payload.details)) return true;
+    if (payload?.deleteList?.length == 0) return true;
     if (payload.details?.length == 0) return true;
     if (payload.details.some((medicine) => payload.deleteList?.includes(medicine.medicineID))) return false;
     return true;
@@ -276,6 +277,13 @@ class PrescriptionService {
       where: { prescriptionID, doctorID, status: PrescriptionStatus.draft },
     });
     return deletedItem;
+  }
+
+  async finish(prescriptionID: string, tx?: Client) {
+    await this.resolveClient(tx).prescription.update({
+      where: { prescriptionID },
+      data: { status: "done" },
+    });
   }
 }
 export default new PrescriptionService();

@@ -63,6 +63,13 @@ router.post("/", verifyAccessToken, CreateFaculty);
  *     tags: [Faculty]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: with-rooms
+ *         schema:
+ *           type: boolean
+ *         description: Include room list in response
+ *         example: true
  *     responses:
  *       200:
  *         description: List of all faculties

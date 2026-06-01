@@ -50,6 +50,10 @@ const router = Router();
  *                 type: string
  *                 format: email
  *                 example: "patient@example.com"
+ *               birthDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "1990-01-01"
  *               appointmentType:
  *                 type: string
  *                 enum: [examine, re_examine]
