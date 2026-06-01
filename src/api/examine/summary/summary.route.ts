@@ -407,8 +407,8 @@ import { recordSchema } from "./schema.js";
  *         schema:
  *           type: string
  *           format: uuid
- *         description: UUID of the examine log
- *         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Human-readable examine ID (display ID)
+ *         example: "2600000001"
  *     responses:
  *       200:
  *         description: Printable summary retrieved successfully

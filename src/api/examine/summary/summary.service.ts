@@ -59,9 +59,10 @@ const prescriptionDetailProjection = {
 };
 
 export async function getPrintableVersion(id: string) {
-  const isExists = prisma.examineLog.count({ where: { examineID: id } });
-  if (!isExists) throw new NotFoundError("Phiếu khám không hợp lệ!");
-
+  // Change to displayID (human-readable code)
+  const examine = await prisma.examineLog.findFirst({ where: { examineDisplayID: id }, select: { examineID: true } });
+  if (!examine) throw new NotFoundError("Phiếu khám không hợp lệ!");
+  const uuid = examine.examineID;
   const _ = await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`update "Prescription"
       set "payAmount" = (select COALESCE(sum(m.price*dt.quantity), 0)
@@ -70,15 +71,15 @@ export async function getPrintableVersion(id: string) {
       on m."medicineID" = dt."medicineID"
       where  
         dt."prescriptionID" =
-        (select ("prescriptionID") from "Prescription" where "examineID" = ${id})
+        (select ("prescriptionID") from "Prescription" where "examineID" = ${uuid})
       and 
         m.quantity > 50)
       where "prescriptionID" =
-        (select ("prescriptionID") from "Prescription" where "examineID" = ${id})
+        (select ("prescriptionID") from "Prescription" where "examineID" = ${uuid})
     `;
 
     const log = await tx.examineLog.findUnique({
-      where: { examineID: id },
+      where: { examineID: uuid },
       select: {
         createdAtLocal: true,
         patient: {
