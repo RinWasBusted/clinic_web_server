@@ -5,6 +5,7 @@ import {
   deleteAccount,
   DeleteManyAccounts,
   GetAllAccounts,
+  SearchPatients,
   GetProfile,
   register,
   registerMany,
@@ -231,6 +232,7 @@ router.post("/register-many", verifyAccessToken, validateBody(registerManySchema
  *         description: Internal server error
  */
 router.get("", verifyAccessToken, GetAllAccounts);
+router.get("/patients/search", verifyAccessToken, SearchPatients);
 
 /**
  * @swagger

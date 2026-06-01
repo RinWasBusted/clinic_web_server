@@ -150,6 +150,32 @@ export const GetAllAccounts = async (req: Request, res: Response) => {
   });
   return res.status(200).json({ accounts });
 }
+
+export const SearchPatients = async (req: Request, res: Response) => {
+  const { keyword } = req.query;
+  const patients = await prisma.account.findMany({
+    where: {
+      role: {
+        roleName: {
+          contains: "patient",
+          mode: "insensitive"
+        }
+      },
+      OR: keyword && typeof keyword === "string" ? [
+        { firstName: { contains: keyword, mode: "insensitive" } },
+        { lastName: { contains: keyword, mode: "insensitive" } },
+        { phoneNumber: { contains: keyword, mode: "insensitive" } }
+      ] : undefined
+    },
+    omit: {
+      password: true,
+    },
+    include: {
+      patient: true
+    }
+  });
+  return res.status(200).json({ data: patients });
+}
 export const GetProfile = async (req: Request, res: Response) => {
   const accountIdToGet = req.params.id ?? "";
   if (Array.isArray(accountIdToGet)) {

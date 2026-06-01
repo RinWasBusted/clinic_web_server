@@ -189,8 +189,6 @@ model RolePermission {
 
 model Account {
   accountID   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  // roleName kept for backwards compatibility only — DO NOT use for authorization logic.
-  // Use roleID + role relation instead.
   roleName    String?  @db.VarChar(50)
   firstName   String   @db.VarChar(50)
   lastName    String   @db.VarChar(75)

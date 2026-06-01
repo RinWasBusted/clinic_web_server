@@ -86,7 +86,8 @@ export const getExamineLogsByDate = async (dateStr: string) => {
             createdAt: {
                 gte: startOfDay,
                 lte: endOfDay
-            }
+            },
+            status: "done"
         },
         include: {
             patient: {
@@ -111,17 +112,122 @@ export const getExamineLogsByDate = async (dateStr: string) => {
     });
 };
 
-// BM5.1: Báo Cáo Doanh Thu Theo Tháng
-export const getMonthlyRevenueReport = async (month: number, year: number) => {
-    return await prisma.paymentMonthReport.findMany({
+export const getExamineLogsByKeyword = async (keyword: string) => {
+    return await prisma.examineLog.findMany({
         where: {
-            month: month,
-            year: year
+            status: "done",
+            patient: {
+                account: {
+                    OR: [
+                        { firstName: { contains: keyword, mode: "insensitive" } },
+                        { lastName: { contains: keyword, mode: "insensitive" } },
+                        { phoneNumber: { contains: keyword, mode: "insensitive" } }
+                    ]
+                }
+            }
         },
-        orderBy: {
-            date: 'asc'
+        orderBy: { createdAt: 'desc' },
+        include: {
+            patient: {
+                include: {
+                    account: {
+                        select: {
+                            firstName: true,
+                            lastName: true
+                        }
+                    }
+                }
+            },
+            details: {
+                include: {
+                    disease: true
+                }
+            }
         }
     });
+};
+
+// BM5.1: Báo Cáo Doanh Thu Theo Tháng
+export const getMonthlyRevenueReport = async (month: number, year: number) => {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+    // Lấy giá tiền khám từ cấu hình hệ thống (COUNT_FEE)
+    const examFeeConfig = await prisma.systemConfig.findUnique({
+        where: { key: "COUNT_FEE" }
+    });
+    const examFee = examFeeConfig ? parseFloat(examFeeConfig.value) : 40000;
+
+    const appointments = await prisma.appointment.findMany({
+        where: {
+            scheduleDate: {
+                gte: startDate,
+                lte: endDate
+            },
+            status: "approved"
+        }
+    });
+
+    const prescriptions = await prisma.prescription.findMany({
+        where: {
+            createdAt: {
+                gte: startDate,
+                lte: endDate
+            },
+            status: "done"
+        },
+        include: {
+            details: {
+                include: {
+                    medicine: true
+                }
+            }
+        }
+    });
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const dailyData = new Map<number, { patientCount: number; revenue: number }>();
+    
+    for (let i = 1; i <= daysInMonth; i++) {
+        dailyData.set(i, { patientCount: 0, revenue: 0 });
+    }
+
+    appointments.forEach(app => {
+        const date = app.scheduleDate.getDate();
+        const data = dailyData.get(date);
+        if (data) {
+            data.patientCount += 1;
+            data.revenue += examFee;
+        }
+    });
+
+    prescriptions.forEach(pres => {
+        const date = pres.createdAt.getDate();
+        const data = dailyData.get(date);
+        if (data) {
+            let medicineFee = 0;
+            pres.details.forEach(d => {
+                medicineFee += d.quantity * Number(d.medicine.price || 0);
+            });
+            data.revenue += medicineFee;
+        }
+    });
+
+    const reports = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+        const data = dailyData.get(i)!;
+        if (data.patientCount > 0 || data.revenue > 0) {
+            reports.push({
+                date: i,
+                month: month,
+                year: year,
+                patientCount: data.patientCount,
+                revenue: data.revenue
+            });
+        }
+    }
+
+    return reports;
 };
 
 // BM5.2: Báo Cáo Sử Dụng Thuốc
