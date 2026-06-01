@@ -86,7 +86,8 @@ export const getExamineLogsByDate = async (dateStr: string) => {
             createdAt: {
                 gte: startOfDay,
                 lte: endOfDay
-            }
+            },
+            status: "done"
         },
         include: {
             patient: {
@@ -107,6 +108,41 @@ export const getExamineLogsByDate = async (dateStr: string) => {
         },
         orderBy: {
             createdAt: 'asc'
+        }
+    });
+};
+
+export const getExamineLogsByKeyword = async (keyword: string) => {
+    return await prisma.examineLog.findMany({
+        where: {
+            status: "done",
+            patient: {
+                account: {
+                    OR: [
+                        { firstName: { contains: keyword, mode: "insensitive" } },
+                        { lastName: { contains: keyword, mode: "insensitive" } },
+                        { phoneNumber: { contains: keyword, mode: "insensitive" } }
+                    ]
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+            patient: {
+                include: {
+                    account: {
+                        select: {
+                            firstName: true,
+                            lastName: true
+                        }
+                    }
+                }
+            },
+            details: {
+                include: {
+                    disease: true
+                }
+            }
         }
     });
 };

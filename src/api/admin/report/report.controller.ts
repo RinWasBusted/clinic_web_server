@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { getAppointmentsByDate, getExamineLogDetails, getMaxPatientsPerDay, getExamineLogsByDate, getMonthlyRevenueReport, getMedicineUsageReport } from "./report.service.js";
+import { getAppointmentsByDate, getExamineLogDetails, getMaxPatientsPerDay, getExamineLogsByDate, getMonthlyRevenueReport, getMedicineUsageReport, getExamineLogsByKeyword } from "./report.service.js";
 
 export const getExaminationList = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -82,20 +82,26 @@ export const getExaminationTicket = async (req: Request, res: Response, next: Ne
 // BM3: Danh Sách Bệnh Nhân
 export const getPatientList = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { date } = req.query;
-        if (!date || typeof date !== "string") {
-            return res.status(400).json({ message: "Vui lòng cung cấp tham số 'date' (YYYY-MM-DD)" });
+        const { date, keyword } = req.query;
+        let logs: any[] = [];
+        
+        if (keyword && typeof keyword === "string") {
+            logs = await getExamineLogsByKeyword(keyword);
+        } else if (date && typeof date === "string") {
+            logs = await getExamineLogsByDate(date);
+        } else {
+            return res.status(400).json({ message: "Vui lòng cung cấp tham số 'date' hoặc 'keyword'" });
         }
-
-        const logs = await getExamineLogsByDate(date);
         
         const data = logs.map((log, index) => {
             const account = log.patient.account;
             const fullName = `${account.firstName || ""} ${account.lastName || ""}`.trim();
-            const predictedDiseases = log.details.map(d => d.disease.diseaseName).join(", ");
+            const predictedDiseases = log.details.map((d: any) => d.disease.diseaseName).join(", ");
             
             return {
                 stt: index + 1,
+                patientId: log.patient.patientID,
+                examineLogId: log.examineID,
                 fullName: fullName,
                 date: log.createdAt.toISOString().split("T")[0],
                 diseaseType: predictedDiseases,
