@@ -103,7 +103,8 @@ export async function createNewRecord(payload) {
   // Refactored code:
   const finalResult = await prisma.$transaction(async (tx) => {
     const newExamineLog = await ExamineLogService.submit(examine, tx);
-    const { examineID, examineDisplayID } = newExamineLog;
+    const { examineID, examineDisplayID, patientID } = newExamineLog;
+
     const prescriptionData = await prescriptionService.refinePrescriptionData(
       {
         ...prescriptionWithNoExamineLog,
@@ -116,6 +117,7 @@ export async function createNewRecord(payload) {
         ...prescriptionData,
         doctorID: prescriptionWithNoExamineLog.doctorID!,
         examineDisplayID: examineDisplayID as string,
+        patientID: patientID as string,
       },
       tx
     );

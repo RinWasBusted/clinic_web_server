@@ -7,6 +7,7 @@ import {
   getPrescriptionHandler,
   updateDoseHandler,
   updateLogHandler,
+  updateStatusHandler,
 } from "./prescription.controller.js";
 import { validateBody } from "../../../middlewares/validate.js";
 import prescriptionSchema from "../../../schema/prescription.schema.js";
@@ -393,6 +394,65 @@ PrescriptionRouter.put(
   validateUpdateHandler,
   updateDoseHandler
 );
+
+/**
+ * @swagger
+ * /examine/prescription/{id}/done:
+ *   patch:
+ *     summary: Mark a prescription as done
+ *     description: |
+ *       Finalizes a draft prescription. Only the doctor who created the prescription
+ *       can mark it as done, and only on the same calendar day it was created.
+ *       Once done, the prescription can no longer be updated or deleted.
+ *     tags:
+ *       - Prescription
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID of the prescription to finalize
+ *         example: "e6f7a8b9-c0d1-2345-efab-456789012345"
+ *     responses:
+ *       200:
+ *         description: Prescription marked as done successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Đã hoàn thành toa thuốc"
+ *       401:
+ *         description: Unauthorized — missing or invalid access token
+ *       403:
+ *         description: |
+ *           Forbidden. Possible reasons:
+ *           - Not the prescribing doctor
+ *           - Prescription status is already `done`
+ *           - Attempting to update after the creation date
+ *         content:
+ *           application/json:
+ *             examples:
+ *               notOwner:
+ *                 summary: Not the prescribing doctor
+ *                 value:
+ *                   message: "Bạn không có quyền cập nhật đơn thuốc này"
+ *               alreadyDone:
+ *                 summary: Prescription is already finalized
+ *                 value:
+ *                   message: "Không thể cập nhật đơn thuốc đã hoàn thành"
+ *               outdated:
+ *                 summary: Past creation date
+ *                 value:
+ *                   message: "Chỉ có thể cập nhật đơn thuốc trong ngày được tạo"
+ *       404:
+ *         description: Prescription not found or not in draft status
+ *       500:
+ *         description: Internal server error
+ */
+PrescriptionRouter.patch("/:id/done", validateUpdateHandler, updateStatusHandler);
 
 /**
  * @swagger
