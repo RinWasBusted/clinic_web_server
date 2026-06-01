@@ -4,6 +4,7 @@ import { isAppointment, NotFoundError, verifyRefsForUpdate } from "./appointment
 import { AppointmentStatus } from "../../../generated/prisma/index.js";
 import { sendMail } from "../../../utils/mailer.js";
 import random6Digits from "../../../utils/generateCode.js";
+import ticketService from "../../examine/ticket/ticket.service.js";
 
 export const CreateAppointment = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -16,6 +17,37 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                 message: "Staff not found"
             })
         }
+
+        // --- BẮT ĐẦU: Check giới hạn số lượng bệnh nhân trong ngày ---
+        const targetDate = new Date(scheduleDate);
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const config = await prisma.systemConfig.findUnique({
+            where: { key: "COUNT_PATIENT" }
+        });
+        const maxPatients = config ? parseInt(config.value, 10) : 40; // Mặc định là 40
+
+        const currentCount = await prisma.appointment.count({
+            where: {
+                scheduleDate: {
+                    gte: startOfDay,
+                    lte: endOfDay
+                },
+                status: {
+                    not: "cancelled"
+                }
+            }
+        });
+
+        if (currentCount >= maxPatients) {
+            return res.status(400).json({
+                message: `Đã đạt giới hạn số lượng bệnh nhân trong ngày (${maxPatients}). Không thể tạo thêm lịch khám.`
+            });
+        }
+        // --- KẾT THÚC: Check giới hạn ---
 
         // Find or create patient with account
         const account = await prisma.patient.findFirst({
@@ -61,6 +93,15 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     approvedByAccount: true
                 }
             });
+
+            if (newAppointment.status === "approved" && newAppointment.roomID) {
+                await ticketService.generateTicket({
+                    appointmentID: newAppointment.appointmentID,
+                    patientID: newAppointment.patientID,
+                    roomID: newAppointment.roomID
+                });
+            }
+
             return res.status(201).json({ appointment: newAppointment });
         }
         else {
@@ -81,6 +122,15 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     approvedByAccount: true
                 }
             });
+
+            if (newAppointment.status === "approved" && newAppointment.roomID) {
+                await ticketService.generateTicket({
+                    appointmentID: newAppointment.appointmentID,
+                    patientID: newAppointment.patientID,
+                    roomID: newAppointment.roomID
+                });
+            }
+
             return res.status(201).json({ appointment: newAppointment });
         }
     } catch (error) {
@@ -193,6 +243,7 @@ export const UpdateAppointmentById = async (req: Request, res: Response, next: N
             }
         });
 
+
         if (result) {
             return res.status(200).json({
                 message: "Update successful",
@@ -234,6 +285,14 @@ export const ApproveAppointment = async (req: Request, res: Response, next: Next
                 approvedByAccount: true
             }
         });
+
+        if (appointment.status === "approved" && appointment.roomID) {
+            await ticketService.generateTicket({
+                appointmentID: appointment.appointmentID,
+                patientID: appointment.patientID,
+                roomID: appointment.roomID
+            });
+        }
 
         return res.status(200).json({
             message: "Appointment approved",

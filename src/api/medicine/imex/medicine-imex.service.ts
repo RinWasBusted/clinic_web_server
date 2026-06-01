@@ -56,6 +56,20 @@ export const getImexLogsService = async (
         value: true,
         createdAt: true,
         note: true,
+        details: {
+          select: {
+            medicineID: true,
+            quantity: true,
+            note: true,
+            medicine: {
+              select: {
+                medicineName: true,
+                unit: true,
+                price: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       skip,

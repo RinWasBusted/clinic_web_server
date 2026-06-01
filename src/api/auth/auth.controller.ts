@@ -16,26 +16,21 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
         password: true,
         firstName: true,
         lastName: true,
-        role: { select: { roleName: true } }
+        role: true,
       },
     });
     if (!account?.password) {
       return res.status(400).json({
-        message: "Not have account with this email or password is required",
+        message: "Tên đăng nhập hoặc mật khẩu không chính xác",
       });
     }
     if (!account || !bcrypt.compareSync(password, account.password)) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Tên đăng nhập hoặc mật khẩu không chính xác" });
     }
-
-    // Prefer dynamic role from Role relation; fallback to legacy roleName field
-    const resolvedRoleName = account.role?.roleName ?? account.roleName ?? "";
-
     const { accessToken, refreshToken } = generateTokens({
       id: account.accountID,
       email,
-      role: resolvedRoleName,
-      roleName: resolvedRoleName,
+      role: account?.role?.roleName as string,
       roleID: account.roleID,
     });
 
@@ -55,8 +50,8 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
     });
     await addRefreshTokenToCookieToWhitelist({ refreshToken, userId: account.accountID });
     return res.status(200).json({
-      message: "Login successful",
-      user: { id: account.accountID, role: resolvedRoleName, firstName: account.firstName, lastName: account.lastName },
+      message: "Đăng nhập thành công",
+      user: { id: account.accountID, role: account?.role?.roleName as string, roleDescription: account?.role?.roleDescription as string, firstName: account.firstName, lastName: account.lastName },
     });
   } catch (error) {
     next(error);
