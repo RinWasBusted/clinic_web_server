@@ -130,11 +130,13 @@ export const UpdateProfile = async (req: Request, res: Response) => {
       message: "Unauthorized",
     });
   }
-  await prisma.account.update({
+  const updated = await prisma.account.update({
     where: { accountID: userId },
     data: req.body,
+    omit: { password: true },
+    include: { role: true, workspaces: true, patient: true },
   });
-  return res.status(200).json({ message: "Profile updated successfully" });
+  return res.status(200).json({ message: "Profile updated successfully", profile: updated });
 };
 export const updatePassword = async (req: Request, res: Response) => {
   const { currentPassword, newPassword } = req.body;
