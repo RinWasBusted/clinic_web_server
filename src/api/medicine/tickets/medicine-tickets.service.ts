@@ -49,6 +49,7 @@ export const getMedicineTicketsService = async (
           prescriptionID: true,
           patient: {
             select: {
+              patientID: true,
               account: {
                 select: {
                   firstName: true,
@@ -77,6 +78,7 @@ export const getMedicineTicketsService = async (
     ticketID: ticket.ticketID,
     prescriptionDisplayID: ticket.prescription.prescriptionDisplayID,
     prescriptionID: ticket.prescription.prescriptionID,
+    patientID: ticket.prescription.patient?.patientID || "",
     patientName: ticket.prescription.patient?.account
       ? `${ticket.prescription.patient.account.lastName} ${ticket.prescription.patient.account.firstName}`.trim()
       : "",
@@ -287,25 +289,24 @@ export const dispenseMedicineTicketService = async (
         throw new MedicineTicketServiceError("Prescription does not contain any medicine", 400);
       }
 
+      const dispensableMedicines = ticket.prescription.details.filter(
+        (detail) => detail.medicine.quantity >= detail.quantity
+      );
       const insufficientMedicines = ticket.prescription.details.filter(
         (detail) => detail.medicine.quantity < detail.quantity
       );
 
-      if (insufficientMedicines.length > 0) {
-        const shortageMessage = insufficientMedicines
-          .map(
-            (detail) =>
-              `${detail.medicine.medicineName} (cần ${detail.quantity}, còn ${detail.medicine.quantity})`
-          )
-          .join(", ");
-
-        throw new MedicineTicketServiceError(`Insufficient stock: ${shortageMessage}`, 400);
+      if (dispensableMedicines.length === 0) {
+        throw new MedicineTicketServiceError(
+          `No medicines have sufficient stock to dispense. Insufficient medicines: ${insufficientMedicines.map((d) => `${d.medicine.medicineName} (need ${d.quantity}, have ${d.medicine.quantity})`).join(", ")}`,
+          400
+        );
       }
 
       const prescriptionCode =
         ticket.prescription.prescriptionDisplayID ?? ticket.prescription.prescriptionID;
       const exportNote = `Xuat thuoc cho don thuoc co ma ${prescriptionCode}`;
-      const exportValue = ticket.prescription.details.reduce(
+      const exportValue = dispensableMedicines.reduce(
         (total, detail) => total + Number(detail.medicine.price) * detail.quantity,
         0
       );
@@ -320,8 +321,9 @@ export const dispenseMedicineTicketService = async (
         select: { imexID: true },
       });
 
+      // Create export details only for dispensable medicines
       await tx.imexMedicineDetails.createMany({
-        data: ticket.prescription.details.map((detail) => ({
+        data: dispensableMedicines.map((detail) => ({
           imexID: imexLog.imexID,
           medicineID: detail.medicineID,
           quantity: -detail.quantity,
@@ -329,7 +331,8 @@ export const dispenseMedicineTicketService = async (
         })),
       });
 
-      for (const detail of ticket.prescription.details) {
+      // Decrement stock only for dispensable medicines
+      for (const detail of dispensableMedicines) {
         await tx.medicine.update({
           where: { medicineID: detail.medicineID },
           data: { quantity: { decrement: detail.quantity } },
@@ -355,6 +358,15 @@ export const dispenseMedicineTicketService = async (
         prescriptionID: ticket.prescriptionID,
         prescriptionDisplayID: ticket.prescription.prescriptionDisplayID,
         imexID: imexLog.imexID,
+        processedCount: dispensableMedicines.length,
+        skippedCount: insufficientMedicines.length,
+        skippedMedicines: insufficientMedicines.map((detail) => ({
+          medicineID: detail.medicineID,
+          medicineName: detail.medicine.medicineName,
+          required: detail.quantity,
+          available: detail.medicine.quantity,
+          shortage: detail.quantity - detail.medicine.quantity,
+        })),
       };
     },
     {

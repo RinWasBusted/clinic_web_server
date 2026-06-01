@@ -49,10 +49,10 @@ class PrescriptionService {
       select: {
         medicineID: true,
         medicineName: true,
-        // medicineImage: true,
+        medicineImage: true,
         unit: true,
         price: true,
-        // quantity: true,
+        quantity: true,
       },
     },
   };
@@ -69,6 +69,7 @@ class PrescriptionService {
     note: true,
     needReExamine: true,
     totalTreatmentDays: true,
+    payAmount: true,
   };
 
   static readonly prescriptionInternalView = {
