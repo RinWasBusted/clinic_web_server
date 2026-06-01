@@ -26,10 +26,9 @@ export const CreateFaculty = async (req: Request, res: Response, next: NextFunct
 };
 export const GetAllFaculties = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const withRooms = req.query["with-rooms"] === "true";
         const faculties = await prisma.faculty.findMany({
-            include: {
-                rooms: true
-            }
+            include: withRooms ? { rooms: true } : undefined
         });
         return res.status(200).json({ faculties });
     } catch (error) {

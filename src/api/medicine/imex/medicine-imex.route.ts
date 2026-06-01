@@ -74,7 +74,7 @@ const router = Router();
  *           minimum: 1
  *           default: 10
  *         description: Số lượng phiếu imex trên mỗi trang
- *         example: 10
+ *         example: 20
  *     responses:
  *       200:
  *         description: Lấy danh sách thành công. Hỗ trợ phân trang và trả về mảng rỗng nếu không có dữ liệu phù hợp.
@@ -554,7 +554,6 @@ router.post(
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Imex log updated successfully"
  *                   example: "Imex log updated successfully"
  *                 data:
  *                   type: object

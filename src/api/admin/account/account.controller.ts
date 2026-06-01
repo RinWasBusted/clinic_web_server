@@ -128,7 +128,18 @@ export const registerMany = async (req: Request<Empty, unknown, RegisterManyBody
   }
 }
 export const GetAllAccounts = async (req: Request, res: Response) => {
+  const { facultyID } = req.query;
+
   const accounts = await prisma.account.findMany({
+    where: facultyID && typeof facultyID === "string"
+      ? {
+          workspaces: {
+            some: {
+              facultyID,
+            },
+          },
+        }
+      : undefined,
     omit: {
       password: true,
     },

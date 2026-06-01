@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import prisma, { Prisma } from "../../../utils/prisma.js";
-import { isAppointment, NotFoundError, verifyRefsForUpdate } from "./appointment.service.js";
+import { isAppointment, NotFoundError, verifyRefsForUpdate, getNumberOfAppointments } from "./appointment.service.js";
 import { AppointmentStatus } from "../../../generated/prisma/index.js";
 import { sendMail } from "../../../utils/mailer.js";
 import random6Digits from "../../../utils/generateCode.js";
@@ -8,13 +8,21 @@ import random6Digits from "../../../utils/generateCode.js";
 export const CreateAppointment = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { appointmentType, scheduleDate, roomID, firstName,
-            lastName, phoneNumber, email } = req.body;
+            lastName, phoneNumber, email, birthDate } = req.body;
         const approvedBy = req.user?.id;
-        console.log(approvedBy);
         if (!approvedBy) {
             return res.status(404).json({
                 message: "Staff not found"
             })
+        }
+
+        const appointmentDate = new Date(scheduleDate);
+        const numberOfAppointments = await getNumberOfAppointments(appointmentDate)
+
+        if(numberOfAppointments >= 40) {
+            return res.status(400).json({
+                message: "The number of appointments for today has reached the limit. Please choose another day."
+            });
         }
 
         // Find or create patient with account
@@ -34,9 +42,8 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     firstName,
                     lastName,
                     phoneNumber,
-                    email: email,
-                    //role: "patient",
-                    birthDate: scheduleDate,
+                    email: email || `${phoneNumber || codePatient}@clinic.local`,
+                    birthDate: birthDate ? new Date(birthDate) : new Date(scheduleDate),
                     DisplayID: codePatient,
                     patient: {
                         create: {}

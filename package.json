@@ -8,7 +8,8 @@
     "build": "tsc",
     "prod": "node dist/index.js",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "seed": "tsx prisma/seed.ts"
   },
   "author": "",
   "type": "module",

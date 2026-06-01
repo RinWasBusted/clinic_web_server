@@ -36,3 +36,22 @@ export const verifyRefsForUpdate = async ({ patientID, roomID }: VerifyRefsInput
     if (!room) throw new NotFoundError("Room not found");
   }
 };
+
+export const getNumberOfAppointments = async (scheduleDate: Date): Promise<number> => {
+  const today = new Date(scheduleDate);
+  today.setHours(0, 0, 0, 0); // Set to the start of the day
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1); // Move to the next day
+
+  const count = await prisma.appointment.count({
+    where: {
+      scheduleDate: {
+        gte: today,
+        lt: tomorrow,
+      },
+    },
+  });
+
+  return count;
+};
