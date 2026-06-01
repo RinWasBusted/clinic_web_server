@@ -4,12 +4,15 @@ import receiptService, { ReceiptServiceError } from "./receipt.service.js";
 export async function getReceiptHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const appointmentID = (req.params.appointmentID || req.query.appointmentID) as string | undefined;
+    const prescriptionID = (req.params.prescriptionID || req.query.prescriptionID) as string | undefined;
 
-    if (!appointmentID) {
-      return res.status(400).json({ message: "appointmentID is required" });
+    if (!appointmentID && !prescriptionID) {
+      return res.status(400).json({ message: "appointmentID or prescriptionID is required" });
     }
 
-    const receipt = await receiptService.getReceiptByAppointmentID(appointmentID);
+    const receipt = appointmentID
+      ? await receiptService.getReceiptByAppointmentID(appointmentID)
+      : await receiptService.getReceiptByPrescriptionID(prescriptionID as string);
 
     return res.json({
       message: "Get receipt successfully",

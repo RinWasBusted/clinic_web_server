@@ -7,6 +7,7 @@ const receiptRouter = Router();
 receiptRouter.use(verifyAccessToken);
 
 receiptRouter.get("/", getReceiptHandler);
+receiptRouter.get("/prescription/:prescriptionID", getReceiptHandler);
 receiptRouter.get("/:appointmentID", getReceiptHandler);
 
 export default receiptRouter;
