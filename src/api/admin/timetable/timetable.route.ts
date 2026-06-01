@@ -12,6 +12,7 @@ import {
 } from "./timetable.controller.js";
 
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorization } from "../../../middlewares/authorization.js";
 const router = Router();
 
 /**
@@ -164,7 +165,7 @@ const router = Router();
  *       500:
  *         description: Internal server error
  */
-router.post("/", verifyAccessToken, CreateTimetable);
+router.post("/", verifyAccessToken, authorization(["timetable.add_new"]), CreateTimetable);
 
 /**
  * @swagger
@@ -204,7 +205,7 @@ router.post("/", verifyAccessToken, CreateTimetable);
  *       500:
  *         description: Internal server error
  */
-router.get("/", verifyAccessToken, GetAllTimetables);
+router.get("/", verifyAccessToken, authorization(["timetable.view_all"]), GetAllTimetables);
 
 /**
  * @swagger
@@ -269,7 +270,7 @@ router.get("/", verifyAccessToken, GetAllTimetables);
  *       500:
  *         description: Internal server error
  */
-router.get("/available-users", verifyAccessToken, GetAvailableUserForTimetable);
+router.get("/available-users", verifyAccessToken, authorization(["timetable.view_all"]), GetAvailableUserForTimetable);
 
 /**
  * @swagger
@@ -348,7 +349,7 @@ router.get("/available-users", verifyAccessToken, GetAvailableUserForTimetable);
  *       500:
  *         description: Internal server error
  */
-router.get("/doctor/:accountID", verifyAccessToken, GetTimetableByDoctor);
+router.get("/doctor/:accountID", verifyAccessToken, authorization(["timetable.view", "timetable.view_all"]), GetTimetableByDoctor);
 
 /**
  * @swagger
@@ -386,7 +387,7 @@ router.get("/doctor/:accountID", verifyAccessToken, GetTimetableByDoctor);
  *       500:
  *         description: Internal server error
  */
-router.get("/:id", verifyAccessToken, GetTimetableById);
+router.get("/:id", verifyAccessToken, authorization(["timetable.view", "timetable.view_all"]), GetTimetableById);
 
 /**
  * @swagger
@@ -432,7 +433,7 @@ router.get("/:id", verifyAccessToken, GetTimetableById);
  *       500:
  *         description: Internal server error
  */
-router.get("/doctor/:accountID/day/:dayOfWeek", verifyAccessToken, GetTimetableByDoctorAndDay);
+router.get("/doctor/:accountID/day/:dayOfWeek", verifyAccessToken, authorization(["timetable.view", "timetable.view_all"]), GetTimetableByDoctorAndDay);
 
 /**
  * @swagger
@@ -498,7 +499,7 @@ router.get("/doctor/:accountID/day/:dayOfWeek", verifyAccessToken, GetTimetableB
  *       500:
  *         description: Internal server error
  */
-router.patch("/:id", verifyAccessToken, UpdateTimetableById);
+router.patch("/:id", verifyAccessToken, authorization(["timetable.update"]), UpdateTimetableById);
 
 /**
  * @swagger
@@ -537,7 +538,7 @@ router.patch("/:id", verifyAccessToken, UpdateTimetableById);
  *       500:
  *         description: Internal server error
  */
-router.delete("/:id", DeleteTimetableById);
+router.delete("/:id", verifyAccessToken, authorization(["timetable.delete"]), DeleteTimetableById);
 
 /**
  * @swagger
@@ -586,6 +587,6 @@ router.delete("/:id", DeleteTimetableById);
  *       500:
  *         description: Internal server error
  */
-router.delete("/delete-many", verifyAccessToken, DeleteManyTimetables);
+router.delete("/delete-many", verifyAccessToken, authorization(["timetable.delete"]), DeleteManyTimetables);
 
 export default router;

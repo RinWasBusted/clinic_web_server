@@ -3,6 +3,7 @@ import { createRecord, getPrintableVersionForExamineSummary } from "./summary.co
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { validateBody } from "../../../middlewares/validate.js";
 import { recordSchema } from "./schema.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 /**
  * @swagger
@@ -468,7 +469,7 @@ import { recordSchema } from "./schema.js";
 
 const SummaryRouter = Router();
 SummaryRouter.use(verifyAccessToken);
-SummaryRouter.get("/:id", getPrintableVersionForExamineSummary);
+SummaryRouter.get("/:id", authorization(["ticket.view_detail", "ticket.update"]), getPrintableVersionForExamineSummary);
 
 /**
  * @swagger
@@ -545,5 +546,5 @@ SummaryRouter.get("/:id", getPrintableVersionForExamineSummary);
  *         description: Internal server error
  */
 
-SummaryRouter.post("/", validateBody(recordSchema), createRecord);
+SummaryRouter.post("/", authorization(["ticket.update"]), validateBody(recordSchema), createRecord);
 export default SummaryRouter;

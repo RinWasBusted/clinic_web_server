@@ -6,6 +6,7 @@ import {
   dispenseMedicineTicket,
 } from "./medicine-tickets.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 import { validateQuery } from "../../../middlewares/validate.js";
 import { dispenseMedicineTicketQuerySchema } from "../../../schema/medicine-ticket.schema.js";
@@ -71,7 +72,7 @@ const medicineTicketsRouter = Router();
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.post("/", verifyAccessToken, createMedicineTicket);
+medicineTicketsRouter.post("/", verifyAccessToken, authorization(["medicine_ticket.update_status"]), createMedicineTicket);
 
 /**
  * @swagger
@@ -140,7 +141,7 @@ medicineTicketsRouter.post("/", verifyAccessToken, createMedicineTicket);
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.get("/", verifyAccessToken, getMedicineTickets);
+medicineTicketsRouter.get("/", verifyAccessToken, authorization(["medicine_ticket.view_all"]), getMedicineTickets);
 
 /**
  * @swagger
@@ -204,7 +205,7 @@ medicineTicketsRouter.get("/", verifyAccessToken, getMedicineTickets);
  *       500:
  *         description: Server error
  */
-medicineTicketsRouter.patch("/:id/status", verifyAccessToken, updateMedicineTicketStatus);
+medicineTicketsRouter.patch("/:id/status", verifyAccessToken, authorization(["medicine_ticket.update_status"]), updateMedicineTicketStatus);
 
 /**
  * @swagger
@@ -273,6 +274,7 @@ medicineTicketsRouter.patch("/:id/status", verifyAccessToken, updateMedicineTick
 medicineTicketsRouter.post(
   "/dispense",
   verifyAccessToken,
+  authorization(["medicine_ticket.update_status"]),
   validateQuery(dispenseMedicineTicketQuerySchema),
   dispenseMedicineTicket
 );

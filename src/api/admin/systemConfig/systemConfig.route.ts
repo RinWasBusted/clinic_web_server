@@ -9,9 +9,12 @@ import {
   deleteConfigHandler,
 } from "./systemConfig.controller.js";
 
+import { authorization } from "../../../middlewares/authorization.js";
+
 const systemConfigRouter = Router();
 
 systemConfigRouter.use(verifyAccessToken);
+systemConfigRouter.use(authorization(["role.manage"]));
 
 /**
  * @swagger

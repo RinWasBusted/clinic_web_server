@@ -35,7 +35,8 @@ export async function verifyAccessToken(req: Request, res: Response, next: NextF
       return res.status(401).json({ message: "Invalid token payload" });
     }
     // Get permissions list and cache it (if not cached) for the user's role
-    const permissions = await authorizationService.getPermissionsListByRole(decoded?.roleID, decoded?.roleName);
+    const resolvedRoleName = decoded?.roleName || decoded?.role;
+    const permissions = await authorizationService.getPermissionsListByRole(decoded?.roleID, resolvedRoleName);
     // attach user info to request object for downstream handlers
     req.user = { id: decoded.id, email: decoded.email, role: decoded.role, permissions };
 

@@ -11,6 +11,7 @@ import {
 } from "./ticket.controller.js";
 import { validateBody, validateQuery } from "../../../middlewares/validate.js";
 import enterTicketSchema from "../../../schema/enterTicket.schema.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 const enterTicketRouter = Router();
 
@@ -419,7 +420,7 @@ enterTicketRouter.use(verifyAccessToken);
  *             schema:
  *               $ref: '#/components/schemas/InternalServerError'
  */
-enterTicketRouter.get("/next", getNextTicket);
+enterTicketRouter.get("/next", authorization(["ticket.view_next"]), getNextTicket);
 
 /**
  * @swagger
@@ -507,7 +508,7 @@ enterTicketRouter.get("/next", getNextTicket);
  *             schema:
  *               $ref: '#/components/schemas/InternalServerError'
  */
-enterTicketRouter.patch("/:id", updateEnterTicket);
+enterTicketRouter.patch("/:id", authorization(["ticket.update"]), updateEnterTicket);
 
 /**
  * @swagger
@@ -562,7 +563,7 @@ enterTicketRouter.patch("/:id", updateEnterTicket);
  *             schema:
  *               $ref: '#/components/schemas/InternalServerError'
  */
-enterTicketRouter.get("/:id", viewEnterTicket);
+enterTicketRouter.get("/:id", authorization(["ticket.view_detail"]), viewEnterTicket);
 
 /**
  * @swagger
@@ -667,7 +668,7 @@ enterTicketRouter.get("/:id", viewEnterTicket);
  *             schema:
  *               $ref: '#/components/schemas/InternalServerError'
  */
-enterTicketRouter.post("/", generateNewTicket);
+enterTicketRouter.post("/", authorization(["ticket.create"]), generateNewTicket);
 
 /**
  * @swagger
@@ -781,7 +782,7 @@ enterTicketRouter.post("/", generateNewTicket);
  */
 enterTicketRouter.get(
   "/",
-
+  authorization(["ticket.view_all"]),
   validateQuery(enterTicketSchema.viewList),
   viewWaitingList
 );

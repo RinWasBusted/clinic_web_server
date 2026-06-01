@@ -31,6 +31,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       id: account.accountID,
       email,
       role: account?.role?.roleName as string,
+      roleName: account?.role?.roleName as string,
       roleID: account.roleID,
     });
 
@@ -49,9 +50,21 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       path: "/",
     });
     await addRefreshTokenToCookieToWhitelist({ refreshToken, userId: account.accountID });
+
+    // Fetch permissions for the logged in role
+    const authorizationService = (await import("../../services/authorization/authorization.service.js")).default;
+    const permissions = await authorizationService.getPermissionsListByRole(account.roleID, account?.role?.roleName);
+
     return res.status(200).json({
       message: "Đăng nhập thành công",
-      user: { id: account.accountID, role: account?.role?.roleName as string, roleDescription: account?.role?.roleDescription as string, firstName: account.firstName, lastName: account.lastName },
+      user: {
+        id: account.accountID,
+        role: account?.role?.roleName as string,
+        roleDescription: account?.role?.roleDescription as string,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        permissions: permissions
+      },
     });
   } catch (error) {
     next(error);
@@ -121,7 +134,18 @@ export const GetProfile = async (req: Request, res: Response) => {
   if (!account) {
     return res.status(404).json({ message: "User not found" });
   }
-  return res.status(200).json({ user: account });
+  return res.status(200).json({
+    user: {
+      id: account.accountID,
+      email: account.email,
+      firstName: account.firstName,
+      lastName: account.lastName,
+      role: account.role?.roleName as string,
+      roleDescription: account.role?.roleDescription as string,
+      avatar: account.avatarUrl as string,
+      permissions: req.user?.permissions || []
+    }
+  });
 };
 export const UpdateProfile = async (req: Request, res: Response) => {
   const userId = req.user?.id;

@@ -11,6 +11,8 @@ const router = Router();
  *   description: System permissions
  */
 
+import { authorization } from "../../middlewares/authorization.js";
+
 /**
  * @swagger
  * /admin/permission:
@@ -23,6 +25,6 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get("/", verifyAccessToken, getAllPermissions);
+router.get("/", verifyAccessToken, authorization(["role.manage"]), getAllPermissions);
 
 export default router;

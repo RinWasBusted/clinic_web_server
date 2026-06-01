@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { verifyAccessToken } from "../../middlewares/verifyToken.js";
+import { authorization } from "../../middlewares/authorization.js";
 import {
   getAllNotificationsHandler,
   getNotificationByIdHandler,
@@ -150,7 +151,7 @@ router.get("/:id", getNotificationByIdHandler);
  *       401:
  *         description: Unauthorized
  */
-router.post("/", createNotificationHandler);
+router.post("/", authorization(["notification.manage"]), createNotificationHandler);
 
 /**
  * @swagger
@@ -213,7 +214,7 @@ router.patch("/:id/read", markNotificationReadHandler);
  *       404:
  *         description: Không tìm thấy thông báo
  */
-router.delete("/:id", deleteNotificationHandler);
+router.delete("/:id", authorization(["notification.manage"]), deleteNotificationHandler);
 
 /**
  * @swagger
@@ -271,7 +272,7 @@ router.delete("/:id", deleteNotificationHandler);
  *       404:
  *         description: Không tìm thấy thông báo
  */
-router.put("/:id", updateNotificationHandler);
+router.put("/:id", authorization(["notification.manage"]), updateNotificationHandler);
 
 
 export default router;

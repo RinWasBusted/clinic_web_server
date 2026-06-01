@@ -16,6 +16,7 @@ import {
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import { checkRole } from "../../../middlewares/role.js";
 import { validateActiveAccount } from "../../../middlewares/acctive.middleware.js";
+import { authorization } from "../../../middlewares/authorization.js";
 import upload from "../../../utils/multer.js";
 const router = Router();
 /**
@@ -71,7 +72,7 @@ const router = Router();
  *       500:
  *         description: Internal server error
  */
-router.post("/register", verifyAccessToken, validateBody(registerSchema), register);
+router.post("/register", verifyAccessToken, authorization(["account.create"]), validateBody(registerSchema), register);
 /**
  * @swagger
  * /admin/account/register-many:
@@ -174,7 +175,7 @@ router.post("/register", verifyAccessToken, validateBody(registerSchema), regist
  *       500:
  *         description: Internal server error
  */
-router.post("/register-many", verifyAccessToken, validateBody(registerManySchema), registerMany);
+router.post("/register-many", verifyAccessToken, authorization(["account.create"]), validateBody(registerManySchema), registerMany);
 /**
  * @swagger
  * /admin/account:
@@ -231,8 +232,8 @@ router.post("/register-many", verifyAccessToken, validateBody(registerManySchema
  *       500:
  *         description: Internal server error
  */
-router.get("", verifyAccessToken, GetAllAccounts);
-router.get("/patients/search", verifyAccessToken, SearchPatients);
+router.get("", verifyAccessToken, authorization(["account.view"]), GetAllAccounts);
+router.get("/patients/search", verifyAccessToken, authorization(["account.view"]), SearchPatients);
 
 /**
  * @swagger
@@ -293,7 +294,7 @@ router.get("/patients/search", verifyAccessToken, SearchPatients);
  *       500:
  *         description: Internal server error
  */
-router.get("/profile/:id", verifyAccessToken, checkRole, GetProfile);
+router.get("/profile/:id", verifyAccessToken, authorization(["account.view"]), checkRole, GetProfile);
 
 /**
  * @swagger
@@ -358,6 +359,7 @@ router.get("/profile/:id", verifyAccessToken, checkRole, GetProfile);
 router.patch(
   "/update-profile/:id",
   verifyAccessToken,
+  authorization(["account.update"]),
   checkRole,
   validateBody(UpdateAccountSchema),
   validateActiveAccount,
@@ -415,7 +417,7 @@ router.patch(
  *       500:
  *         description: Internal server error
  */
-router.patch("/update-password/:id", verifyAccessToken, checkRole, updatePassword);
+router.patch("/update-password/:id", verifyAccessToken, authorization(["account.update"]), checkRole, updatePassword);
 
 /**
  * @swagger
@@ -521,7 +523,7 @@ router.patch("/avatar/:id", verifyAccessToken, upload.single("avatar"), updateAv
  *         description: Internal server error
  */
 
-router.delete("/:id", verifyAccessToken, checkRole, deleteAccount);
+router.delete("/:id", verifyAccessToken, authorization(["account.delete"]), checkRole, deleteAccount);
 
 /**
  * @swagger
@@ -574,5 +576,5 @@ router.delete("/:id", verifyAccessToken, checkRole, deleteAccount);
  *       500:
  *         description: Internal server error
  */
-router.post("/delete-many", verifyAccessToken, checkRole, DeleteManyAccounts);
+router.post("/delete-many", verifyAccessToken, authorization(["account.delete"]), checkRole, DeleteManyAccounts);
 export default router;

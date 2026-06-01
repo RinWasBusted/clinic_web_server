@@ -31,3 +31,6 @@ ticket.view_all                Xem danh sách khám                       Xem to
 medicine.update                Cập nhật danh mục                        Chỉnh sửa thông tin thuốc trong danh mục
 medicine_ticket.view_all       Xem danh sách phiếu cấp thuốc            Xem hàng đợi cấp phát thuốc tại quầy dược
 medicine_ticket.update_status  Cập nhật trạng thái phiếu thuốc          Dược sĩ xác nhận đã cấp phát thuốc cho bệnh nhân
+notification.manage            Quản lý thông báo                        Quản lý việc tạo, sửa, xóa thông báo chung của hệ thống
+menu.pharmacy_inventory        Hiển thị thẻ Kho thuốc                   Quyền hiển thị chức năng Quản lý Kho thuốc trên trang chủ
+report.view                    Xem báo cáo                              Xem và xuất các báo cáo thống kê, doanh thu, danh sách khám bệnh

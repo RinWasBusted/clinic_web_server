@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { GetAccountsByRole } from "./user.controller.js";
+import { verifyAccessToken } from "../../middlewares/verifyToken.js";
+import { authorization } from "../../middlewares/authorization.js";
 const router = Router();
 
 /**
@@ -90,5 +92,5 @@ const router = Router();
  *       500:
  *         description: Internal server error
  */
-router.get("/role", GetAccountsByRole);
+router.get("/role", verifyAccessToken, authorization(["account.view", "timetable.add_new", "timetable.update", "appointment.create", "appointment.update", "ticket.update"]), GetAccountsByRole);
 export default router;

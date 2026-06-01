@@ -10,6 +10,7 @@ import {
   DeleteManyAppointments,
 } from "./appointment.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 import {  validateQuery } from "../../../middlewares/validate.js";
 import { getAllAppointmentsQuerySchema } from "../../../schema/appointment.schama.js";
@@ -91,7 +92,7 @@ const router = Router();
  *       404:
  *         description: Room not found
  */
-router.post("/", verifyAccessToken, CreateAppointment);
+router.post("/", verifyAccessToken, authorization(["appointment.create"]), CreateAppointment);
 
 /**
  * @swagger
@@ -139,7 +140,7 @@ router.post("/", verifyAccessToken, CreateAppointment);
  *                   items:
  *                     type: object
  */
-router.get("/", verifyAccessToken, validateQuery(getAllAppointmentsQuerySchema), GetAllAppointments);
+router.get("/", verifyAccessToken, authorization(["appointment.view"]), validateQuery(getAllAppointmentsQuerySchema), GetAllAppointments);
 
 /**
  * @swagger
@@ -172,7 +173,7 @@ router.get("/", verifyAccessToken, validateQuery(getAllAppointmentsQuerySchema),
  *       404:
  *         description: Not Found - Appointment not found
  */
-router.get("/:id", verifyAccessToken, GetAppointmentById);
+router.get("/:id", verifyAccessToken, authorization(["appointment.view"]), GetAppointmentById);
 
 /**
  * @swagger
@@ -232,7 +233,7 @@ router.get("/:id", verifyAccessToken, GetAppointmentById);
  *       404:
  *         description: Not Found - Appointment, Patient, Room or Staff not found
  */
-router.patch("/:id", verifyAccessToken, UpdateAppointmentById);
+router.patch("/:id", verifyAccessToken, authorization(["appointment.update"]), UpdateAppointmentById);
 
 /**
  * @swagger
@@ -284,7 +285,7 @@ router.patch("/:id", verifyAccessToken, UpdateAppointmentById);
  *       404:
  *         description: Not Found - Appointment, Staff or Room not found
  */
-router.patch("/:id/approve", verifyAccessToken, ApproveAppointment);
+router.patch("/:id/approve", verifyAccessToken, authorization(["appointment.update"]), ApproveAppointment);
 
 /**
  * @swagger
@@ -317,7 +318,7 @@ router.patch("/:id/approve", verifyAccessToken, ApproveAppointment);
  *       404:
  *         description: Not Found - Appointment not found
  */
-router.patch("/:id/cancel", verifyAccessToken, CancelAppointment);
+router.patch("/:id/cancel", verifyAccessToken, authorization(["appointment.update"]), CancelAppointment);
 
 /**
  * @swagger
@@ -350,7 +351,7 @@ router.patch("/:id/cancel", verifyAccessToken, CancelAppointment);
  *       404:
  *         description: Not Found - Appointment not found
  */
-router.delete("/:id", verifyAccessToken, DeleteAppointmentById);
+router.delete("/:id", verifyAccessToken, authorization(["appointment.delete"]), DeleteAppointmentById);
 
 /**
  * @swagger
@@ -390,6 +391,6 @@ router.delete("/:id", verifyAccessToken, DeleteAppointmentById);
  *       400:
  *         description: Bad request
  */
-router.delete("/delete-many", verifyAccessToken, DeleteManyAppointments);
+router.delete("/delete-many", verifyAccessToken, authorization(["appointment.delete"]), DeleteManyAppointments);
 
 export default router;

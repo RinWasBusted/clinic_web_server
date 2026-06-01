@@ -10,6 +10,7 @@ import {
   getExamineLogWithPrescriptionHandler,
   updateExamineLogHandler,
 } from "./log.controller.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 /**
  * @swagger
@@ -204,7 +205,7 @@ examineLogRouter.use(verifyAccessToken);
  *       500:
  *         description: Internal server error
  */
-examineLogRouter.get("/:id", getExamineLogHandler);
+examineLogRouter.get("/:id", authorization(["ticket.view_detail", "ticket.update"]), getExamineLogHandler);
 
 /**
  * @swagger
@@ -315,7 +316,7 @@ examineLogRouter.get("/:id", getExamineLogHandler);
  *       500:
  *         description: Internal server error
  */
-examineLogRouter.post("/new", createExamineLogHandler);
+examineLogRouter.post("/new", authorization(["ticket.update"]), createExamineLogHandler);
 
 /**
  * @swagger
@@ -419,7 +420,7 @@ examineLogRouter.post("/new", createExamineLogHandler);
  *       500:
  *         description: Internal server error
  */
-examineLogRouter.put("/:id", updateExamineLogHandler);
+examineLogRouter.put("/:id", authorization(["ticket.update"]), updateExamineLogHandler);
 
 /**
  * @swagger
@@ -469,7 +470,7 @@ examineLogRouter.put("/:id", updateExamineLogHandler);
  *       500:
  *         description: Internal server error
  */
-examineLogRouter.get("/ticket/:ticketID", getExamineLogByTicketIDHandler);
+examineLogRouter.get("/ticket/:ticketID", authorization(["ticket.view_detail", "ticket.update"]), getExamineLogByTicketIDHandler);
 
 /**
  * @swagger
@@ -534,6 +535,6 @@ examineLogRouter.get("/ticket/:ticketID", getExamineLogByTicketIDHandler);
  *         description: Internal server error
  */
 
-examineLogRouter.get("/:id/full", getExamineLogWithPrescriptionHandler);
+examineLogRouter.get("/:id/full", authorization(["ticket.view_detail", "ticket.update"]), getExamineLogWithPrescriptionHandler);
 
 export default examineLogRouter;

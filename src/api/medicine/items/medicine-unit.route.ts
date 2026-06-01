@@ -7,6 +7,7 @@ import {
   updateMedicineUnitHandler,
   deleteMedicineUnitHandler,
 } from "./medicine-unit.controller.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 const medicineUnitRouter = Router();
 
@@ -59,7 +60,7 @@ medicineUnitRouter.use(verifyAccessToken);
  *                 - unitID: 3
  *                   unitName: gói
  */
-medicineUnitRouter.get("/", getAllMedicineUnitsHandler);
+medicineUnitRouter.get("/", authorization(["medicine.view", "medicine.add", "medicine.update", "imex.create", "imex.update", "ticket.update"]), getAllMedicineUnitsHandler);
 
 /**
  * @swagger
@@ -83,7 +84,7 @@ medicineUnitRouter.get("/", getAllMedicineUnitsHandler);
  *       404:
  *         description: Không tìm thấy
  */
-medicineUnitRouter.get("/:id", getMedicineUnitByIdHandler);
+medicineUnitRouter.get("/:id", authorization(["medicine.view", "medicine.add", "medicine.update", "imex.create", "imex.update", "ticket.update"]), getMedicineUnitByIdHandler);
 
 /**
  * @swagger
@@ -114,7 +115,7 @@ medicineUnitRouter.get("/:id", getMedicineUnitByIdHandler);
  *       409:
  *         description: Đơn vị đã tồn tại
  */
-medicineUnitRouter.post("/", createMedicineUnitHandler);
+medicineUnitRouter.post("/", authorization(["medicine.add", "medicine.update"]), createMedicineUnitHandler);
 
 /**
  * @swagger
@@ -152,7 +153,7 @@ medicineUnitRouter.post("/", createMedicineUnitHandler);
  *       409:
  *         description: Tên đã tồn tại
  */
-medicineUnitRouter.put("/:id", updateMedicineUnitHandler);
+medicineUnitRouter.put("/:id", authorization(["medicine.update"]), updateMedicineUnitHandler);
 
 /**
  * @swagger
@@ -179,6 +180,6 @@ medicineUnitRouter.put("/:id", updateMedicineUnitHandler);
  *       409:
  *         description: Đơn vị đang được sử dụng, không thể xóa
  */
-medicineUnitRouter.delete("/:id", deleteMedicineUnitHandler);
+medicineUnitRouter.delete("/:id", authorization(["medicine.delete"]), deleteMedicineUnitHandler);
 
 export default medicineUnitRouter;

@@ -12,6 +12,7 @@ import {
 import { validateBody } from "../../../middlewares/validate.js";
 import prescriptionSchema from "../../../schema/prescription.schema.js";
 import { validateUpdateHandler } from "./prescription.middleware.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 /**
  * @swagger
@@ -192,7 +193,7 @@ PrescriptionRouter.use(verifyAccessToken);
  *       500:
  *         description: Internal server error
  */
-PrescriptionRouter.post("/new", validateBody(prescriptionSchema.new), createPrescriptionHandler);
+PrescriptionRouter.post("/new", authorization(["ticket.update"]), validateBody(prescriptionSchema.new), createPrescriptionHandler);
 
 /**
  * @swagger
@@ -293,7 +294,7 @@ PrescriptionRouter.post("/new", validateBody(prescriptionSchema.new), createPres
  *       500:
  *         description: Internal server error
  */
-PrescriptionRouter.put("/:id", validateBody(prescriptionSchema.update), validateUpdateHandler, updateLogHandler);
+PrescriptionRouter.put("/:id", authorization(["ticket.update"]), validateBody(prescriptionSchema.update), validateUpdateHandler, updateLogHandler);
 
 /**
  * @swagger
@@ -390,6 +391,7 @@ PrescriptionRouter.put("/:id", validateBody(prescriptionSchema.update), validate
  */
 PrescriptionRouter.put(
   "/:id/details",
+  authorization(["ticket.update"]),
   validateBody(prescriptionSchema.updateDetails),
   validateUpdateHandler,
   updateDoseHandler
@@ -452,7 +454,7 @@ PrescriptionRouter.put(
  *       500:
  *         description: Internal server error
  */
-PrescriptionRouter.patch("/:id/done", validateUpdateHandler, updateStatusHandler);
+PrescriptionRouter.patch("/:id/done", authorization(["ticket.update"]), validateUpdateHandler, updateStatusHandler);
 
 /**
  * @swagger
@@ -495,7 +497,7 @@ PrescriptionRouter.patch("/:id/done", validateUpdateHandler, updateStatusHandler
  *       500:
  *         description: Internal server error
  */
-PrescriptionRouter.delete("/:id", deletePrescriptionHandler);
+PrescriptionRouter.delete("/:id", authorization(["ticket.update"]), deletePrescriptionHandler);
 
 /**
  * @swagger
@@ -613,6 +615,6 @@ PrescriptionRouter.delete("/:id", deletePrescriptionHandler);
  *       500:
  *         description: Internal server error
  */
-PrescriptionRouter.get("/:id", getPrescriptionHandler);
+PrescriptionRouter.get("/:id", authorization(["ticket.view_detail", "ticket.update"]), getPrescriptionHandler);
 
 export default PrescriptionRouter;

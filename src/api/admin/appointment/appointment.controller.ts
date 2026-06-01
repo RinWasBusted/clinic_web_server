@@ -9,7 +9,7 @@ import ticketService from "../../examine/ticket/ticket.service.js";
 export const CreateAppointment = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { appointmentType, scheduleDate, roomID, firstName,
-            lastName, phoneNumber, email, birthDate } = req.body;
+            lastName, phoneNumber, email, birthDate, address } = req.body;
         const approvedBy = req.user?.id;
         if (!approvedBy) {
             return res.status(404).json({
@@ -67,6 +67,7 @@ export const CreateAppointment = async (req: Request, res: Response, next: NextF
                     phoneNumber,
                     email: email || `${phoneNumber || codePatient}@clinic.local`,
                     birthDate: birthDate ? new Date(birthDate) : new Date(scheduleDate),
+                    address: address || null,
                     DisplayID: codePatient,
                     patient: {
                         create: {}

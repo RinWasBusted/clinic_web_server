@@ -8,6 +8,7 @@ import {
   DeleteManyFaculty,
 } from "./faculty.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 import { validateStatusFaculty } from "../../../middlewares/statusFaculty.middleware.js";
 
@@ -53,7 +54,7 @@ const router = Router();
  *       409:
  *         description: Conflict - Faculty with this name already exists
  */
-router.post("/", verifyAccessToken, CreateFaculty);
+router.post("/", verifyAccessToken, authorization(["faculty.manage"]), CreateFaculty);
 
 /**
  * @swagger
@@ -88,7 +89,7 @@ router.post("/", verifyAccessToken, CreateFaculty);
  *                       facultyName:
  *                         type: string
  */
-router.get("/", verifyAccessToken, GetAllFaculties);
+router.get("/", verifyAccessToken, authorization(["faculty.manage"]), GetAllFaculties);
 
 /**
  * @swagger
@@ -125,7 +126,7 @@ router.get("/", verifyAccessToken, GetAllFaculties);
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.get("/:id", verifyAccessToken, GetFacultyById);
+router.get("/:id", verifyAccessToken, authorization(["faculty.manage"]), GetFacultyById);
 
 /**
  * @swagger
@@ -169,7 +170,7 @@ router.get("/:id", verifyAccessToken, GetFacultyById);
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.patch("/:id", verifyAccessToken, UpdateFacultyById);
+router.patch("/:id", verifyAccessToken, authorization(["faculty.manage"]), UpdateFacultyById);
 
 /**
  * @swagger
@@ -207,7 +208,7 @@ router.patch("/:id", verifyAccessToken, UpdateFacultyById);
  *       400:
  *         description: Bad request
  */
-router.post("/delete-many", verifyAccessToken, DeleteManyFaculty);
+router.post("/delete-many", verifyAccessToken, authorization(["faculty.manage"]), DeleteManyFaculty);
 
 /**
  * @swagger
@@ -240,6 +241,6 @@ router.post("/delete-many", verifyAccessToken, DeleteManyFaculty);
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.post("/:id", verifyAccessToken, DeleteFacultyById);
+router.post("/:id", verifyAccessToken, authorization(["faculty.manage"]), DeleteFacultyById);
 
 export default router;

@@ -3,6 +3,7 @@ import { verifyAccessToken } from "../../middlewares/verifyToken.js";
 import { validateBody, validateParams } from "../../middlewares/validate.js";
 import { createRoleSchema, updateRoleSchema, roleParamsSchema } from "../../schema/role.schema.js";
 import { getAllRoles, getRoleById, createRole, updateRole, deleteRole } from "./role.controller.js";
+import { authorization } from "../../middlewares/authorization.js";
 
 const router = Router();
 
@@ -156,7 +157,7 @@ const router = Router();
  *       500:
  *         description: Internal server error
  */
-router.get("/", verifyAccessToken, getAllRoles);
+router.get("/", verifyAccessToken, authorization(["role.manage"]), getAllRoles);
 
 /**
  * @swagger
@@ -196,7 +197,7 @@ router.get("/", verifyAccessToken, getAllRoles);
  *       500:
  *         description: Internal server error
  */
-router.get("/:id", verifyAccessToken, validateParams(roleParamsSchema), getRoleById);
+router.get("/:id", verifyAccessToken, authorization(["role.manage"]), validateParams(roleParamsSchema), getRoleById);
 
 /**
  * @swagger
@@ -231,7 +232,7 @@ router.get("/:id", verifyAccessToken, validateParams(roleParamsSchema), getRoleB
  *       500:
  *         description: Internal server error
  */
-router.post("/", verifyAccessToken, validateBody(createRoleSchema), createRole);
+router.post("/", verifyAccessToken, authorization(["role.manage"]), validateBody(createRoleSchema), createRole);
 
 /**
  * @swagger
@@ -279,7 +280,7 @@ router.post("/", verifyAccessToken, validateBody(createRoleSchema), createRole);
  *       500:
  *         description: Internal server error
  */
-router.patch("/:id", verifyAccessToken, validateParams(roleParamsSchema), validateBody(updateRoleSchema), updateRole);
+router.patch("/:id", verifyAccessToken, authorization(["role.manage"]), validateParams(roleParamsSchema), validateBody(updateRoleSchema), updateRole);
 
 /**
  * @swagger
@@ -319,6 +320,6 @@ router.patch("/:id", verifyAccessToken, validateParams(roleParamsSchema), valida
  *       500:
  *         description: Internal server error
  */
-router.delete("/:id", verifyAccessToken, validateParams(roleParamsSchema), deleteRole);
+router.delete("/:id", verifyAccessToken, authorization(["role.manage"]), validateParams(roleParamsSchema), deleteRole);
 
 export default router;

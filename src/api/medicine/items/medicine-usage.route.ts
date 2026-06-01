@@ -7,6 +7,7 @@ import {
   updateMedicineUsageHandler,
   deleteMedicineUsageHandler,
 } from "./medicine-usage.controller.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 const medicineUsageRouter = Router();
 
@@ -57,7 +58,7 @@ medicineUsageRouter.use(verifyAccessToken);
  *                 - id: 2
  *                   usage: "Uống trước ăn"
  */
-medicineUsageRouter.get("/", getAllMedicineUsagesHandler);
+medicineUsageRouter.get("/", authorization(["medicine.view", "medicine.add", "medicine.update", "imex.create", "imex.update", "ticket.update"]), getAllMedicineUsagesHandler);
 
 /**
  * @swagger
@@ -81,7 +82,7 @@ medicineUsageRouter.get("/", getAllMedicineUsagesHandler);
  *       404:
  *         description: Không tìm thấy
  */
-medicineUsageRouter.get("/:id", getMedicineUsageByIdHandler);
+medicineUsageRouter.get("/:id", authorization(["medicine.view", "medicine.add", "medicine.update", "imex.create", "imex.update", "ticket.update"]), getMedicineUsageByIdHandler);
 
 /**
  * @swagger
@@ -112,7 +113,7 @@ medicineUsageRouter.get("/:id", getMedicineUsageByIdHandler);
  *       409:
  *         description: Cách dùng đã tồn tại
  */
-medicineUsageRouter.post("/", createMedicineUsageHandler);
+medicineUsageRouter.post("/", authorization(["medicine.add", "medicine.update"]), createMedicineUsageHandler);
 
 /**
  * @swagger
@@ -150,7 +151,7 @@ medicineUsageRouter.post("/", createMedicineUsageHandler);
  *       409:
  *         description: Cách dùng đã tồn tại
  */
-medicineUsageRouter.put("/:id", updateMedicineUsageHandler);
+medicineUsageRouter.put("/:id", authorization(["medicine.update"]), updateMedicineUsageHandler);
 
 /**
  * @swagger
@@ -174,6 +175,6 @@ medicineUsageRouter.put("/:id", updateMedicineUsageHandler);
  *       404:
  *         description: Không tìm thấy
  */
-medicineUsageRouter.delete("/:id", deleteMedicineUsageHandler);
+medicineUsageRouter.delete("/:id", authorization(["medicine.delete"]), deleteMedicineUsageHandler);
 
 export default medicineUsageRouter;

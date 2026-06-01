@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { findDiseaseByWords, searchDiseaseByName, createDisease, updateDisease, deleteDisease, getAllDiseases, getDiseaseById } from "./disease.controller.js";
+import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 const diseaseRouter = Router();
 
@@ -81,7 +83,7 @@ const diseaseRouter = Router();
  *                   message: No disease matches!
  *                   data: []
  */
-diseaseRouter.get("/find", findDiseaseByWords);
+diseaseRouter.get("/find", verifyAccessToken, authorization(["ticket.update", "role.manage"]), findDiseaseByWords);
 
 /**
  * @swagger
@@ -136,7 +138,7 @@ diseaseRouter.get("/find", findDiseaseByWords);
  *                   message: No disease matches!
  *                   data: []
  */
-diseaseRouter.get("/search", searchDiseaseByName);
+diseaseRouter.get("/search", verifyAccessToken, authorization(["ticket.update", "role.manage"]), searchDiseaseByName);
 
 /**
  * @swagger
@@ -171,7 +173,7 @@ diseaseRouter.get("/search", searchDiseaseByName);
  *       400:
  *         description: Bad request
  */
-diseaseRouter.post("/", createDisease);
+diseaseRouter.post("/", verifyAccessToken, authorization(["role.manage"]), createDisease);
 
 /**
  * @swagger
@@ -209,7 +211,7 @@ diseaseRouter.post("/", createDisease);
  *       404:
  *         description: Disease not found
  */
-diseaseRouter.put("/:id", updateDisease);
+diseaseRouter.put("/:id", verifyAccessToken, authorization(["role.manage"]), updateDisease);
 
 /**
  * @swagger
@@ -234,7 +236,7 @@ diseaseRouter.put("/:id", updateDisease);
  *       404:
  *         description: Disease not found
  */
-diseaseRouter.delete("/:id", deleteDisease);
+diseaseRouter.delete("/:id", verifyAccessToken, authorization(["role.manage"]), deleteDisease);
 
 /**
  * @swagger
@@ -261,7 +263,7 @@ diseaseRouter.delete("/:id", deleteDisease);
  *       200:
  *         description: A paginated list of diseases
  */
-diseaseRouter.get("/", getAllDiseases);
+diseaseRouter.get("/", verifyAccessToken, authorization(["ticket.update", "role.manage"]), getAllDiseases);
 
 /**
  * @swagger
@@ -284,6 +286,6 @@ diseaseRouter.get("/", getAllDiseases);
  *       404:
  *         description: Disease not found
  */
-diseaseRouter.get("/:id", getDiseaseById);
+diseaseRouter.get("/:id", verifyAccessToken, authorization(["ticket.update", "role.manage"]), getDiseaseById);
 
 export default diseaseRouter;

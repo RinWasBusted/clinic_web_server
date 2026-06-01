@@ -1,15 +1,12 @@
 import prisma from "../../utils/prisma.js";
 import { CreateRoleInput, UpdateRoleInput } from "../../schema/role.schema.js";
 import { ProhibitedError } from "../admin/appointment/appointment.service.js";
+import rbacService from "../../services/cache/rbac.service.js";
 
 export const roleService = {
   async getAllRoles() {
     const roles = await prisma.role.findMany({});
     return roles;
-    // return roles.map((role) => ({
-    //   ...role,
-    //   permissions: role.permissions.map((rp) => rp.permission),
-    // }));
   },
 
   async getRoleById(roleID: string) {
@@ -57,7 +54,7 @@ export const roleService = {
   async updateRole(roleID: string, data: UpdateRoleInput) {
     const { roleName, roleDescription, permissions } = data;
 
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const updateData: any = {};
       if (roleName !== undefined) updateData.roleName = roleName;
       if (roleDescription !== undefined) updateData.roleDescription = roleDescription;
@@ -91,10 +88,16 @@ export const roleService = {
 
       return role;
     });
+
+    // Clear cache after successful transaction
+    await rbacService.deleteCachedRole(result.roleName);
+    return result;
   },
 
   async deleteRole(roleID: string) {
-    return prisma.$transaction(async (tx) => {
+    const oldRole = await prisma.role.findUnique({ where: { roleID } });
+    
+    const result = await prisma.$transaction(async (tx) => {
       const existedAccount = await tx.account.findFirst({
         where: {
           roleID,
@@ -108,5 +111,10 @@ export const roleService = {
         where: { roleID },
       });
     });
+
+    if (oldRole) {
+      await rbacService.deleteCachedRole(oldRole.roleName);
+    }
+    return result;
   },
 };

@@ -2,8 +2,9 @@ import { Router } from "express";
 import {  GetProfile, loginUser,refreshTokens,updatePassword, UpdateProfile } from "./auth.controller.js";
 import { verifyAccessToken, verifyRefreshToken } from "../../middlewares/verifyToken.js";
 import { logout } from "./auth.controller.js";
-import { validateBody,   } from "../../middlewares/validate.js";
+import { validateBody } from "../../middlewares/validate.js";
 import { UpdateAccountSchema } from "../../schema/auth.schema.js";
+import { authorization } from "../../middlewares/authorization.js";
 const router = Router();
 
 /**
@@ -125,7 +126,7 @@ router.post("/refresh", verifyRefreshToken, refreshTokens);
  *       500:
  *         description: Internal server error
  */
-router.patch("/update-password", verifyAccessToken,updatePassword)
+router.patch("/update-password", verifyAccessToken, authorization(["self.update_password"]), updatePassword);
 /**
  * @swagger
  * /auth/profile:
@@ -224,7 +225,7 @@ router.get("/profile", verifyAccessToken, GetProfile)
  *       500:
  *         description: Internal server error
  */
-router.patch("/update-profile", verifyAccessToken,validateBody(UpdateAccountSchema), UpdateProfile)
+router.patch("/update-profile", verifyAccessToken, authorization(["self.update_profile"]), validateBody(UpdateAccountSchema), UpdateProfile);
 /**
  * @swagger
  * /auth/logout:

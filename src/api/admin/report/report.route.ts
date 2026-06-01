@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getExaminationList, getExaminationTicket, getPatientList, getPaymentBill, getMonthlyRevenue, getMedicineUsage } from "./report.controller.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 const router = Router();
 
@@ -31,7 +32,7 @@ const router = Router();
  *       401:
  *         description: Unauthorized
  */
-router.get("/examination-list", verifyAccessToken, getExaminationList);
+router.get("/examination-list", verifyAccessToken, authorization(["report.view"]), getExaminationList);
 
 /**
  * @swagger
@@ -61,7 +62,7 @@ router.get("/examination-list", verifyAccessToken, getExaminationList);
  *       404:
  *         description: Không tìm thấy phiếu khám
  */
-router.get("/examination-ticket/:examineId", verifyAccessToken, getExaminationTicket);
+router.get("/examination-ticket/:examineId", verifyAccessToken, authorization(["report.view"]), getExaminationTicket);
 
 /**
  * @swagger
@@ -90,7 +91,7 @@ router.get("/examination-ticket/:examineId", verifyAccessToken, getExaminationTi
  *       401:
  *         description: Unauthorized
  */
-router.get("/patient-list", verifyAccessToken, getPatientList);
+router.get("/patient-list", verifyAccessToken, authorization(["report.view"]), getPatientList);
 
 /**
  * @swagger
@@ -120,7 +121,7 @@ router.get("/patient-list", verifyAccessToken, getPatientList);
  *       404:
  *         description: Không tìm thấy phiên khám
  */
-router.get("/payment-bill/:examineId", verifyAccessToken, getPaymentBill);
+router.get("/payment-bill/:examineId", verifyAccessToken, authorization(["report.view"]), getPaymentBill);
 
 /**
  * @swagger
@@ -153,7 +154,7 @@ router.get("/payment-bill/:examineId", verifyAccessToken, getPaymentBill);
  *       401:
  *         description: Unauthorized
  */
-router.get("/monthly-revenue", verifyAccessToken, getMonthlyRevenue);
+router.get("/monthly-revenue", verifyAccessToken, authorization(["report.view"]), getMonthlyRevenue);
 
 /**
  * @swagger
@@ -186,6 +187,6 @@ router.get("/monthly-revenue", verifyAccessToken, getMonthlyRevenue);
  *       401:
  *         description: Unauthorized
  */
-router.get("/medicine-usage", verifyAccessToken, getMedicineUsage);
+router.get("/medicine-usage", verifyAccessToken, authorization(["report.view"]), getMedicineUsage);
 
 export default router;

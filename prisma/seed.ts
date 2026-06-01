@@ -136,6 +136,24 @@ async function seedAdminAccount() {
     select: { accountID: true, email: true, roleName: true },
   });
 
+  // Assign all permissions to Admin role
+  const allPermissions = await prisma.permission.findMany();
+  for (const p of allPermissions) {
+    await prisma.rolePermission.upsert({
+      where: {
+        roleID_permissionID: {
+          roleID: adminRole.roleID,
+          permissionID: p.permissionID
+        }
+      },
+      update: {},
+      create: {
+        roleID: adminRole.roleID,
+        permissionID: p.permissionID
+      }
+    });
+  }
+
   console.log("Seeded admin:", admin);
 }
 

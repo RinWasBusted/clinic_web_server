@@ -9,6 +9,7 @@ import {
 } from "./medicine-items.controller.js";
 import upload from "../../../utils/multer.js";
 import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
+import { authorization } from "../../../middlewares/authorization.js";
 
 const medicineItemsRouter = Router();
 
@@ -114,7 +115,7 @@ const medicineItemsRouter = Router();
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.post("/", verifyAccessToken, upload.single("image"), createMedicine);
+medicineItemsRouter.post("/", verifyAccessToken, authorization(["medicine.add"]), upload.single("image"), createMedicine);
 
 /**
  * @swagger
@@ -236,7 +237,7 @@ medicineItemsRouter.post("/", verifyAccessToken, upload.single("image"), createM
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.post("/many", verifyAccessToken, createManyMedicine);
+medicineItemsRouter.post("/many", verifyAccessToken, authorization(["medicine.add"]), createManyMedicine);
 
 /**
  * @swagger
@@ -342,7 +343,7 @@ medicineItemsRouter.post("/many", verifyAccessToken, createManyMedicine);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.get("/", verifyAccessToken, getMedicineItems);
+medicineItemsRouter.get("/", verifyAccessToken, authorization(["medicine.view"]), getMedicineItems);
 
 /**
  * @swagger
@@ -434,7 +435,7 @@ medicineItemsRouter.get("/", verifyAccessToken, getMedicineItems);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.get("/:id", verifyAccessToken, getMedicineById);
+medicineItemsRouter.get("/:id", verifyAccessToken, authorization(["medicine.view"]), getMedicineById);
 
 /**
  * @swagger
@@ -554,7 +555,7 @@ medicineItemsRouter.get("/:id", verifyAccessToken, getMedicineById);
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.patch("/:id", verifyAccessToken, upload.single("image"), updateMedicine);
+medicineItemsRouter.patch("/:id", verifyAccessToken, authorization(["medicine.update"]), upload.single("image"), updateMedicine);
 
 /**
  * @swagger
@@ -610,6 +611,6 @@ medicineItemsRouter.patch("/:id", verifyAccessToken, upload.single("image"), upd
  *       500:
  *         description: Server error
  */
-medicineItemsRouter.delete("/:id", verifyAccessToken, deleteMedicine);
+medicineItemsRouter.delete("/:id", verifyAccessToken, authorization(["medicine.delete"]), deleteMedicine);
 
 export default medicineItemsRouter;
