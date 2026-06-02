@@ -63,7 +63,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
         roleDescription: account?.role?.roleDescription as string,
         firstName: account.firstName,
         lastName: account.lastName,
-        permissions: permissions
+        permissions: permissions,
       },
     });
   } catch (error) {
@@ -140,11 +140,13 @@ export const GetProfile = async (req: Request, res: Response) => {
       email: account.email,
       firstName: account.firstName,
       lastName: account.lastName,
+      displayID: account.DisplayID,
+      birthDate: account.birthDate,
       role: account.role?.roleName as string,
       roleDescription: account.role?.roleDescription as string,
       avatar: account.avatarUrl as string,
-      permissions: req.user?.permissions || []
-    }
+      permissions: req.user?.permissions || [],
+    },
   });
 };
 export const UpdateProfile = async (req: Request, res: Response) => {
