@@ -160,9 +160,22 @@ export const UpdateProfile = async (req: Request, res: Response) => {
     where: { accountID: userId },
     data: req.body,
     omit: { password: true },
-    include: { role: true, workspaces: true, patient: true },
+    include: { role: true },
   });
-  return res.status(200).json({ message: "Profile updated successfully", profile: updated });
+  return res.status(200).json({
+    message: "Profile updated successfully",
+    profile: {
+      id: updated.accountID,
+      email: updated.email,
+      firstName: updated.firstName,
+      lastName: updated.lastName,
+      displayID: updated.DisplayID,
+      birthDate: updated.birthDate,
+      role: updated.role?.roleName as string,
+      roleDescription: updated.role?.roleDescription as string,
+      avatar: updated.avatarUrl as string,
+    },
+  });
 };
 export const updatePassword = async (req: Request, res: Response) => {
   const { currentPassword, newPassword } = req.body;
