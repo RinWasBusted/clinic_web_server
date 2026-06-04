@@ -9,6 +9,7 @@ import {
   getExamineLogHandler,
   getExamineLogWithPrescriptionHandler,
   updateExamineLogHandler,
+  getPatientLookupHandler
 } from "./log.controller.js";
 import { authorization } from "../../../middlewares/authorization.js";
 
@@ -149,6 +150,9 @@ import { authorization } from "../../../middlewares/authorization.js";
 const examineLogRouter = Router();
 
 examineLogRouter.use(verifyAccessToken);
+
+examineLogRouter.get("/patient-lookup", authorization(["appointment.view", "ticket.view_all"]), getPatientLookupHandler);
+
 
 /**
  * @swagger

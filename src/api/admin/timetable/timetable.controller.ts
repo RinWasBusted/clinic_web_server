@@ -82,16 +82,14 @@ export const GetAllTimetables = async (req: Request, res: Response, next: NextFu
     try {
         const { facultyID } = req.query;
 
-        if (!facultyID || typeof facultyID !== "string") {
-            return res.status(400).json({ message: "Faculty ID is required" });
-        }
+        const whereClause = facultyID && typeof facultyID === "string" ? {
+            room: {
+                FacultyID: facultyID
+            }
+        } : {};
 
         const timetables = await prisma.timetable.findMany({
-            where: {
-                room: {
-                    FacultyID: facultyID
-                }
-            },
+            where: whereClause,
             include: {
                 account: {
                     select: {
