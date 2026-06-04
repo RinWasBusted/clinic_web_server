@@ -14,7 +14,7 @@ import { authorization } from "../../../middlewares/authorization.js";
 const systemConfigRouter = Router();
 
 systemConfigRouter.use(verifyAccessToken);
-systemConfigRouter.use(authorization(["role.manage"]));
+systemConfigRouter.use(authorization(["system.manage"]));
 
 /**
  * @swagger
