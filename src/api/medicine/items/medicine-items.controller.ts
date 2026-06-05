@@ -36,7 +36,7 @@ export const createMedicine = async (
     // Create medicine with image URL
     const medicine = await createMedicineService({
       medicineName,
-      unit,
+      unitID: parseInt(unit),
       price: parseFloat(price),
       description,
       medicineImage,
@@ -170,7 +170,7 @@ export const updateMedicine = async (
 
     const medicine = await updateMedicineService(parseInt(id as string), {
       medicineName,
-      unit,
+      unitID: unit ? parseInt(unit) : undefined,
       price: price ? parseFloat(price) : undefined,
       description,
       medicineImage,

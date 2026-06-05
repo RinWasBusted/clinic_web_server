@@ -97,7 +97,8 @@ export async function getPrintableVersion(id: string) {
   return _;
 }
 
-export async function createNewRecord(payload) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createNewRecord(payload: any) {
   const { examine, prescription: prescriptionWithNoExamineLog } = payload;
 
   // Refactored code:

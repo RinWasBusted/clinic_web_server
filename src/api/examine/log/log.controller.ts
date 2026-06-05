@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import ExamineLogService from "./log.service.js";
 import { getExamineLogsByDate, getExamineLogsByKeyword } from "../../admin/report/report.service.js";
+import { getPrintableVersion } from "../summary/summary.service.js";
 export async function createExamineLogHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const examinedBy = req.user?.id;
@@ -53,7 +54,7 @@ export async function updateExamineLogHandler(req: Request, res: Response, next:
 export async function getPrintableExamineLogHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const result = await ExamineLogService.getPrintableExamineLog(id as string);
+    const result = await getPrintableVersion(id as string);
     return res.json({ examineLog: result });
   } catch (error) {
     next(error);
