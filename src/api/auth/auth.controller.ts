@@ -140,7 +140,7 @@ export const GetProfile = async (req: Request, res: Response) => {
       email: account.email,
       firstName: account.firstName,
       lastName: account.lastName,
-      displayID: account.DisplayID,
+      DisplayID: account.DisplayID,
       birthDate: account.birthDate,
       role: account.role?.roleName as string,
       roleDescription: account.role?.roleDescription as string,
