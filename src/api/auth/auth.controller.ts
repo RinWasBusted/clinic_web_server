@@ -169,7 +169,7 @@ export const UpdateProfile = async (req: Request, res: Response) => {
       email: updated.email,
       firstName: updated.firstName,
       lastName: updated.lastName,
-      displayID: updated.DisplayID,
+      DisplayID: updated.DisplayID,
       birthDate: updated.birthDate,
       role: updated.role?.roleName as string,
       roleDescription: updated.role?.roleDescription as string,
