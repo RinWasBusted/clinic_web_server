@@ -37,6 +37,11 @@ interface FindUniqueType {
   mode?: FindUniqueEnum;
 }
 
+interface UpdatePriceQuery {
+  prescriptionID?: string;
+  examineID?: string;
+}
+
 type Client = typeof prisma | PrismaClient;
 
 class PrescriptionService {
@@ -192,7 +197,7 @@ class PrescriptionService {
 
     // Calculate payAmount
 
-    const newPrescription = await this.resolveClient(tx).prescription.create({
+    const { prescriptionID } = await this.resolveClient(tx).prescription.create({
       data: {
         ...rest,
         prescriptionDisplayID: examineDisplayID,
@@ -202,8 +207,8 @@ class PrescriptionService {
       },
       select: PrescriptionService.prescriptionInternalView,
     });
-
-    return newPrescription;
+    await this.updatePrice({ prescriptionID }, tx);
+    return await this.findByID(prescriptionID, tx, { mode: "INTERNAL", onlyAllowDraft: true }); // Refetch to get the updated payAmount after calculation
   }
 
   isValidUpdate(payload: PrescriptionType) {
@@ -246,9 +251,51 @@ class PrescriptionService {
         data: { note, needReExamine, totalTreatmentDays: dateDiff },
         select: PrescriptionService.prescriptionInternalView,
       });
+      await this.updatePrice({ prescriptionID }, tx);
       return finalPrescription;
     });
     return prescription;
+  }
+
+  async updatePrice(query: UpdatePriceQuery, tx?: Client) {
+    const client = this.resolveClient(tx);
+
+    if (query.prescriptionID) {
+      await client.$executeRaw`UPDATE "Prescription"
+        SET "payAmount" = (
+          SELECT COALESCE(SUM(m.price * dt.quantity), 0)
+          FROM "PrescriptionDetails" AS dt
+          INNER JOIN "Medicine" AS m
+            ON m."medicineID" = dt."medicineID"
+          WHERE dt."prescriptionID" = ${query.prescriptionID}
+            AND m.quantity > 50
+        )
+        WHERE "prescriptionID" = ${query.prescriptionID}
+      `;
+      return;
+    }
+
+    if (query.examineID) {
+      await client.$executeRaw`UPDATE "Prescription"
+        SET "payAmount" = (
+          SELECT COALESCE(SUM(m.price * dt.quantity), 0)
+          FROM "PrescriptionDetails" AS dt
+          INNER JOIN "Medicine" AS m
+            ON m."medicineID" = dt."medicineID"
+          WHERE dt."prescriptionID" = (
+            SELECT "prescriptionID"
+            FROM "Prescription"
+            WHERE "examineID" = ${query.examineID}
+          )
+            AND m.quantity > 50
+        )
+        WHERE "prescriptionID" = (
+          SELECT "prescriptionID"
+          FROM "Prescription"
+          WHERE "examineID" = ${query.examineID}
+        )
+      `;
+    }
   }
 
   async updateDetails(prescriptionID: string, target: unknown, payload: PrescriptionType) {
@@ -268,6 +315,7 @@ class PrescriptionService {
         const upsertDetails = this.renderDoseList(details, totalTreatmentDays);
         await this.upsertMany(prescriptionID, upsertDetails, tx);
       }
+      await this.updatePrice({ prescriptionID }, tx);
       return await this.findByID(prescriptionID, tx, { mode: "INTERNAL", onlyAllowDraft: true });
     });
     return updatedPrescription;
