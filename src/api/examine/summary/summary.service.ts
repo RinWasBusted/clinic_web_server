@@ -64,20 +64,6 @@ export async function getPrintableVersion(id: string) {
   if (!examine) throw new NotFoundError("Phiếu khám không hợp lệ!");
   const uuid = examine.examineID;
   const _ = await prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`update "Prescription"
-      set "payAmount" = (select COALESCE(sum(m.price*dt.quantity), 0)
-      from "PrescriptionDetails" as dt 
-      inner join "Medicine" as m 
-      on m."medicineID" = dt."medicineID"
-      where  
-        dt."prescriptionID" =
-        (select ("prescriptionID") from "Prescription" where "examineID" = ${uuid})
-      and 
-        m.quantity > 50)
-      where "prescriptionID" =
-        (select ("prescriptionID") from "Prescription" where "examineID" = ${uuid})
-    `;
-
     const log = await tx.examineLog.findUnique({
       where: { examineID: uuid },
       select: {
