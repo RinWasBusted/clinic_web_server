@@ -1,4 +1,6 @@
 import prisma from "../../../utils/prisma.js";
+import { getConfigAtEndOfDay } from "../../../utils/configHistory.js";
+
 
 // Lấy giới hạn bệnh nhân trong ngày từ cấu hình hệ thống
 export const getMaxPatientsPerDay = async (): Promise<number> => {
@@ -149,67 +151,66 @@ export const getExamineLogsByKeyword = async (keyword: string) => {
 
 // BM5.1: Báo Cáo Doanh Thu Theo Tháng
 export const getMonthlyRevenueReport = async (month: number, year: number) => {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
-    // Lấy giá tiền khám từ cấu hình hệ thống (COUNT_FEE)
-    const examFeeConfig = await prisma.systemConfig.findUnique({
-        where: { key: "COUNT_FEE" }
-    });
-    const examFee = examFeeConfig ? parseFloat(examFeeConfig.value) : 40000;
-
-    const appointments = await prisma.appointment.findMany({
-        where: {
-            scheduleDate: {
-                gte: startDate,
-                lte: endDate
+    const [appointments, prescriptions] = await Promise.all([
+        prisma.appointment.findMany({
+            where: {
+                scheduleDate: { gte: startDate, lte: endDate },
+                status: "approved"
             },
-            status: "approved"
-        }
-    });
+            select: { scheduleDate: true }
+        }),
 
-    const prescriptions = await prisma.prescription.findMany({
-        where: {
-            createdAt: {
-                gte: startDate,
-                lte: endDate
+        // Dùng payAmount đã lưu khi duyệt thuốc — KHÔNG tính lại từ medicine.price
+        // (tránh sai lệch khi giá thuốc thay đổi sau này)
+        prisma.prescription.findMany({
+            where: {
+                createdAt: { gte: startDate, lte: endDate },
+                status: "done"
             },
-            status: "done"
-        },
-        include: {
-            details: {
-                include: {
-                    medicine: true
-                }
+            select: {
+                payAmount: true,
+                createdAt: true
             }
-        }
-    });
+        })
+    ]);
 
-    const daysInMonth = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
     const dailyData = new Map<number, { patientCount: number; revenue: number }>();
-    
+
     for (let i = 1; i <= daysInMonth; i++) {
         dailyData.set(i, { patientCount: 0, revenue: 0 });
     }
 
+    // Bước 1: Gom appointment theo ngày, sau đó lấy giá khám từng ngày một lần
+    const appointmentsByDay = new Map<number, number>(); // day → count
     appointments.forEach(app => {
-        const date = app.scheduleDate.getDate();
-        const data = dailyData.get(date);
-        if (data) {
-            data.patientCount += 1;
-            data.revenue += examFee;
-        }
+        // Dùng getUTCDate() để tránh lệch múi giờ
+        const day = app.scheduleDate.getUTCDate();
+        appointmentsByDay.set(day, (appointmentsByDay.get(day) ?? 0) + 1);
     });
 
-    prescriptions.forEach(pres => {
-        const date = pres.createdAt.getDate();
-        const data = dailyData.get(date);
+    // Lấy giá khám cho từng ngày có appointment (dùng end-of-day của ngày đó)
+    for (const [day, count] of appointmentsByDay.entries()) {
+        const dayDate = new Date(Date.UTC(year, month - 1, day));
+        const examFeeValue = await getConfigAtEndOfDay("COUNT_FEE", dayDate);
+        const examFee = examFeeValue ? parseFloat(examFeeValue) : 0;
+
+        const data = dailyData.get(day);
         if (data) {
-            let medicineFee = 0;
-            pres.details.forEach(d => {
-                medicineFee += d.quantity * Number(d.medicine.price || 0);
-            });
-            data.revenue += medicineFee;
+            data.patientCount += count;
+            data.revenue += examFee * count;
+        }
+    }
+
+    // Bước 2: Cộng tiền thuốc từ payAmount đã lưu (không tính lại từ medicine.price)
+    prescriptions.forEach(pres => {
+        const day = pres.createdAt.getUTCDate();
+        const data = dailyData.get(day);
+        if (data) {
+            data.revenue += Number(pres.payAmount ?? 0);
         }
     });
 
@@ -219,8 +220,8 @@ export const getMonthlyRevenueReport = async (month: number, year: number) => {
         if (data.patientCount > 0 || data.revenue > 0) {
             reports.push({
                 date: i,
-                month: month,
-                year: year,
+                month,
+                year,
                 patientCount: data.patientCount,
                 revenue: data.revenue
             });
@@ -229,6 +230,7 @@ export const getMonthlyRevenueReport = async (month: number, year: number) => {
 
     return reports;
 };
+
 
 // BM5.2: Báo Cáo Sử Dụng Thuốc
 export const getMedicineUsageReport = async (month: number, year: number) => {

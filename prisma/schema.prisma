@@ -632,5 +632,25 @@ model SystemConfig {
   value       String  @db.Text
   description String?
 
+  history SystemConfigHistory[]
+
   @@map("SystemConfig")
+}
+
+/// Lưu lịch sử mỗi lần giá trị config thay đổi.
+/// effectiveDate = ngày có hiệu lực (luôn = ngày cập nhật + 1).
+/// Nếu admin cập nhật 2 lần trong 1 ngày → upsert theo (key, effectiveDate)
+/// → chỉ giữ lại bản mới nhất, không bị chồng chất.
+model SystemConfigHistory {
+  id            Int      @id @default(autoincrement())
+  key           String   @db.VarChar(50)
+  value         String   @db.Text           // giá trị MỚI sẽ có hiệu lực
+  changedAt     DateTime @default(now()) @db.Timestamptz(3) // thời điểm admin bấm lưu
+  effectiveDate DateTime @db.Date           // ngày có hiệu lực = changedAt.date + 1
+
+  config SystemConfig @relation(fields: [key], references: [key], onDelete: Cascade)
+
+  @@unique([key, effectiveDate]) // mỗi key chỉ có 1 giá trị cho 1 ngày hiệu lực
+  @@index([key, effectiveDate])
+  @@map("SystemConfigHistory")
 }

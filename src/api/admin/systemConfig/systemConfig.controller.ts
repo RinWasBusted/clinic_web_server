@@ -91,3 +91,43 @@ export async function deleteConfigHandler(req: Request, res: Response, next: Nex
     next(error);
   }
 }
+
+/** GET /admin/config/:key/history — Lấy lịch sử thay đổi của 1 config key */
+export async function getConfigHistoryHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { key } = req.params;
+    const limit = Number(req.query.limit ?? 50);
+    const exists = await systemConfigService.getByKey(key as string);
+    if (!exists) {
+      return res.status(404).json({ message: `Không tìm thấy config với key: ${key}` });
+    }
+    const data = await systemConfigService.getHistory(key as string, limit);
+    return res.status(200).json({ message: "OK", data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /admin/config/:key/pending
+ * Lấy thay đổi đang chờ hiệu lực (effectiveDate = ngày mai) của 1 config key.
+ * Trả về null nếu không có thay đổi nào đang chờ.
+ * Dùng để hiển thị banner "Giá sẽ thay đổi từ ngày mai" trên UI admin.
+ */
+export async function getPendingChangeHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { key } = req.params;
+    const exists = await systemConfigService.getByKey(key as string);
+    if (!exists) {
+      return res.status(404).json({ message: `Không tìm thấy config với key: ${key}` });
+    }
+    const data = await systemConfigService.getPendingChange(key as string);
+    return res.status(200).json({
+      message: "OK",
+      data,                        // null nếu không có pending change
+      hasPending: data !== null,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

@@ -1,4 +1,5 @@
 import prisma from "../../utils/prisma.js";
+import { getConfigAtEndOfDay } from "../../utils/configHistory.js";
 
 export class ReceiptServiceError extends Error {
   statusCode: number;
@@ -16,7 +17,7 @@ const parseMoney = (value?: unknown) => {
 
 class ReceiptService {
   async getReceiptByAppointmentID(appointmentID: string) {
-    const [appointment, examineFeeConfig] = await Promise.all([
+    const [appointment] = await Promise.all([
       prisma.appointment.findUnique({
         where: { appointmentID },
         select: {
@@ -52,18 +53,19 @@ class ReceiptService {
           },
         },
       }),
-      prisma.systemConfig.findUnique({
-        where: { key: "COUNT_FEE" },
-        select: { value: true },
-      }),
     ]);
-
 
     if (!appointment) {
       throw new ReceiptServiceError("Appointment not found", 404);
     }
 
-    if (!examineFeeConfig) {
+    // Lấy giá khám áp dụng vào cuối ngày khám (không phải giá hiện tại)
+    // Dùng endOfDay vì scheduleDate là Date-only (không có giờ phút)
+    const examineFeeValue = await getConfigAtEndOfDay(
+      "COUNT_FEE",
+      appointment.scheduleDate
+    );
+    if (examineFeeValue === null) {
       throw new ReceiptServiceError("System config COUNT_FEE not found", 404);
     }
 
@@ -77,7 +79,7 @@ class ReceiptService {
       (total, prescription) => total + parseMoney(prescription.payAmount?.toNumber()),
       0
     );
-    const examineFee = parseMoney(examineFeeConfig.value);
+    const examineFee = parseMoney(examineFeeValue);
 
     const patientName = `${appointment.patient.account.lastName} ${appointment.patient.account.firstName}`.trim();
 
@@ -99,7 +101,7 @@ class ReceiptService {
   }
 
   async getReceiptByPrescriptionID(prescriptionID: string) {
-    const [prescription, examineFeeConfig] = await Promise.all([
+    const [prescription] = await Promise.all([
       prisma.prescription.findUnique({
         where: { prescriptionID },
         select: {
@@ -154,22 +156,25 @@ class ReceiptService {
           },
         },
       }),
-      prisma.systemConfig.findUnique({
-        where: { key: "COUNT_FEE" },
-        select: { value: true },
-      }),
     ]);
 
     if (!prescription) {
       throw new ReceiptServiceError("Prescription not found", 404);
     }
 
-    if (!examineFeeConfig) {
+    const appointment = prescription.examine.enterTicket.appointment;
+
+    // Lấy giá khám áp dụng vào cuối ngày khám (không phải giá hiện tại)
+    // Dùng endOfDay vì scheduleDate là Date-only (không có giờ phút)
+    const examineFeeValue = await getConfigAtEndOfDay(
+      "COUNT_FEE",
+      appointment.scheduleDate
+    );
+    if (examineFeeValue === null) {
       throw new ReceiptServiceError("System config COUNT_FEE not found", 404);
     }
 
-    const appointment = prescription.examine.enterTicket.appointment;
-    const examineFee = parseMoney(examineFeeConfig.value);
+    const examineFee = parseMoney(examineFeeValue);
     const isDonePrescription = prescription.status === "done";
     const prescriptionFee = isDonePrescription ? parseMoney(prescription.payAmount?.toNumber()) : null;
     const patientName = `${appointment.patient.account.lastName} ${appointment.patient.account.firstName}`.trim();
@@ -188,12 +193,12 @@ class ReceiptService {
       totalFee: examineFee + (prescriptionFee ?? 0),
       prescriptions: isDonePrescription
         ? [
-            {
-              prescriptionID: prescription.prescriptionID,
-              prescriptionDisplayID: prescription.prescriptionDisplayID,
-              payAmount: parseMoney(prescription.payAmount?.toNumber()),
-            },
-          ]
+          {
+            prescriptionID: prescription.prescriptionID,
+            prescriptionDisplayID: prescription.prescriptionDisplayID,
+            payAmount: parseMoney(prescription.payAmount?.toNumber()),
+          },
+        ]
         : [],
       medicines: enoughMedicines.map((detail) => ({
         medicineID: detail.medicine.medicineID,

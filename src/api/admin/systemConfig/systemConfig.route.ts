@@ -3,6 +3,8 @@ import { verifyAccessToken } from "../../../middlewares/verifyToken.js";
 import {
   getAllConfigHandler,
   getConfigByKeyHandler,
+  getConfigHistoryHandler,
+  getPendingChangeHandler,
   createConfigHandler,
   updateConfigHandler,
   upsertConfigHandler,
@@ -109,6 +111,96 @@ systemConfigRouter.get("/", getAllConfigHandler);
  *         description: Unauthorized
  */
 systemConfigRouter.get("/:key", getConfigByKeyHandler);
+
+/**
+ * @swagger
+ * /admin/config/{key}/history:
+ *   get:
+ *     summary: Lấy lịch sử thay đổi của 1 config key
+ *     description: Trả về danh sách các lần thay đổi, mới nhất trước. Dùng để audit trail.
+ *     tags:
+ *       - SystemConfig
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: key
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: COUNT_FEE
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Số bản ghi tối đa trả về
+ *     responses:
+ *       200:
+ *         description: Danh sách lịch sử thay đổi
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: OK
+ *               data:
+ *                 - id: 3
+ *                   key: COUNT_FEE
+ *                   value: "50000"
+ *                   changedAt: "2026-06-07T12:00:00.000Z"
+ *                 - id: 1
+ *                   key: COUNT_FEE
+ *                   value: "40000"
+ *                   changedAt: "2026-01-01T00:00:00.000Z"
+ *       404:
+ *         description: Không tìm thấy config
+ *       401:
+ *         description: Unauthorized
+ */
+systemConfigRouter.get("/:key/history", getConfigHistoryHandler);
+
+/**
+ * @swagger
+ * /admin/config/{key}/pending:
+ *   get:
+ *     summary: Xem giá trị đang chờ hiệu lực (ngày mai)
+ *     description: |
+ *       Trả về bản ghi history có effectiveDate = ngày mai (nếu có).
+ *       hasPending = true nghĩa là có thay đổi giá sẽ có hiệu lực từ ngày mai.
+ *       Dùng để hiển thị banner cảnh báo trên UI admin.
+ *     tags:
+ *       - SystemConfig
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: key
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: COUNT_FEE
+ *     responses:
+ *       200:
+ *         description: Pending change (nếu có)
+ *         content:
+ *           application/json:
+ *             examples:
+ *               hasPending:
+ *                 value:
+ *                   message: OK
+ *                   hasPending: true
+ *                   data:
+ *                     id: 5
+ *                     key: COUNT_FEE
+ *                     value: "50000"
+ *                     changedAt: "2026-06-07T14:00:00.000Z"
+ *                     effectiveDate: "2026-06-08"
+ *               noPending:
+ *                 value:
+ *                   message: OK
+ *                   hasPending: false
+ *                   data: null
+ */
+systemConfigRouter.get("/:key/pending", getPendingChangeHandler);
 
 /**
  * @swagger
