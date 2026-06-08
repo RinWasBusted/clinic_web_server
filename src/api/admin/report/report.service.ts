@@ -234,20 +234,52 @@ export const getMonthlyRevenueReport = async (month: number, year: number) => {
 
 // BM5.2: Báo Cáo Sử Dụng Thuốc
 export const getMedicineUsageReport = async (month: number, year: number) => {
-    return await prisma.medicineMonthReport.findMany({
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+    const prescriptions = await prisma.prescription.findMany({
         where: {
-            month: month,
-            year: year
+            createdAt: { gte: startDate, lte: endDate },
+            status: "done"
         },
         include: {
-            medicine: {
+            details: {
                 include: {
-                    unit: true
+                    medicine: {
+                        include: {
+                            unit: true
+                        }
+                    }
                 }
             }
-        },
-        orderBy: {
-            useCount: 'desc'
         }
     });
+
+    const medicineMap = new Map<string | number, { medicine: any, soLuong: number, soLanDung: number }>();
+
+    prescriptions.forEach(p => {
+        p.details.forEach(d => {
+            const medId = d.medicineID;
+            if (!medicineMap.has(medId)) {
+                medicineMap.set(medId, {
+                    medicine: d.medicine,
+                    soLuong: 0,
+                    soLanDung: 0
+                });
+            }
+            const data = medicineMap.get(medId)!;
+            data.soLuong += d.quantity;
+            data.soLanDung += 1; // Mỗi đơn tính là 1 lần xuất dùng
+        });
+    });
+
+    const report = Array.from(medicineMap.values()).map(item => ({
+        medicine: item.medicine,
+        soLuong: item.soLuong,
+        soLanDung: item.soLanDung
+    }));
+
+    report.sort((a, b) => b.soLuong - a.soLuong);
+
+    return report;
 };

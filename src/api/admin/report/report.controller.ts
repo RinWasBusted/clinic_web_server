@@ -218,12 +218,11 @@ export const getMedicineUsage = async (req: Request, res: Response, next: NextFu
         const data = reports.map((r, index) => {
             return {
                 stt: index + 1,
-                medicineName: r.medicine.medicineName,
-                unit: (r.medicine as any).unit?.unitName || "Khác",
-                // Ghi chú: quantity hiện đang dùng count số lần dùng
-                // Nếu cần quantity tổng, cần điều chỉnh MedicineMonthReport hoặc aggregate query
-                quantity: r.useCount, // Tạm thời map vào useCount
-                useCount: r.useCount
+                key: r.medicine.medicineID,
+                thuoc: r.medicine.medicineName,
+                donViTinh: (r.medicine as any).unit?.unitName || "Khác",
+                soLuong: r.soLuong,
+                soLanDung: r.soLanDung
             };
         });
 
