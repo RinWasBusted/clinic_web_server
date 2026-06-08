@@ -104,7 +104,7 @@ router.post("/", verifyAccessToken, authorization(["room.manage"]), CreateRoom);
  *                       faculty:
  *                         type: object
  */
-router.get("/", verifyAccessToken, authorization(["room.manage"]), GetAllRooms);
+router.get("/", verifyAccessToken, authorization(["room.view", "room.manage"]), GetAllRooms);
 
 /**
  * @swagger
@@ -150,7 +150,7 @@ router.get("/", verifyAccessToken, authorization(["room.manage"]), GetAllRooms);
  *       400:
  *         description: Bad request - Faculty ID is required
  */
-router.get("/faculty/:facultyId", verifyAccessToken, authorization(["room.manage"]), GetRoomsByFacultyId);
+router.get("/faculty/:facultyId", verifyAccessToken, authorization(["room.view", "room.manage"]), GetRoomsByFacultyId);
 
 /**
  * @swagger
@@ -195,7 +195,7 @@ router.get("/faculty/:facultyId", verifyAccessToken, authorization(["room.manage
  *       404:
  *         description: Not Found - Room not found
  */
-router.get("/:id", verifyAccessToken, authorization(["room.manage"]), GetRoomById);
+router.get("/:id", verifyAccessToken, authorization(["room.view", "room.manage"]), GetRoomById);
 
 /**
  * @swagger

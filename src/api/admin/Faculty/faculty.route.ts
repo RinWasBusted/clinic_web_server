@@ -89,7 +89,7 @@ router.post("/", verifyAccessToken, authorization(["faculty.manage"]), CreateFac
  *                       facultyName:
  *                         type: string
  */
-router.get("/", verifyAccessToken, authorization(["faculty.manage"]), GetAllFaculties);
+router.get("/", verifyAccessToken, authorization(["faculty.view", "faculty.manage"]), GetAllFaculties);
 
 /**
  * @swagger
@@ -126,7 +126,7 @@ router.get("/", verifyAccessToken, authorization(["faculty.manage"]), GetAllFacu
  *       404:
  *         description: Not Found - Faculty not found
  */
-router.get("/:id", verifyAccessToken, authorization(["faculty.manage"]), GetFacultyById);
+router.get("/:id", verifyAccessToken, authorization(["faculty.view", "faculty.manage"]), GetFacultyById);
 
 /**
  * @swagger

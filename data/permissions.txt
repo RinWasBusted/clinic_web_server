@@ -16,10 +16,12 @@ appointment.update             Cập nhật lịch hẹn                        
 appointment.view               Xem lịch hẹn                             Xem thông tin lịch hẹn bất kỳ
 self.update_password           Đổi mật khẩu                             Người dùng tự đổi mật khẩu của mình
 self.update_profile            Cập nhật hồ sơ cá nhân                   Người dùng cập nhật thông tin hồ sơ của chính mình
+faculty.view                   Xem thông tin khoa                       Xem danh sách và chi tiết các khoa
 faculty.manage                 Quản lý thông tin khoa                   Quản lý các thông tin của một khoa, bao gồm tạo mới, sửa và xóa.
 imex.create                    Tạo phiếu xuất/nhập kho                  Tạo mới phiếu nhập hoặc xuất kho thuốc
 imex.view                      Xem nhật ký xuất/nhập kho                Xem toàn bộ chi tiết xuất nhập kho thuốc
 medicine.view                  Xem danh mục thuốc                       Xem toàn bộ danh mục thuốc có phân trang
+room.view                      Xem thông tin phòng                      Xem danh sách và chi tiết các phòng
 room.manage                    Quản lý phòng                            Quản lý việc tạo, sửa, xóa phòng
 timetable.delete               Xóa lịch làm việc                        Xóa lịch làm việc
 timetable.view_all             Xem tất cả lịch làm việc                 Xem toàn bộ lịch làm việc
